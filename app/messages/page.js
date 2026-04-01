@@ -4,13 +4,22 @@ import { useState, useEffect } from 'react'
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
 const TYPE_COLORS = {
-  'Session reminder': { bg: '#E6F1FB', color: '#0C447C' },
-  'Unpaid reminder':  { bg: '#FCEBEB', color: '#791F1F' },
+  'Session reminder':  { bg: '#E6F1FB', color: '#0C447C' },
+  'Unpaid reminder':   { bg: '#FCEBEB', color: '#791F1F' },
   'Therapist absence': { bg: '#FAEEDA', color: '#633806' },
 }
 
+const TEMPLATE_KEYS = ['Session reminder', 'Unpaid reminder', 'Therapist absence']
+const TEMPLATE_LABELS = {
+  'Session reminder':  'Session reminder (day before)',
+  'Unpaid reminder':   'Unpaid session reminder',
+  'Therapist absence': 'Therapist absence notice',
+}
+const TEMPLATE_VARS = '[CLIENT], [DATE], [TIME], [THERAPIST]'
+
 export default function MessagesPage() {
   const [messages, setMessages] = useState([])
+  const [templates, setTemplates] = useState({})
   const [loading, setLoading] = useState(true)
   const [filterType, setFilterType] = useState('All')
   const [filterSent, setFilterSent] = useState('Pending')
@@ -21,6 +30,9 @@ export default function MessagesPage() {
   const [absenceMessages, setAbsenceMessages] = useState([])
   const [therapists, setTherapists] = useState([])
   const [sending, setSending] = useState(null)
+  const [showTemplates, setShowTemplates] = useState(false)
+  const [editTemplates, setEditTemplates] = useState({})
+  const [savingTemplates, setSavingTemplates] = useState(false)
 
   useEffect(() => {
     fetchMessages()
@@ -31,7 +43,11 @@ export default function MessagesPage() {
     setLoading(true)
     const res = await fetch('/api/messages')
     const json = await res.json()
-    if (json.success) setMessages(json.data)
+    if (json.success) {
+      setMessages(json.data)
+      setTemplates(json.templates || {})
+      setEditTemplates(json.templates || {})
+    }
     setLoading(false)
   }
 
@@ -44,6 +60,25 @@ export default function MessagesPage() {
     }
   }
 
+  async function saveTemplates() {
+    setSavingTemplates(true)
+    const res = await fetch('/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'save_templates', templates: editTemplates })
+    })
+    const json = await res.json()
+    if (json.success) {
+      setTemplates(editTemplates)
+      setShowTemplates(false)
+      alert('Templates saved!')
+      fetchMessages()
+    } else {
+      alert('Error saving: ' + json.error)
+    }
+    setSavingTemplates(false)
+  }
+
   async function generateAbsenceMessages() {
     if (!absenceForm.therapist || !absenceForm.day) return alert('Please select a therapist and day')
     const res = await fetch('/api/messages', {
@@ -53,11 +88,8 @@ export default function MessagesPage() {
     })
     const json = await res.json()
     if (json.success) {
-      if (json.data.length === 0) {
-        alert(`No scheduled sessions found for ${absenceForm.therapist} on ${absenceForm.day}`)
-      } else {
-        setAbsenceMessages(json.data)
-      }
+      if (json.data.length === 0) alert(`No scheduled sessions found for ${absenceForm.therapist} on ${absenceForm.day}`)
+      else setAbsenceMessages(json.data)
     }
   }
 
@@ -67,22 +99,12 @@ export default function MessagesPage() {
     const fbUrl = msg.fb_account
       ? `https://m.me/${msg.fb_account.replace(/^https?:\/\/(www\.)?(facebook\.com\/|fb\.com\/|m\.me\/)/, '').replace(/\/$/, '')}`
       : 'https://www.facebook.com/messages'
-
     window.open(fbUrl, '_blank')
-
     await fetch('/api/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'log',
-        key: msg.key,
-        client_name: msg.client_name,
-        fb_account: msg.fb_account,
-        type: msg.type,
-        message: text
-      })
+      body: JSON.stringify({ action: 'log', key: msg.key, client_name: msg.client_name, fb_account: msg.fb_account, type: msg.type, message: text })
     })
-
     setMessages(prev => prev.map(m => m.key === msg.key ? { ...m, sent: true } : m))
     setEditingMessage(null)
     setSending(null)
@@ -94,22 +116,14 @@ export default function MessagesPage() {
     await fetch('/api/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'log',
-        key: msg.key,
-        client_name: msg.client_name,
-        fb_account: msg.fb_account,
-        type: msg.type,
-        message: text
-      })
+      body: JSON.stringify({ action: 'log', key: msg.key, client_name: msg.client_name, fb_account: msg.fb_account, type: msg.type, message: text })
     })
     setMessages(prev => prev.map(m => m.key === msg.key ? { ...m, sent: true } : m))
     setEditingMessage(null)
-    alert('Message copied to clipboard!')
+    alert('Message copied!')
   }
 
   const types = ['All', 'Session reminder', 'Unpaid reminder', 'Therapist absence']
-
   const filtered = messages.filter(m => {
     const matchType = filterType === 'All' || m.type === filterType
     const matchSent = filterSent === 'All' || (filterSent === 'Pending' && !m.sent) || (filterSent === 'Sent' && m.sent)
@@ -125,17 +139,49 @@ export default function MessagesPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ color: '#0f4c81', margin: '0 0 4px' }}>Messages</h1>
-          <p style={{ margin: 0, fontSize: '13px', color: '#999' }}>
-            {pendingCount} pending · {sentCount} sent this week
-          </p>
+          <p style={{ margin: 0, fontSize: '13px', color: '#999' }}>{pendingCount} pending · {sentCount} sent</p>
         </div>
-        <button onClick={() => { setAbsenceModal(true); setAbsenceMessages([]) }} style={{
-          background: '#FAEEDA', color: '#633806', border: '1px solid #EF9F27',
-          padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '500'
-        }}>
-          Therapist absence notice
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={() => { setShowTemplates(true); setEditTemplates({ ...templates }) }} style={{
+            padding: '9px 16px', borderRadius: '8px', border: '1px solid #ddd',
+            cursor: 'pointer', fontSize: '13px', background: 'white', color: '#666'
+          }}>Edit templates</button>
+          <button onClick={() => { setAbsenceModal(true); setAbsenceMessages([]) }} style={{
+            background: '#FAEEDA', color: '#633806', border: '1px solid #EF9F27',
+            padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '500'
+          }}>Therapist absence notice</button>
+        </div>
       </div>
+
+      {showTemplates && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '600px', maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Edit message templates</h3>
+            <p style={{ margin: '0 0 1.5rem', fontSize: '13px', color: '#999' }}>
+              Available variables: <code style={{ background: '#f0f0f0', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>{TEMPLATE_VARS}</code>
+            </p>
+            {TEMPLATE_KEYS.map(key => (
+              <div key={key} style={{ marginBottom: '1.25rem' }}>
+                <label style={{ fontSize: '13px', fontWeight: '500', color: '#0f4c81', display: 'block', marginBottom: '6px' }}>
+                  {TEMPLATE_LABELS[key]}
+                </label>
+                <textarea
+                  value={editTemplates[key] || ''}
+                  onChange={e => setEditTemplates({ ...editTemplates, [key]: e.target.value })}
+                  rows={4}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px', lineHeight: '1.6', boxSizing: 'border-box', resize: 'vertical' }}
+                />
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setShowTemplates(false)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={saveTemplates} disabled={savingTemplates} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
+                {savingTemplates ? 'Saving...' : 'Save templates'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {absenceModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -192,7 +238,6 @@ export default function MessagesPage() {
                 </div>
               </div>
             )}
-
             <button onClick={() => setAbsenceModal(false)} style={{
               width: '100%', marginTop: '1rem', padding: '8px', borderRadius: '6px',
               border: '1px solid #ddd', cursor: 'pointer', background: 'white', color: '#666'
@@ -251,9 +296,7 @@ export default function MessagesPage() {
               </div>
 
               {msg.fb_account && (
-                <div style={{ fontSize: '12px', color: '#185FA5', marginBottom: '8px' }}>
-                  FB: {msg.fb_account}
-                </div>
+                <div style={{ fontSize: '12px', color: '#185FA5', marginBottom: '8px' }}>FB: {msg.fb_account}</div>
               )}
 
               {editingMessage === msg.key ? (
@@ -266,13 +309,9 @@ export default function MessagesPage() {
                       Open in Messenger
                     </button>
                     <button onClick={() => copyAndLog(msg, editText)}
-                      style={{ padding: '8px 14px', borderRadius: '6px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', fontSize: '13px', color: '#666' }}>
-                      Copy
-                    </button>
+                      style={{ padding: '8px 14px', borderRadius: '6px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', fontSize: '13px', color: '#666' }}>Copy</button>
                     <button onClick={() => setEditingMessage(null)}
-                      style={{ padding: '8px 14px', borderRadius: '6px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', fontSize: '13px', color: '#666' }}>
-                      Cancel
-                    </button>
+                      style={{ padding: '8px 14px', borderRadius: '6px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', fontSize: '13px', color: '#666' }}>Cancel</button>
                   </div>
                 </div>
               ) : (
@@ -287,13 +326,9 @@ export default function MessagesPage() {
                         {sending === msg.key ? 'Opening...' : 'Open in Messenger'}
                       </button>
                       <button onClick={() => { setEditingMessage(msg.key); setEditText(msg.message) }}
-                        style={{ padding: '8px 14px', borderRadius: '6px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', fontSize: '13px', color: '#666' }}>
-                        Edit
-                      </button>
+                        style={{ padding: '8px 14px', borderRadius: '6px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', fontSize: '13px', color: '#666' }}>Edit</button>
                       <button onClick={() => copyAndLog(msg, msg.message)}
-                        style={{ padding: '8px 14px', borderRadius: '6px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', fontSize: '13px', color: '#666' }}>
-                        Copy
-                      </button>
+                        style={{ padding: '8px 14px', borderRadius: '6px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', fontSize: '13px', color: '#666' }}>Copy</button>
                     </div>
                   )}
                 </div>
