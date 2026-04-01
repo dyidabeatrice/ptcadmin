@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 export default function Dashboard() {
-  cconst [sessions, setSessions] = useState<any[]>([])
+  const [sessions, setSessions] = useState<any[]>([])
   const [clients, setClients] = useState<any[]>([])
   const [payments, setPayments] = useState<any[]>([])
   const [messages, setMessages] = useState<any[]>([])
