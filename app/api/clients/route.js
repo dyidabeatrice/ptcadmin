@@ -1,6 +1,7 @@
-import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
+import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
 
 async function syncToMaster(sheets, clientName, scheduleStr, isInactive) {
+  const { getSheetId } = await import('../../lib/sheets')
   const masterData = await getSheetData('masterschedule')
   const [, ...masterRows] = masterData
   const sheetId = await getSheetId('masterschedule')
@@ -44,9 +45,15 @@ export async function GET() {
     const [, ...rows] = data
     const clients = rows.filter(r => r && r[0]).map((row, i) => ({
       index: i,
-      id: row[0], name: row[1], birthdate: row[2],
-      fb_account: row[3], phone: row[4], address: row[5],
-      notes: row[6], schedule: row[7], status: row[8] || 'active'
+      id: row[0],
+      name: row[1],
+      birthdate: row[2] || '',
+      fb_account: row[3] || '',
+      phone: row[4] || '',
+      address: row[5] || '',
+      notes: row[6] || '',
+      schedule: row[7] || '',
+      status: row[8] || 'active'
     }))
     return Response.json({ success: true, data: clients })
   } catch (error) {
@@ -64,14 +71,22 @@ export async function POST(request) {
       spreadsheetId: SPREADSHEET_ID,
       range: 'clients', valueInputOption: 'RAW',
       requestBody: { values: [[
-        id, body.name, body.birthdate || '',
-        body.fb_account || '', body.phone || '',
-        body.address || '', body.notes || '',
-        body.schedule || '', 'active'
+        id,
+        body.name || '',
+        body.birthdate || '',
+        body.fb_account || '',
+        body.phone || '',
+        body.address || '',
+        body.notes || '',
+        body.schedule || '',
+        'active'
       ]]}
     })
 
-    await syncToMaster(sheets, body.name, body.schedule, false)
+    if (body.schedule) {
+      await syncToMaster(sheets, body.name, body.schedule, false)
+    }
+
     return Response.json({ success: true })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
@@ -89,14 +104,19 @@ export async function PATCH(request) {
       range: `clients!B${sheetRow}:I${sheetRow}`,
       valueInputOption: 'RAW',
       requestBody: { values: [[
-        body.name, body.birthdate || '',
-        body.fb_account || '', body.phone || '',
-        body.address || '', body.notes || '',
-        body.schedule || '', body.status || 'active'
+        body.name || '',
+        body.birthdate || '',
+        body.fb_account || '',
+        body.phone || '',
+        body.address || '',
+        body.notes || '',
+        body.schedule || '',
+        body.status || 'active'
       ]]}
     })
 
     await syncToMaster(sheets, body.name, body.schedule, body.status === 'inactive')
+
     return Response.json({ success: true })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
