@@ -3,10 +3,10 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 export default function Dashboard() {
-  const [sessions, setSessions] = useState([])
-  const [clients, setClients] = useState([])
-  const [payments, setPayments] = useState([])
-  const [messages, setMessages] = useState([])
+  cconst [sessions, setSessions] = useState<any[]>([])
+  const [clients, setClients] = useState<any[]>([])
+  const [payments, setPayments] = useState<any[]>([])
+  const [messages, setMessages] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
