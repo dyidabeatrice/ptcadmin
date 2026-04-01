@@ -17,11 +17,18 @@ function buildSlots() {
 buildSlots()
 
 const RATES = {
-  OT: { Regular: 1200, Evaluation: 2800 },
-  ST: { Regular: 1300, Evaluation: 2800 },
-  PT: { Regular: 900, Evaluation: 2800 },
-  SPED: { Regular: 900, Evaluation: 1800 },
+  OT:   { Regular: 1200, Evaluation: 2800, IEP: 1800, Specialized: 0 },
+  ST:   { Regular: 1300, Evaluation: 2800, IEP: 1800, Specialized: 0 },
+  PT:   { Regular: 900,  Evaluation: 2800, IEP: 1800, Specialized: 0 },
+  SPED: { Regular: 900,  Evaluation: 1800, IEP: 1800, Specialized: 0 },
 }
+
+const SESSION_TYPES = [
+  { value: 'Regular',     label: 'Regular session' },
+  { value: 'Evaluation',  label: 'Evaluation' },
+  { value: 'Specialized', label: 'Specialized session (custom amount)' },
+  { value: 'IEP',         label: 'IEP / Individualized Education Plan' },
+]
 
 const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
 
@@ -35,7 +42,7 @@ function getSpecialty(name) {
 
 function getRate(therapist, sessionType) {
   const s = getSpecialty(therapist)
-  return RATES[s]?.[sessionType] || RATES[s]?.Regular || 1200
+  return RATES[s]?.[sessionType] ?? RATES[s]?.Regular ?? 1200
 }
 
 const STATUS_COLORS = {
@@ -47,6 +54,7 @@ const STATUS_COLORS = {
 
 export default function SchedulePage() {
   const [sessions, setSessions] = useState([])
+  const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [selectedDay, setSelectedDay] = useState(() => {
@@ -57,11 +65,16 @@ export default function SchedulePage() {
   const [payForm, setPayForm] = useState({ session_type: 'Regular', mop: 'Cash', amount: 0 })
   const [addModal, setAddModal] = useState(false)
   const [addForm, setAddForm] = useState({ client_name: '', therapist: '', day: 'Monday', time_start: '9:00 AM', time_end: '10:00 AM' })
+  const [advanceModal, setAdvanceModal] = useState(false)
+  const [advanceForm, setAdvanceForm] = useState({ client_name: '', amount: '', mop: 'Cash' })
   const [saving, setSaving] = useState(false)
   const [dragSession, setDragSession] = useState(null)
   const [dropTarget, setDropTarget] = useState(null)
 
-  useEffect(() => { fetchSessions() }, [])
+  useEffect(() => {
+    fetchSessions()
+    fetchClients()
+  }, [])
 
   async function fetchSessions() {
     setLoading(true)
@@ -69,6 +82,12 @@ export default function SchedulePage() {
     const json = await res.json()
     if (json.success) setSessions(json.data)
     setLoading(false)
+  }
+
+  async function fetchClients() {
+    const res = await fetch('/api/clients')
+    const json = await res.json()
+    if (json.success) setClients(json.data.filter((c) => c.status !== 'inactive'))
   }
 
   async function generateWeek() {
@@ -95,10 +114,10 @@ export default function SchedulePage() {
     fetchSessions()
   }
 
-  async function openPayModal(session) {
-    const amount = getRate(session.therapist, session.session_type)
+  function openPayModal(session) {
+    const type = session.session_type || 'Regular'
     setPayModal(session)
-    setPayForm({ session_type: session.session_type || 'Regular', mop: 'Cash', amount })
+    setPayForm({ session_type: type, mop: 'Cash', amount: getRate(session.therapist, type) })
   }
 
   async function confirmPayment() {
@@ -135,7 +154,7 @@ export default function SchedulePage() {
   }
 
   async function deleteSession(session) {
-    if (!confirm(`Delete this session for ${session.client_name}?`)) return
+    if (!confirm(`Delete session for ${session.client_name}?`)) return
     await fetch('/api/sessions', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
@@ -145,6 +164,7 @@ export default function SchedulePage() {
   }
 
   async function addOneOff() {
+    if (!addForm.client_name || !addForm.therapist) return alert('Please fill in client and therapist')
     setSaving(true)
     await fetch('/api/sessions', {
       method: 'POST',
@@ -152,8 +172,34 @@ export default function SchedulePage() {
       body: JSON.stringify({ action: 'add', ...addForm })
     })
     setAddModal(false)
+    setAddForm({ client_name: '', therapist: '', day: 'Monday', time_start: '9:00 AM', time_end: '10:00 AM' })
     fetchSessions()
     setSaving(false)
+  }
+
+  async function recordAdvance() {
+    if (!advanceForm.client_name) return alert('Please select a client')
+    if (!advanceForm.amount || Number(advanceForm.amount) <= 0) return alert('Please enter an amount')
+    setSaving(true)
+    const today = new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+    await fetch('/api/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_name: advanceForm.client_name,
+        therapist: '',
+        session_id: 'ADVANCE-' + Date.now(),
+        amount: Number(advanceForm.amount),
+        mop: advanceForm.mop,
+        session_type: 'Advance',
+        date: today,
+        payment_type: 'advance'
+      })
+    })
+    setAdvanceModal(false)
+    setAdvanceForm({ client_name: '', amount: '', mop: 'Cash' })
+    setSaving(false)
+    alert(`Advance payment of ₱${Number(advanceForm.amount).toLocaleString()} recorded for ${advanceForm.client_name}`)
   }
 
   async function handleDrop(therapist, timeSlot) {
@@ -184,19 +230,21 @@ export default function SchedulePage() {
   const daySessions = sessions.filter(s => s.day === selectedDay)
   const therapists = [...new Set(daySessions.map(s => s.therapist))].sort()
   const usedSlots = ALL_TIME_SLOTS.filter(t => daySessions.some(s => s.time_start === t))
+  const today = new Date().toLocaleDateString('en-US', { weekday: 'long' })
 
   function getSessionsForCell(therapist, slot) {
     return daySessions.filter(s => s.time_start === slot && s.therapist === therapist)
   }
-
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long' })
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '12px' }}>
         <h1 style={{ color: '#0f4c81', margin: 0 }}>Schedule</h1>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button onClick={() => setAdvanceModal(true)} style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #1D9E75', cursor: 'pointer', fontSize: '13px', background: '#EAF3DE', color: '#27500A', fontWeight: '500' }}>
+            + Advance payment
+          </button>
           <button onClick={() => setAddModal(true)} style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #0f4c81', cursor: 'pointer', fontSize: '13px', background: 'white', color: '#0f4c81', fontWeight: '500' }}>
             + One-off session
           </button>
@@ -212,7 +260,8 @@ export default function SchedulePage() {
           const isToday = day === today
           return (
             <button key={day} onClick={() => setSelectedDay(day)} style={{
-              padding: '8px 16px', borderRadius: '20px', border: isToday ? '2px solid #fcc200' : 'none',
+              padding: '8px 16px', borderRadius: '20px',
+              border: isToday ? '2px solid #fcc200' : 'none',
               cursor: 'pointer', fontSize: '13px', fontWeight: '500',
               background: selectedDay === day ? '#0f4c81' : '#f0f0f0',
               color: selectedDay === day ? 'white' : '#666'
@@ -234,19 +283,33 @@ export default function SchedulePage() {
             <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Session type</label>
               <select value={payForm.session_type}
-                onChange={e => setPayForm({ ...payForm, session_type: e.target.value, amount: getRate(payModal.therapist, e.target.value) })}
+                onChange={e => {
+                  const type = e.target.value
+                  const rate = getRate(payModal.therapist, type)
+                  setPayForm({ ...payForm, session_type: type, amount: type === 'Specialized' ? '' : rate })
+                }}
                 style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
-                <option value="Regular">Regular session</option>
-                <option value="Evaluation">Evaluation</option>
-                <option value="Re-evaluation">Re-evaluation</option>
+                {SESSION_TYPES.map(t => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}{t.value !== 'Specialized' ? ` — ₱${getRate(payModal.therapist, t.value).toLocaleString()}` : ''}
+                  </option>
+                ))}
               </select>
             </div>
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Amount (₱)</label>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
+                Amount (₱)
+                {payForm.session_type === 'Specialized' && (
+                  <span style={{ color: '#E24B4A', fontWeight: '500', marginLeft: '6px' }}>— enter manually</span>
+                )}
+              </label>
               <input type="number" value={payForm.amount}
                 onChange={e => setPayForm({ ...payForm, amount: Number(e.target.value) })}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '16px', fontWeight: '500', boxSizing: 'border-box' }} />
-              <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}>Auto-filled from {getSpecialty(payModal.therapist)} rate — edit if needed</div>
+                placeholder={payForm.session_type === 'Specialized' ? 'Enter amount...' : ''}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: payForm.session_type === 'Specialized' ? '2px solid #fcc200' : '1px solid #ddd', fontSize: '16px', fontWeight: '500', boxSizing: 'border-box' }} />
+              {payForm.session_type !== 'Specialized' && (
+                <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}>Auto-filled from {getSpecialty(payModal.therapist)} rate — edit if needed</div>
+              )}
             </div>
             <div style={{ marginBottom: '1.25rem' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Mode of payment</label>
@@ -264,12 +327,12 @@ export default function SchedulePage() {
             </div>
             <div style={{ background: '#EAF3DE', borderRadius: '8px', padding: '10px 14px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#27500A', fontWeight: '500' }}>Total</span>
-              <span style={{ color: '#27500A', fontWeight: '700', fontSize: '18px' }}>₱{payForm.amount.toLocaleString()}</span>
+              <span style={{ color: '#27500A', fontWeight: '700', fontSize: '18px' }}>₱{Number(payForm.amount || 0).toLocaleString()}</span>
             </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setPayModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
-              <button onClick={confirmPayment} disabled={saving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
-                {saving ? 'Saving...' : `Confirm ₱${payForm.amount.toLocaleString()}`}
+              <button onClick={confirmPayment} disabled={saving || !payForm.amount} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: !payForm.amount ? 0.5 : 1 }}>
+                {saving ? 'Saving...' : `Confirm ₱${Number(payForm.amount || 0).toLocaleString()}`}
               </button>
             </div>
           </div>
@@ -280,13 +343,20 @@ export default function SchedulePage() {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
             <h3 style={{ margin: '0 0 1rem', color: '#0f4c81' }}>Add one-off session</h3>
-            {[{ key: 'client_name', label: 'Client name' }, { key: 'therapist', label: 'Therapist' }].map(f => (
-              <div key={f.key} style={{ marginBottom: '12px' }}>
-                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>{f.label}</label>
-                <input value={addForm[f.key]} onChange={e => setAddForm({ ...addForm, [f.key]: e.target.value })}
-                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
-              </div>
-            ))}
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Client name</label>
+              <input value={addForm.client_name} onChange={e => setAddForm({ ...addForm, client_name: e.target.value })}
+                list="client-list"
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+              <datalist id="client-list">
+                {clients.map(c => <option key={c.id} value={c.name} />)}
+              </datalist>
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Therapist</label>
+              <input value={addForm.therapist} onChange={e => setAddForm({ ...addForm, therapist: e.target.value })}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+            </div>
             <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Day</label>
               <select value={addForm.day} onChange={e => setAddForm({ ...addForm, day: e.target.value })}
@@ -309,6 +379,51 @@ export default function SchedulePage() {
               <button onClick={() => setAddModal(false)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
               <button onClick={addOneOff} disabled={saving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
                 {saving ? 'Adding...' : 'Add session'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {advanceModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Record advance payment</h3>
+            <p style={{ margin: '0 0 1.25rem', fontSize: '13px', color: '#999' }}>Not tied to a specific session — recorded as credit for this client.</p>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Client</label>
+              <select value={advanceForm.client_name}
+                onChange={e => setAdvanceForm({ ...advanceForm, client_name: e.target.value })}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
+                <option value="">Select client...</option>
+                {clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+              </select>
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Amount (₱)</label>
+              <input type="number" value={advanceForm.amount}
+                onChange={e => setAdvanceForm({ ...advanceForm, amount: e.target.value })}
+                placeholder="Enter amount..."
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '16px', fontWeight: '500', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Mode of payment</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {MOP_OPTIONS.map(mop => (
+                  <button key={mop} onClick={() => setAdvanceForm({ ...advanceForm, mop })} style={{
+                    padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
+                    border: advanceForm.mop === mop ? '2px solid #0f4c81' : '1px solid #ddd',
+                    background: advanceForm.mop === mop ? '#E6F1FB' : 'white',
+                    color: advanceForm.mop === mop ? '#0f4c81' : '#666',
+                    fontWeight: advanceForm.mop === mop ? '500' : '400'
+                  }}>{mop}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setAdvanceModal(false)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={recordAdvance} disabled={saving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
+                {saving ? 'Saving...' : `Record ₱${Number(advanceForm.amount || 0).toLocaleString()}`}
               </button>
             </div>
           </div>
@@ -353,7 +468,7 @@ export default function SchedulePage() {
                                 onDragStart={() => setDragSession(s)}
                                 onDragEnd={() => setDragSession(null)}
                                 style={{
-                                  background: s.payment === 'Paid' ? '#EAF3DE' : '#fff',
+                                  background: s.payment === 'Paid' ? '#EAF3DE' : 'white',
                                   border: `1px solid ${s.payment === 'Paid' ? '#97C459' : '#e0e0e0'}`,
                                   borderRadius: '5px', padding: '4px 6px', cursor: 'grab',
                                   opacity: dragSession?.index === s.index ? 0.4 : 1
@@ -397,9 +512,8 @@ export default function SchedulePage() {
       )}
 
       <div style={{ marginTop: '1rem', display: 'flex', gap: '16px', fontSize: '12px', color: '#999', flexWrap: 'wrap' }}>
-        <span>Color:</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '10px', height: '10px', background: '#EAF3DE', border: '1px solid #97C459', borderRadius: '2px', display: 'inline-block' }}></span> Paid</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '10px', height: '10px', background: '#fff', border: '1px solid #e0e0e0', borderRadius: '2px', display: 'inline-block' }}></span> Unpaid</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '10px', height: '10px', background: 'white', border: '1px solid #e0e0e0', borderRadius: '2px', display: 'inline-block' }}></span> Unpaid</span>
         <span style={{ color: '#ccc' }}>· Drag to reschedule · Click Unpaid to record payment · ✕ to delete</span>
       </div>
     </div>
