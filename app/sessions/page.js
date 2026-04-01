@@ -16,8 +16,6 @@ function buildSlots() {
 }
 buildSlots()
 
-const [absentTherapists, setAbsentTherapists] = useState(new Set())
-
 const RATES = {
   OT:   { Regular: 1200, Evaluation: 2800, IEP: 1800, Specialized: 0 },
   ST:   { Regular: 1300, Evaluation: 2800, IEP: 1800, Specialized: 0 },
@@ -72,6 +70,7 @@ export default function SchedulePage() {
   const [saving, setSaving] = useState(false)
   const [dragSession, setDragSession] = useState(null)
   const [dropTarget, setDropTarget] = useState(null)
+  const [absentTherapists, setAbsentTherapists] = useState(new Set())
 
   useEffect(() => {
     fetchSessions()
@@ -227,6 +226,15 @@ export default function SchedulePage() {
     })
     setDragSession(null)
     fetchSessions()
+  }
+
+  function toggleAbsent(therapist) {
+    setAbsentTherapists(prev => {
+      const next = new Set(prev)
+      if (next.has(therapist)) next.delete(therapist)
+      else next.add(therapist)
+      return next
+    })
   }
 
   const daySessions = sessions.filter(s => s.day === selectedDay)
@@ -443,28 +451,18 @@ export default function SchedulePage() {
           <table style={{ borderCollapse: 'collapse', fontSize: '12px', minWidth: '100%' }}>
             <thead>
               <tr>
-                                {therapists.map(t => {
+                <th style={{ padding: '10px 14px', background: '#0f4c81', color: 'white', textAlign: 'left', minWidth: '85px', fontWeight: '500', borderRight: '1px solid #1a5fa0', position: 'sticky', left: 0, zIndex: 3 }}>TIME</th>
+                {therapists.map(t => {
                   const isAbsent = absentTherapists.has(t)
                   return (
-                    <th key={t} style={{ padding: '8px 12px', background: isAbsent ? '#888' : '#0f4c81', color: 'white', textAlign: 'center', minWidth: '150px', fontWeight: '500', borderRight: '1px solid #1a5fa0', whiteSpace: 'nowrap', fontSize: '12px' }}>
-                      <div style={{ marginBottom: '4px' }}>{t}</div>
-                      <button
-                        onClick={() => {
-                          setAbsentTherapists(prev => {
-                            const next = new Set(prev)
-                            if (next.has(t)) next.delete(t)
-                            else next.add(t)
-                            return next
-                          })
-                        }}
-                        style={{
-                          fontSize: '10px', padding: '2px 8px', borderRadius: '10px',
-                          border: 'none', cursor: 'pointer', fontWeight: '500',
-                          background: isAbsent ? '#c00' : 'rgba(255,255,255,0.2)',
-                          color: 'white'
-                        }}>
-                        {isAbsent ? 'ABSENT' : 'Mark absent'}
-                      </button>
+                    <th key={t} style={{ padding: '8px 12px', background: isAbsent ? '#777' : '#0f4c81', color: 'white', textAlign: 'center', minWidth: '150px', fontWeight: '500', borderRight: '1px solid #1a5fa0', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: '12px', marginBottom: '4px' }}>{t}</div>
+                      <button onClick={() => toggleAbsent(t)} style={{
+                        fontSize: '10px', padding: '2px 8px', borderRadius: '10px',
+                        border: 'none', cursor: 'pointer', fontWeight: '500',
+                        background: isAbsent ? '#c00' : 'rgba(255,255,255,0.2)',
+                        color: 'white'
+                      }}>{isAbsent ? 'ABSENT' : 'Mark absent'}</button>
                     </th>
                   )
                 })}
@@ -477,14 +475,19 @@ export default function SchedulePage() {
                   {therapists.map(therapist => {
                     const cellSessions = getSessionsForCell(therapist, slot)
                     const isTarget = dropTarget?.therapist === therapist && dropTarget?.slot === slot
+                    const isAbsent = absentTherapists.has(therapist)
                     return (
                       <td key={therapist}
-                        style={{ padding: '3px 4px', borderRight: '1px solid #e0e0e0', borderBottom: '1px solid #f0f0f0', verticalAlign: 'top', background: absentTherapists.has(therapist) ? '#f5f5f5' : isTarget ? '#E6F1FB' : 'transparent' }}
-                        onDragOver={e => { e.preventDefault(); setDropTarget({ therapist, slot }) }}
+                        style={{ padding: '3px 4px', borderRight: '1px solid #e0e0e0', borderBottom: '1px solid #f0f0f0', verticalAlign: 'top', background: isAbsent ? '#f5f5f5' : isTarget ? '#E6F1FB' : 'transparent' }}
+                        onDragOver={e => { e.preventDefault(); if (!isAbsent) setDropTarget({ therapist, slot }) }}
                         onDragLeave={() => setDropTarget(null)}
-                        onDrop={() => handleDrop(therapist, slot)}
+                        onDrop={() => { if (!isAbsent) handleDrop(therapist, slot) }}
                       >
-                        {cellSessions.length > 0 ? (
+                        {isAbsent ? (
+                          <div style={{ height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <span style={{ fontSize: '9px', color: '#bbb' }}>absent</span>
+                          </div>
+                        ) : cellSessions.length > 0 ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                             {cellSessions.map((s, si) => (
                               <div key={si} draggable
@@ -537,7 +540,7 @@ export default function SchedulePage() {
       <div style={{ marginTop: '1rem', display: 'flex', gap: '16px', fontSize: '12px', color: '#999', flexWrap: 'wrap' }}>
         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '10px', height: '10px', background: '#EAF3DE', border: '1px solid #97C459', borderRadius: '2px', display: 'inline-block' }}></span> Paid</span>
         <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '10px', height: '10px', background: 'white', border: '1px solid #e0e0e0', borderRadius: '2px', display: 'inline-block' }}></span> Unpaid</span>
-        <span style={{ color: '#ccc' }}>· Drag to reschedule · Click Unpaid to record payment · ✕ to delete</span>
+        <span style={{ color: '#ccc' }}>· Drag to reschedule · Click Unpaid to record payment · ✕ to delete · Click therapist header to mark absent</span>
       </div>
     </div>
   )
