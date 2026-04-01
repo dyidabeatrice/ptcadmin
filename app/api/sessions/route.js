@@ -58,9 +58,15 @@ export async function POST(request) {
           .map(r => `${r[1]}|${r[2]}|${r[4]}|${r[5]}`)
       )
 
-      const master = masterRows.filter(r => r && r[0]).map(row => ({
-        client_name: row[1], therapist: row[2],
-        day: row[3]?.trim(), time_start: row[4], time_end: row[5]
+      const clientData = await getSheetData('clients')
+      const [, ...clientRows] = clientData
+      const inactiveClients = new Set(
+        clientRows
+            .filter(r => r && r[0] && r[9] === 'inactive')
+            .map(r => r[1])
+      )
+
+      const master = masterRows.filter(r => r && r[0] && !inactiveClients.has(r[1])).map(row => ({
       }))
 
       const newRows = master

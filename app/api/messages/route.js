@@ -3,7 +3,7 @@ import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../..
 const DEFAULT_TEMPLATES = {
   'Session reminder': `Good day! This is a friendly reminder that [CLIENT] has a therapy session tomorrow, [DATE] at [TIME] with [THERAPIST]. Please make sure to arrive on time. Thank you!`,
   'Unpaid reminder': `Good day! We would like to remind you that [CLIENT]'s session on [DATE] at [TIME] with [THERAPIST] has an outstanding balance. Kindly settle the payment on or before the next session. Thank you!`,
-  'Therapist absence': `Good day! We regret to inform you that [CLIENT]'s session on [DATE] at [TIME] will not push through due to [THERAPIST]'s absence. We will get in touch regarding rescheduling. We apologize for the inconvenience.`,
+  'Therapist absence': `Good day! We regret to inform you that [CLIENT]'s session on [DATE] at [TIME] will not push through due to T. [THERAPIST]'s absence. We will get in touch regarding rescheduling. We apologize for the inconvenience.`,
 }
 
 async function getTemplates() {

@@ -16,6 +16,8 @@ function buildSlots() {
 }
 buildSlots()
 
+const [absentTherapists, setAbsentTherapists] = useState(new Set())
+
 const RATES = {
   OT:   { Regular: 1200, Evaluation: 2800, IEP: 1800, Specialized: 0 },
   ST:   { Regular: 1300, Evaluation: 2800, IEP: 1800, Specialized: 0 },
@@ -441,10 +443,31 @@ export default function SchedulePage() {
           <table style={{ borderCollapse: 'collapse', fontSize: '12px', minWidth: '100%' }}>
             <thead>
               <tr>
-                <th style={{ padding: '10px 14px', background: '#0f4c81', color: 'white', textAlign: 'left', minWidth: '85px', fontWeight: '500', borderRight: '1px solid #1a5fa0', position: 'sticky', left: 0, zIndex: 3 }}>TIME</th>
-                {therapists.map(t => (
-                  <th key={t} style={{ padding: '10px 12px', background: '#0f4c81', color: 'white', textAlign: 'center', minWidth: '150px', fontWeight: '500', borderRight: '1px solid #1a5fa0', whiteSpace: 'nowrap', fontSize: '12px' }}>{t}</th>
-                ))}
+                                {therapists.map(t => {
+                  const isAbsent = absentTherapists.has(t)
+                  return (
+                    <th key={t} style={{ padding: '8px 12px', background: isAbsent ? '#888' : '#0f4c81', color: 'white', textAlign: 'center', minWidth: '150px', fontWeight: '500', borderRight: '1px solid #1a5fa0', whiteSpace: 'nowrap', fontSize: '12px' }}>
+                      <div style={{ marginBottom: '4px' }}>{t}</div>
+                      <button
+                        onClick={() => {
+                          setAbsentTherapists(prev => {
+                            const next = new Set(prev)
+                            if (next.has(t)) next.delete(t)
+                            else next.add(t)
+                            return next
+                          })
+                        }}
+                        style={{
+                          fontSize: '10px', padding: '2px 8px', borderRadius: '10px',
+                          border: 'none', cursor: 'pointer', fontWeight: '500',
+                          background: isAbsent ? '#c00' : 'rgba(255,255,255,0.2)',
+                          color: 'white'
+                        }}>
+                        {isAbsent ? 'ABSENT' : 'Mark absent'}
+                      </button>
+                    </th>
+                  )
+                })}
               </tr>
             </thead>
             <tbody>
@@ -456,7 +479,7 @@ export default function SchedulePage() {
                     const isTarget = dropTarget?.therapist === therapist && dropTarget?.slot === slot
                     return (
                       <td key={therapist}
-                        style={{ padding: '3px 4px', borderRight: '1px solid #e0e0e0', borderBottom: '1px solid #f0f0f0', verticalAlign: 'top', background: isTarget ? '#E6F1FB' : 'transparent' }}
+                        style={{ padding: '3px 4px', borderRight: '1px solid #e0e0e0', borderBottom: '1px solid #f0f0f0', verticalAlign: 'top', background: absentTherapists.has(therapist) ? '#f5f5f5' : isTarget ? '#E6F1FB' : 'transparent' }}
                         onDragOver={e => { e.preventDefault(); setDropTarget({ therapist, slot }) }}
                         onDragLeave={() => setDropTarget(null)}
                         onDrop={() => handleDrop(therapist, slot)}
