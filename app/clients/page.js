@@ -39,12 +39,31 @@ function parseSchedule(str) {
   })
 }
 
+function similarity(a, b) {
+  a = a.toLowerCase().trim()
+  b = b.toLowerCase().trim()
+  if (a === b) return 1
+  const longer = a.length > b.length ? a : b
+  const shorter = a.length > b.length ? b : a
+  if (longer.length === 0) return 1
+  const costs = []
+  for (let i = 0; i <= shorter.length; i++) costs[i] = i
+  for (let i = 1; i <= longer.length; i++) {
+    let prev = i
+    for (let j = 1; j <= shorter.length; j++) {
+      const val = longer[i-1] === shorter[j-1] ? costs[j-1] : Math.min(costs[j-1], costs[j], prev) + 1
+      costs[j-1] = prev
+      prev = val
+    }
+    costs[shorter.length] = prev
+  }
+  return (longer.length - costs[shorter.length]) / longer.length
+}
+
 function TherapistRows({ therapists, setTherapists, therapistData }) {
   function getTherapistsForDay(day) {
     if (!day) return []
-    return [...new Set(
-      therapistData.filter(t => t.day === day && !t.is_intern).map(t => t.name)
-    )].sort()
+    return [...new Set(therapistData.filter(t => t.day === day && !t.is_intern).map(t => t.name))].sort()
   }
 
   function getTimeSlotsForTherapist(day, name) {
@@ -143,18 +162,50 @@ function TherapistRows({ therapists, setTherapists, therapistData }) {
   )
 }
 
-function ClientForm({ data, setData, onSave, onClose, title, saving, therapistData }) {
+function ClientForm({ data, setData, onSave, onClose, title, saving, therapistData, clients }) {
+  const [duplicateWarning, setDuplicateWarning] = useState(null)
+
+  useEffect(() => {
+    if (!data.name || data.name.length < 3) { setDuplicateWarning(null); return }
+    const name = data.name.trim().toLowerCase()
+    const exact = clients.find(c => c.name.toLowerCase() === name && c.index !== data.index)
+    const similar = clients
+      .filter(c => c.name.toLowerCase() !== name && c.index !== data.index)
+      .filter(c => similarity(c.name, data.name) >= 0.7)
+      .sort((a, b) => similarity(b.name, data.name) - similarity(a.name, data.name))
+      .slice(0, 3)
+    if (exact || similar.length > 0) setDuplicateWarning({ exact, similar })
+    else setDuplicateWarning(null)
+  }, [data.name])
+
   return (
     <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '540px', maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ margin: '0 0 1.5rem', color: '#0f4c81' }}>{title}</h3>
 
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Full name</label>
+          <input value={data.name} onChange={e => setData({ ...data, name: e.target.value })}
+            style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: duplicateWarning?.exact ? '2px solid #E24B4A' : '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+
+          {duplicateWarning?.exact && (
+            <div style={{ marginTop: '6px', padding: '10px 12px', borderRadius: '8px', background: '#FCEBEB', border: '1px solid #F09595' }}>
+              <div style={{ fontSize: '12px', fontWeight: '500', color: '#791F1F', marginBottom: '4px' }}>⚠️ Client already exists: {duplicateWarning.exact.name}</div>
+              <div style={{ fontSize: '11px', color: '#A32D2D' }}>Please edit the existing client instead of creating a new one.</div>
+            </div>
+          )}
+
+          {!duplicateWarning?.exact && duplicateWarning?.similar?.length > 0 && (
+            <div style={{ marginTop: '6px', padding: '10px 12px', borderRadius: '8px', background: '#FAEEDA', border: '1px solid #EF9F27' }}>
+              <div style={{ fontSize: '12px', fontWeight: '500', color: '#633806', marginBottom: '6px' }}>⚠️ Similar names found — is this the same client?</div>
+              {duplicateWarning.similar.map((c, i) => (
+                <div key={i} style={{ fontSize: '11px', color: '#633806', marginBottom: '2px' }}>· {c.name} ({Math.round(similarity(c.name, data.name) * 100)}% similar)</div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1rem' }}>
-          <div style={{ gridColumn: '1 / -1' }}>
-            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Full name</label>
-            <input value={data.name} onChange={e => setData({ ...data, name: e.target.value })}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
-          </div>
           <div>
             <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Birthdate</label>
             <input type="date" value={data.birthdate} onChange={e => setData({ ...data, birthdate: e.target.value })}
@@ -166,9 +217,9 @@ function ClientForm({ data, setData, onSave, onClose, title, saving, therapistDa
               style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Facebook account (parent/guardian)</label>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Facebook account</label>
             <input value={data.fb_account} onChange={e => setData({ ...data, fb_account: e.target.value })}
-              placeholder="e.g. facebook.com/parentname or just their name"
+              placeholder="e.g. facebook.com/parentname"
               style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
@@ -186,7 +237,7 @@ function ClientForm({ data, setData, onSave, onClose, title, saving, therapistDa
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '8px', fontWeight: '500' }}>
             Therapist schedule
-            <span style={{ fontWeight: '400', marginLeft: '6px', color: '#aaa' }}>— adding here also updates master schedule</span>
+            <span style={{ fontWeight: '400', marginLeft: '6px', color: '#aaa' }}>— updates master schedule automatically</span>
           </label>
           <TherapistRows
             therapists={data.therapists}
@@ -197,7 +248,7 @@ function ClientForm({ data, setData, onSave, onClose, title, saving, therapistDa
 
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
-          <button onClick={onSave} disabled={saving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
+          <button onClick={onSave} disabled={saving || !!duplicateWarning?.exact} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: duplicateWarning?.exact ? 0.5 : 1 }}>
             {saving ? 'Saving...' : 'Save client'}
           </button>
         </div>
@@ -216,6 +267,7 @@ export default function ClientsPage() {
   const [search, setSearch] = useState('')
   const [showInactive, setShowInactive] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   useEffect(() => {
     fetchClients()
@@ -263,6 +315,17 @@ export default function ClientsPage() {
     setSaving(false)
   }
 
+async function handleDelete(client) {
+    const res = await fetch('/api/clients', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ index: client.index })
+    })
+    const json = await res.json()
+    if (json.success) { setDeleteConfirm(null); fetchClients() }
+    else alert('Error: ' + json.error)
+  }
+
   async function toggleStatus(client) {
     const newStatus = client.status === 'inactive' ? 'active' : 'inactive'
     if (newStatus === 'inactive' && !confirm(`Mark ${client.name} as inactive? Their master schedule slots will be removed.`)) return
@@ -274,14 +337,16 @@ export default function ClientsPage() {
     fetchClients()
   }
 
-  const filtered = clients.filter(c => {
-    const matchStatus = showInactive ? c.status === 'inactive' : c.status !== 'inactive'
-    const matchSearch = !search || c.name?.toLowerCase().includes(search.toLowerCase()) || c.fb_account?.toLowerCase().includes(search.toLowerCase())
-    return matchStatus && matchSearch
-  })
+  const filtered = clients
+    .filter(c => {
+      const matchStatus = showInactive ? c.status === 'inactive' : c.status !== 'inactive'
+      const matchSearch = !search || c.name?.toLowerCase().includes(search.toLowerCase()) || c.fb_account?.toLowerCase().includes(search.toLowerCase())
+      return matchStatus && matchSearch
+    })
+    .sort((a, b) => (a.name || '').localeCompare(b.name || ''))
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '1100px', margin: '0 auto' }}>
+    <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ color: '#0f4c81', margin: '0 0 4px' }}>Clients</h1>
@@ -306,14 +371,34 @@ export default function ClientsPage() {
         </div>
       </div>
 
-      {showForm && <ClientForm data={form} setData={setForm} onSave={handleAdd} onClose={() => setShowForm(false)} title="New client" saving={saving} therapistData={therapistData} />}
-      {editClient && <ClientForm data={editClient} setData={setEditClient} onSave={handleEdit} onClose={() => setEditClient(null)} title="Edit client" saving={saving} therapistData={therapistData} />}
+      {showForm && <ClientForm data={form} setData={setForm} onSave={handleAdd} onClose={() => setShowForm(false)} title="New client" saving={saving} therapistData={therapistData} clients={clients} />}
+      {editClient && <ClientForm data={editClient} setData={setEditClient} onSave={handleEdit} onClose={() => setEditClient(null)} title="Edit client" saving={saving} therapistData={therapistData} clients={clients} />}
+
+      {deleteConfirm && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#E24B4A' }}>Delete client</h3>
+            <p style={{ margin: '0 0 0.5rem', fontSize: '14px', color: '#333' }}>
+              Are you sure you want to permanently delete <strong>{deleteConfirm.name}</strong>?
+            </p>
+            <p style={{ margin: '0 0 1.5rem', fontSize: '12px', color: '#999' }}>
+              This will remove them from the clients list and master schedule. This cannot be undone. Use this only to remove duplicates.
+            </p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setDeleteConfirm(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={() => handleDelete(deleteConfirm)} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#E24B4A', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
+                Delete permanently
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
           <thead>
             <tr style={{ background: '#f8f9fa' }}>
-              {['Name', 'Birthdate', 'FB Account', 'Phone', 'Schedule', 'Actions'].map(h => (
+              {['Name', 'FB Account', 'Phone', 'Schedule', 'Balance', 'Actions'].map(h => (
                 <th key={h} style={{ padding: '12px 16px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>{h}</th>
               ))}
             </tr>
@@ -323,15 +408,21 @@ export default function ClientsPage() {
               <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>Loading...</td></tr>
             ) : filtered.length === 0 ? (
               <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>
-                {showInactive ? 'No inactive clients' : 'No clients yet — add your first one!'}
+                {showInactive ? 'No inactive clients' : 'No clients yet'}
               </td></tr>
             ) : filtered.map((c, i) => {
               const schedules = parseSchedule(c.schedule)
               const isInactive = c.status === 'inactive'
               return (
                 <tr key={i} style={{ borderBottom: '1px solid #f0f0f0', opacity: isInactive ? 0.55 : 1 }}>
-                  <td style={{ padding: '12px 16px', fontWeight: '500', color: '#0f4c81' }}>{c.name}</td>
-                  <td style={{ padding: '12px 16px', color: '#666', whiteSpace: 'nowrap' }}>{c.birthdate || '—'}</td>
+                  <td style={{ padding: '12px 16px', fontWeight: '500', color: '#0f4c81' }}>
+                    {c.name}
+                    {c.outstanding_balance > 0 && (
+                      <span style={{ marginLeft: '6px', fontSize: '10px', padding: '1px 6px', borderRadius: '8px', background: '#FCEBEB', color: '#791F1F', fontWeight: '500' }}>
+                        ⚠️ Unpaid
+                      </span>
+                    )}
+                  </td>
                   <td style={{ padding: '12px 16px', color: '#185FA5', fontSize: '12px' }}>{c.fb_account || '—'}</td>
                   <td style={{ padding: '12px 16px', color: '#666' }}>{c.phone || '—'}</td>
                   <td style={{ padding: '12px 16px' }}>
@@ -344,7 +435,24 @@ export default function ClientsPage() {
                     </div>
                   </td>
                   <td style={{ padding: '12px 16px' }}>
-                    <div style={{ display: 'flex', gap: '6px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      {c.credit_balance > 0 && (
+                        <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A', whiteSpace: 'nowrap' }}>
+                          💳 ₱{c.credit_balance.toLocaleString()} credit
+                        </span>
+                      )}
+                      {c.outstanding_balance > 0 && (
+                        <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#FCEBEB', color: '#791F1F', whiteSpace: 'nowrap' }}>
+                          ⚠️ ₱{c.outstanding_balance.toLocaleString()} due
+                        </span>
+                      )}
+                      {c.credit_balance === 0 && c.outstanding_balance === 0 && (
+                        <span style={{ fontSize: '11px', color: '#aaa' }}>—</span>
+                      )}
+                    </div>
+                  </td>
+                  <td style={{ padding: '12px 16px' }}>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       {!isInactive && (
                         <button onClick={() => setEditClient({ ...c, therapists: parseSchedule(c.schedule) })}
                           style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '5px', border: '1px solid #ddd', cursor: 'pointer', background: 'white', color: '#444' }}>Edit</button>
@@ -355,6 +463,10 @@ export default function ClientsPage() {
                           background: isInactive ? '#EAF3DE' : '#fff5f5',
                           color: isInactive ? '#27500A' : '#c00'
                         }}>{isInactive ? 'Reactivate' : 'Deactivate'}</button>
+                      <button onClick={() => setDeleteConfirm(c)}
+                        style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', border: '1px solid #E24B4A', background: '#fff5f5', color: '#E24B4A' }}>
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>

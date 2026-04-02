@@ -138,7 +138,7 @@ export async function POST(request) {
             Date.now().toString() + Math.random().toString(36).slice(2),
             m.client_name, m.therapist, weekDates[m.day],
             m.day, m.time_start, m.time_end,
-            'Regular', 'Scheduled', 'Unpaid', '', '', ''
+            '', 'Pencil', 'Unpaid', '', '', ''
           ])
 
         await createWeekSheet(weekKey, getWeekLabel(monday))

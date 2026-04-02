@@ -197,7 +197,10 @@ export default function MasterPage() {
     const groupTherapists = getGroupTherapists(groupStart)
     if (groupTherapists.length === 0) return null
 
-    const endTime = '6:30 PM'
+    const latestEnd = groupTherapists.reduce((latest, t) => {
+      return parseTime(t.time_end) > parseTime(latest) ? t.time_end : latest
+    }, '6:00 PM')
+    const endTime = latestEnd
     const startMins = parseTime(groupStart)
     const endMins = parseTime(endTime)
     const slots = generateSlots(startMins, endMins)
@@ -300,9 +303,7 @@ export default function MasterPage() {
                           zIndex: 1
                         }}>
                           <div style={{ fontSize: '10px', fontWeight: '500', color: sc.color, lineHeight: '1.3' }}>{slot.client_name}</div>
-                          {(slotCount === 1 && height > 28) && (
-                            <div style={{ fontSize: '9px', color: sc.color, opacity: 0.7, marginTop: '1px' }}>{slot.time_start}–{slot.time_end}</div>
-                          )}
+                          <div style={{ fontSize: '9px', color: sc.color, opacity: 0.7, marginTop: '1px' }}>{slot.time_start}–{slot.time_end}</div>
                         </div>
                       )
                     })}

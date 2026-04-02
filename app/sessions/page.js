@@ -3,338 +3,437 @@ import { useState, useEffect } from 'react'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
-const ALL_TIME_SLOTS = []
-function buildSlots() {
-  let h = 8, m = 0
-  while (h < 19) {
-    const period = h >= 12 ? 'PM' : 'AM'
-    const dh = h > 12 ? h - 12 : h === 0 ? 12 : h
-    ALL_TIME_SLOTS.push(`${dh}:${m.toString().padStart(2,'0')} ${period}`)
-    m += 15
-    if (m >= 60) { h++; m = 0 }
-  }
+const SESSION_TYPES = {
+  OT:        [{ value: 'OT Session', label: 'OT Session', amount: 1200 }, { value: 'Initial Evaluation', label: 'Initial Evaluation', amount: 2800 }, { value: 'IEP', label: 'IEP', amount: 1800 }, { value: 'Specialized', label: 'Specialized', amount: 0 }, { value: 'Cancellation Fee', label: 'Cancellation Fee', amount: 0 }],
+  OT_INTERN: [{ value: 'OT Intern Session', label: 'OT Intern Session', amount: 600 }, { value: 'Intern Evaluation', label: 'Intern Evaluation', amount: 800 }, { value: 'Specialized', label: 'Specialized', amount: 0 }, { value: 'Cancellation Fee', label: 'Cancellation Fee', amount: 0 }],
+  ST:        [{ value: 'ST Session', label: 'ST Session', amount: 1300 }, { value: 'Initial Evaluation', label: 'Initial Evaluation', amount: 2800 }, { value: 'IEP', label: 'IEP', amount: 1800 }, { value: 'Specialized', label: 'Specialized', amount: 0 }, { value: 'Cancellation Fee', label: 'Cancellation Fee', amount: 0 }],
+  ST_INTERN: [{ value: 'ST Intern Session', label: 'ST Intern Session', amount: 600 }, { value: 'Intern Evaluation', label: 'Intern Evaluation', amount: 800 }, { value: 'Specialized', label: 'Specialized', amount: 0 }, { value: 'Cancellation Fee', label: 'Cancellation Fee', amount: 0 }],
+  PT:        [{ value: 'PT Session', label: 'PT Session', amount: 900 }, { value: 'Initial Evaluation', label: 'Initial Evaluation', amount: 2800 }, { value: 'IEP', label: 'IEP', amount: 1800 }, { value: 'Specialized', label: 'Specialized', amount: 0 }, { value: 'Cancellation Fee', label: 'Cancellation Fee', amount: 0 }],
+  SPED:      [{ value: 'SPED Tutorial', label: 'SPED Tutorial', amount: 900 }, { value: 'IEP', label: 'IEP', amount: 1800 }, { value: 'Specialized', label: 'Specialized', amount: 0 }, { value: 'Cancellation Fee', label: 'Cancellation Fee', amount: 0 }],
 }
-buildSlots()
-
-const RATES = {
-  OT:   { Regular: 1200, Evaluation: 2800, IEP: 1800, Specialized: 0 },
-  ST:   { Regular: 1300, Evaluation: 2800, IEP: 1800, Specialized: 0 },
-  PT:   { Regular: 900,  Evaluation: 2800, IEP: 1800, Specialized: 0 },
-  SPED: { Regular: 900,  Evaluation: 1800, IEP: 1800, Specialized: 0 },
-}
-
-const SESSION_TYPES = [
-  { value: 'Regular',     label: 'Regular session' },
-  { value: 'Evaluation',  label: 'Evaluation' },
-  { value: 'Specialized', label: 'Specialized session (custom amount)' },
-  { value: 'IEP',         label: 'IEP / Individualized Education Plan' },
-]
 
 const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
+const ROW_HEIGHT = 24
 
-function getSpecialty(name) {
-  const n = name?.toUpperCase() || ''
-  if (n.includes('(ST)') || n.includes('ST INTERN')) return 'ST'
-  if (n.includes('(PT)')) return 'PT'
-  if (n.includes('(SPED)')) return 'SPED'
-  return 'OT'
+function parseTime(str) {
+  if (!str) return 0
+  const [time, period] = str.split(' ')
+  let [h, m] = time.split(':').map(Number)
+  if (period === 'PM' && h !== 12) h += 12
+  if (period === 'AM' && h === 12) h = 0
+  return h * 60 + m
 }
 
-function getRate(therapist, sessionType) {
-  const s = getSpecialty(therapist)
-  return RATES[s]?.[sessionType] ?? RATES[s]?.Regular ?? 1200
+function formatTime(mins) {
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  const period = h >= 12 ? 'PM' : 'AM'
+  const dh = h > 12 ? h - 12 : h === 0 ? 12 : h
+  return `${dh}:${m.toString().padStart(2, '0')} ${period}`
 }
 
-const STATUS_COLORS = {
-  Scheduled: { bg: '#E6F1FB', color: '#0C447C' },
-  Present:   { bg: '#EAF3DE', color: '#27500A' },
-  Absent:    { bg: '#FCEBEB', color: '#791F1F' },
-  Cancelled: { bg: '#F1EFE8', color: '#5F5E5A' },
+function getTherapistKey(therapist, therapistData) {
+  const t = therapistData.find(x => x.name === therapist)
+  if (!t) return 'OT'
+  if (t.is_intern) return `${t.specialty}_INTERN`
+  return t.specialty
+}
+
+function getDefaultSessionType(key) {
+  const types = SESSION_TYPES[key] || SESSION_TYPES.OT
+  return types[0].value
+}
+
+function getSessionColor(session) {
+  const paid = session.payment === 'Paid'
+  const status = session.status
+
+  if (status === 'Absent') return { bg: '#FCEBEB', border: '#F09595', color: '#791F1F' }
+  if (status === 'Pencil') return { bg: '#FFFBE6', border: '#FFD666', color: '#7C5800' }
+  if (status === 'Cancelled' && !paid) return { bg: '#FAEEDA', border: '#EF9F27', color: '#633806' }
+  if ((status === 'Present' && paid) || (status === 'Cancelled' && paid)) return { bg: '#EAF3DE', border: '#97C459', color: '#27500A' }
+  return { bg: '#E6F1FB', border: '#B5D4F4', color: '#0C447C' }
 }
 
 export default function SchedulePage() {
+  const [weeks, setWeeks] = useState([])
+  const [selectedWeek, setSelectedWeek] = useState(null)
   const [sessions, setSessions] = useState([])
+  const [therapistData, setTherapistData] = useState([])
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState(false)
   const [selectedDay, setSelectedDay] = useState(() => {
     const day = new Date().toLocaleDateString('en-US', { weekday: 'long' })
     return DAYS.includes(day) ? day : 'Monday'
   })
-  const [payModal, setPayModal] = useState(null)
-  const [payForm, setPayForm] = useState({ session_type: 'Regular', mop: 'Cash', amount: 0 })
-  const [addModal, setAddModal] = useState(false)
-  const [addForm, setAddForm] = useState({ client_name: '', therapist: '', day: 'Monday', time_start: '9:00 AM', time_end: '10:00 AM' })
-  const [advanceModal, setAdvanceModal] = useState(false)
-  const [advanceForm, setAdvanceForm] = useState({ client_name: '', amount: '', mop: 'Cash' })
-  const [saving, setSaving] = useState(false)
-  const [dragSession, setDragSession] = useState(null)
-  const [dropTarget, setDropTarget] = useState(null)
+  const [notification, setNotification] = useState(null)
   const [absentTherapists, setAbsentTherapists] = useState(new Set())
+  const [holidayDays, setHolidayDays] = useState(new Set())
+  const [freeSlotMode, setFreeSlotMode] = useState(false)
+  const [search, setSearch] = useState('')
+  const [payModal, setPayModal] = useState(null)
+  const [payForm, setPayForm] = useState({ session_type: '', mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0 })
+  const [clientCredit, setClientCredit] = useState(0)
+  const [rescheduleModal, setRescheduleModal] = useState(null)
+  const [rescheduleForm, setRescheduleForm] = useState({ day: '', therapist: '', time_start: '', time_end: '' })
+  const [addModal, setAddModal] = useState(false)
+  const [addForm, setAddForm] = useState({ client_name: '', therapist: '', day: '', time_start: '', time_end: '' })
+  const [saving, setSaving] = useState(false)
+  const [absentConfirm, setAbsentConfirm] = useState(null)
 
-  useEffect(() => {
-    fetchSessions()
-    fetchClients()
-  }, [])
+  useEffect(() => { initializePage() }, [])
 
-  async function fetchSessions() {
+  async function initializePage() {
     setLoading(true)
-    const res = await fetch('/api/sessions')
-    const json = await res.json()
-    if (json.success) setSessions(json.data)
+    const [tRes, cRes] = await Promise.all([fetch('/api/therapists'), fetch('/api/clients')])
+    const [tJson, cJson] = await Promise.all([tRes.json(), cRes.json()])
+    if (tJson.success) setTherapistData(tJson.data)
+    if (cJson.success) setClients(cJson.data.filter(c => c.status !== 'inactive'))
+
+    const genRes = await fetch('/api/weeks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'generate' }) })
+    const genJson = await genRes.json()
+    if (genJson.success && genJson.created?.length > 0) {
+      setNotification(`Generated ${genJson.created.length} new week${genJson.created.length !== 1 ? 's' : ''}`)
+      setTimeout(() => setNotification(null), 4000)
+    }
+
+    const weeksRes = await fetch('/api/weeks')
+    const weeksJson = await weeksRes.json()
+    if (weeksJson.success && weeksJson.data.length > 0) {
+      setWeeks(weeksJson.data)
+      const today = new Date()
+      const monday = getMondayOf(today)
+      const currentKey = getWeekKey(monday)
+      const current = weeksJson.data.find(w => w.key === currentKey) || weeksJson.data[weeksJson.data.length - 1]
+      setSelectedWeek(current)
+      await fetchSessions(current.key)
+    }
     setLoading(false)
   }
 
-  async function fetchClients() {
-    const res = await fetch('/api/clients')
+  function getMondayOf(date) {
+    const d = new Date(date)
+    const day = d.getDay()
+    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1))
+    return d
+  }
+
+  function getWeekKey(monday) {
+    const y = monday.getFullYear()
+    const m = String(monday.getMonth() + 1).padStart(2, '0')
+    const d = String(monday.getDate()).padStart(2, '0')
+    return `week_${y}_${m}_${d}`
+  }
+
+  async function fetchSessions(weekKey) {
+    const res = await fetch(`/api/sessions?week=${weekKey}`)
     const json = await res.json()
-    if (json.success) setClients(json.data.filter((c) => c.status !== 'inactive'))
+    if (json.success) setSessions(json.data)
   }
 
-  async function generateWeek() {
-    setGenerating(true)
-    const res = await fetch('/api/sessions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'generate' })
+  async function switchWeek(week) {
+    setSelectedWeek(week)
+    setAbsentTherapists(new Set())
+    setHolidayDays(new Set())
+    setSearch('')
+    setFreeSlotMode(false)
+    setSessions([])
+    await fetchSessions(week.key)
+  }
+
+  // Grid calculations
+  const daySessions = sessions.filter(s => s.day === selectedDay)
+  const therapists = [...new Set(therapistData.filter(t => t.day === selectedDay).map(t => t.name))].sort()
+
+  const gridStartMins = 8 * 60
+  const gridEndMins = therapists.reduce((max, t) => {
+    const entry = therapistData.find(x => x.name === t && x.day === selectedDay)
+    if (!entry) return max
+    return Math.max(max, parseTime(entry.time_end))
+  }, 18 * 60)
+
+  const totalMins = gridEndMins - gridStartMins
+  const totalRows = Math.ceil(totalMins / 15)
+  const timeSlots = []
+  for (let i = 0; i <= totalRows; i++) timeSlots.push(formatTime(gridStartMins + i * 15))
+
+  function getSessionsForTherapist(therapist) {
+    return daySessions.filter(s => s.therapist === therapist)
+  }
+
+  function isSlotFree(therapist, timeMins) {
+    return !daySessions.some(s => {
+      const start = parseTime(s.time_start)
+      const end = parseTime(s.time_end)
+      return s.therapist === therapist && timeMins >= start && timeMins < end
     })
-    const json = await res.json()
-    if (json.success) {
-      if (json.generated === 0) alert(json.message || 'All sessions already exist for this week')
-      else { alert(`Generated ${json.generated} sessions!`); fetchSessions() }
-    } else alert('Error: ' + json.error)
-    setGenerating(false)
   }
 
-  async function updateStatus(session, value) {
-    await fetch('/api/sessions', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rowIndex: session.index, field: 'status', value })
-    })
-    fetchSessions()
+  async function updateStatus(session, status) {
+    if (status === 'Absent' && session.payment === 'Paid') { setAbsentConfirm(session); return }
+    await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'status', week_key: selectedWeek.key, rowIndex: session.index, status }) })
+    fetchSessions(selectedWeek.key)
   }
 
-  function openPayModal(session) {
-    const type = session.session_type || 'Regular'
+  async function confirmAbsent() {
+    await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'absent_paid', week_key: selectedWeek.key, rowIndex: absentConfirm.index, client_name: absentConfirm.client_name, amount: absentConfirm.amount }) })
+    setAbsentConfirm(null)
+    fetchSessions(selectedWeek.key)
+  }
+
+  async function openPayModal(session) {
+    const key = getTherapistKey(session.therapist, therapistData)
+    const types = SESSION_TYPES[key] || SESSION_TYPES.OT
+    const defaultType = types[0].value
+    const amount = types[0].amount
+    setPayForm({ session_type: defaultType, mop: 'Cash', amount, use_credit: false, split: false, split_credit: 0, split_cash: amount })
     setPayModal(session)
-    setPayForm({ session_type: type, mop: 'Cash', amount: getRate(session.therapist, type) })
+    const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
+    const json = await res.json()
+    if (json.success) setClientCredit(json.credit_balance || 0)
   }
 
   async function confirmPayment() {
     setSaving(true)
     await fetch('/api/sessions', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'pay',
-        rowIndex: payModal.index,
-        session_id: payModal.id,
-        client_name: payModal.client_name,
-        therapist: payModal.therapist,
-        date: payModal.date,
-        session_type: payForm.session_type,
-        status: payModal.status,
-        mop: payForm.mop,
-        amount: payForm.amount
-      })
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'pay', week_key: selectedWeek.key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payForm.session_type, mop: payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop, amount: payForm.amount, use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash })
     })
     setPayModal(null)
-    fetchSessions()
+    fetchSessions(selectedWeek.key)
     setSaving(false)
   }
 
   async function reversePayment(session) {
     if (!confirm(`Reverse payment for ${session.client_name}?`)) return
-    await fetch('/api/sessions', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'unpay', rowIndex: session.index, session_id: session.id })
-    })
-    fetchSessions()
+    await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'unpay', week_key: selectedWeek.key, rowIndex: session.index, session_id: session.id, client_name: session.client_name, amount: session.amount }) })
+    fetchSessions(selectedWeek.key)
   }
 
   async function deleteSession(session) {
     if (!confirm(`Delete session for ${session.client_name}?`)) return
-    await fetch('/api/sessions', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rowIndex: session.index })
+    await fetch('/api/sessions', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rowIndex: session.index, week_key: selectedWeek.key }) })
+    fetchSessions(selectedWeek.key)
+  }
+
+  async function confirmReschedule() {
+    if (!rescheduleForm.day || !rescheduleForm.therapist || !rescheduleForm.time_start || !rescheduleForm.time_end) return alert('Please fill in all fields')
+    setSaving(true)
+    const parts = selectedWeek.key.replace('week_', '').split('_')
+    const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
+    const weekDates = {}
+    DAYS.forEach((day, i) => {
+      const d = new Date(monday)
+      d.setDate(d.getDate() + i)
+      weekDates[day] = d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
     })
-    fetchSessions()
+    await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'reschedule', week_key: selectedWeek.key, rowIndex: rescheduleModal.index, therapist: rescheduleForm.therapist, date: weekDates[rescheduleForm.day] || '', day: rescheduleForm.day, time_start: rescheduleForm.time_start, time_end: rescheduleForm.time_end }) })
+    setRescheduleModal(null)
+    fetchSessions(selectedWeek.key)
+    setSaving(false)
   }
 
   async function addOneOff() {
-    if (!addForm.client_name || !addForm.therapist) return alert('Please fill in client and therapist')
+    if (!addForm.client_name || !addForm.therapist || !addForm.day || !addForm.time_start || !addForm.time_end) return alert('Please fill in all fields')
     setSaving(true)
-    await fetch('/api/sessions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'add', ...addForm })
+    const parts = selectedWeek.key.replace('week_', '').split('_')
+    const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
+    const weekDates = {}
+    DAYS.forEach((day, i) => {
+      const d = new Date(monday)
+      d.setDate(d.getDate() + i)
+      weekDates[day] = d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
     })
+    await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add', week_key: selectedWeek.key, ...addForm, date: weekDates[addForm.day] || '' }) })
     setAddModal(false)
-    setAddForm({ client_name: '', therapist: '', day: 'Monday', time_start: '9:00 AM', time_end: '10:00 AM' })
-    fetchSessions()
+    setAddForm({ client_name: '', therapist: '', day: '', time_start: '', time_end: '' })
+    fetchSessions(selectedWeek.key)
     setSaving(false)
   }
 
-  async function recordAdvance() {
-    if (!advanceForm.client_name) return alert('Please select a client')
-    if (!advanceForm.amount || Number(advanceForm.amount) <= 0) return alert('Please enter an amount')
-    setSaving(true)
-    const today = new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
-    await fetch('/api/payments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        client_name: advanceForm.client_name,
-        therapist: '',
-        session_id: 'ADVANCE-' + Date.now(),
-        amount: Number(advanceForm.amount),
-        mop: advanceForm.mop,
-        session_type: 'Advance',
-        date: today,
-        payment_type: 'advance'
-      })
-    })
-    setAdvanceModal(false)
-    setAdvanceForm({ client_name: '', amount: '', mop: 'Cash' })
-    setSaving(false)
-    alert(`Advance payment of ₱${Number(advanceForm.amount).toLocaleString()} recorded for ${advanceForm.client_name}`)
+  async function toggleHoliday(day) {
+    if (holidayDays.has(day)) { setHolidayDays(prev => { const n = new Set(prev); n.delete(day); return n }); return }
+    if (!confirm(`Mark ${day} as a holiday? All sessions will be cancelled.`)) return
+    setHolidayDays(prev => new Set([...prev, day]))
+    await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'holiday', week_key: selectedWeek.key, day }) })
+    fetchSessions(selectedWeek.key)
   }
 
-  async function handleDrop(therapist, timeSlot) {
-    if (!dragSession) return
-    setDropTarget(null)
-    await fetch('/api/sessions', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'edit',
-        rowIndex: dragSession.index,
-        client_name: dragSession.client_name,
-        therapist,
-        date: dragSession.date,
-        day: selectedDay,
-        time_start: timeSlot,
-        time_end: dragSession.time_end,
-        session_type: dragSession.session_type,
-        status: dragSession.status,
-        payment: dragSession.payment,
-        mop: dragSession.mop
-      })
-    })
-    setDragSession(null)
-    fetchSessions()
+  async function toggleTherapistAbsent(therapist) {
+    const isAbsent = absentTherapists.has(therapist)
+    if (isAbsent) {
+      if (!confirm(`Undo absence for ${therapist}?`)) return
+      setAbsentTherapists(prev => { const n = new Set(prev); n.delete(therapist); return n })
+      await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'therapist_undo_absent', week_key: selectedWeek.key, therapist, day: selectedDay }) })
+    } else {
+      if (!confirm(`Mark ${therapist} as absent for ${selectedDay}?`)) return
+      setAbsentTherapists(prev => new Set([...prev, therapist]))
+      await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'therapist_absent', week_key: selectedWeek.key, therapist, day: selectedDay }) })
+      alert(`${therapist} marked absent. Go to Messages to send absence notices.`)
+    }
+    fetchSessions(selectedWeek.key)
   }
 
-  function toggleAbsent(therapist) {
-    setAbsentTherapists(prev => {
-      const next = new Set(prev)
-      if (next.has(therapist)) next.delete(therapist)
-      else next.add(therapist)
-      return next
-    })
-  }
-
-  const daySessions = sessions.filter(s => s.day === selectedDay)
-  const therapists = [...new Set(daySessions.map(s => s.therapist))].sort()
-  const usedSlots = ALL_TIME_SLOTS.filter(t => daySessions.some(s => s.time_start === t))
+  const therapistKey = payModal ? getTherapistKey(payModal.therapist, therapistData) : 'OT'
+  const sessionTypes = SESSION_TYPES[therapistKey] || SESSION_TYPES.OT
+  const isCustomAmount = ['Specialized', 'Cancellation Fee'].includes(payForm.session_type)
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long' })
-
-  function getSessionsForCell(therapist, slot) {
-    return daySessions.filter(s => s.time_start === slot && s.therapist === therapist)
-  }
+  const searchedSessions = search ? sessions.filter(s => s.client_name?.toLowerCase().includes(search.toLowerCase())) : null
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
 
+      {notification && (
+        <div style={{ position: 'fixed', top: '1rem', right: '1rem', background: '#0f4c81', color: 'white', padding: '12px 20px', borderRadius: '10px', fontSize: '13px', fontWeight: '500', zIndex: 200, boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
+          ✓ {notification}
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '12px' }}>
-        <h1 style={{ color: '#0f4c81', margin: 0 }}>Schedule</h1>
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <button onClick={() => setAdvanceModal(true)} style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #1D9E75', cursor: 'pointer', fontSize: '13px', background: '#EAF3DE', color: '#27500A', fontWeight: '500' }}>
-            + Advance payment
-          </button>
-          <button onClick={() => setAddModal(true)} style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #0f4c81', cursor: 'pointer', fontSize: '13px', background: 'white', color: '#0f4c81', fontWeight: '500' }}>
-            + One-off session
-          </button>
-          <button onClick={generateWeek} disabled={generating} style={{ background: '#fcc200', color: '#0f4c81', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '700' }}>
-            {generating ? 'Generating...' : 'Generate this week'}
-          </button>
+        <div>
+          <h1 style={{ color: '#0f4c81', margin: '0 0 4px' }}>Schedule</h1>
+          {selectedWeek && <p style={{ margin: 0, fontSize: '13px', color: '#999' }}>{selectedWeek.label}</p>}
+        </div>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input placeholder="Search client..." value={search} onChange={e => setSearch(e.target.value)}
+            style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px', width: '180px' }} />
+          <select value={selectedWeek?.key || ''} onChange={e => { const w = weeks.find(x => x.key === e.target.value); if (w) switchWeek(w) }}
+            style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px', cursor: 'pointer' }}>
+            {weeks.map(w => <option key={w.key} value={w.key}>{w.label}</option>)}
+          </select>
+          <button onClick={() => setAddModal(true)} style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #0f4c81', cursor: 'pointer', fontSize: '13px', background: 'white', color: '#0f4c81', fontWeight: '500' }}>+ One-off session</button>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
         {DAYS.map(day => {
           const count = sessions.filter(s => s.day === day).length
           const isToday = day === today
+          const isHoliday = holidayDays.has(day)
           return (
-            <button key={day} onClick={() => setSelectedDay(day)} style={{
-              padding: '8px 16px', borderRadius: '20px',
+            <button key={day} onClick={() => { setSelectedDay(day); setFreeSlotMode(false) }} style={{
+              padding: '7px 14px', borderRadius: '20px',
               border: isToday ? '2px solid #fcc200' : 'none',
               cursor: 'pointer', fontSize: '13px', fontWeight: '500',
-              background: selectedDay === day ? '#0f4c81' : '#f0f0f0',
-              color: selectedDay === day ? 'white' : '#666'
+              background: isHoliday ? '#888' : selectedDay === day ? '#0f4c81' : '#f0f0f0',
+              color: isHoliday || selectedDay === day ? 'white' : '#666'
             }}>
-              {day} {count > 0 && <span style={{ fontSize: '11px', opacity: 0.7 }}>({count})</span>}
+              {day} {isHoliday ? '🏖' : count > 0 ? <span style={{ fontSize: '11px', opacity: 0.7 }}>({count})</span> : ''}
             </button>
           )
         })}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+          <button onClick={() => setFreeSlotMode(!freeSlotMode)} style={{
+            padding: '7px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '12px',
+            background: freeSlotMode ? '#1D9E75' : '#f0f0f0',
+            color: freeSlotMode ? 'white' : '#666'
+          }}>Highlight free slots</button>
+          <button onClick={() => toggleHoliday(selectedDay)} style={{
+            padding: '7px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '12px',
+            background: holidayDays.has(selectedDay) ? '#888' : '#f0f0f0',
+            color: holidayDays.has(selectedDay) ? 'white' : '#666'
+          }}>{holidayDays.has(selectedDay) ? '🏖 Holiday' : 'Mark holiday'}</button>
+        </div>
       </div>
+
+      {/* Modals */}
+      {absentConfirm && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Session already paid</h3>
+            <p style={{ margin: '0 0 0.5rem', fontSize: '14px' }}>This session for <strong>{absentConfirm.client_name}</strong> was already paid (₱{Number(absentConfirm.amount || 0).toLocaleString()}).</p>
+            <p style={{ margin: '0 0 1.5rem', fontSize: '13px', color: '#666' }}>Payment will be moved to their credit balance automatically. If a cash refund is needed, go to the Payments page.</p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setAbsentConfirm(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={confirmAbsent} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#E24B4A', color: 'white', cursor: 'pointer', fontWeight: '500' }}>Mark absent + credit payment</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {payModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '420px', maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
             <h3 style={{ margin: '0 0 1rem', color: '#0f4c81' }}>Record payment</h3>
             <div style={{ background: '#f8f9fa', borderRadius: '8px', padding: '10px 12px', marginBottom: '1rem' }}>
               <div style={{ fontWeight: '500', color: '#0f4c81' }}>{payModal.client_name}</div>
               <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>{payModal.therapist} · {payModal.day} {payModal.time_start}–{payModal.time_end}</div>
+              {clientCredit > 0 && <div style={{ marginTop: '6px', fontSize: '12px', color: '#27500A', background: '#EAF3DE', padding: '4px 8px', borderRadius: '6px', display: 'inline-block' }}>💳 Credit: ₱{clientCredit.toLocaleString()}</div>}
             </div>
             <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Session type</label>
               <select value={payForm.session_type}
                 onChange={e => {
-                  const type = e.target.value
-                  const rate = getRate(payModal.therapist, type)
-                  setPayForm({ ...payForm, session_type: type, amount: type === 'Specialized' ? '' : rate })
+                  const t = sessionTypes.find(x => x.value === e.target.value)
+                  setPayForm({ ...payForm, session_type: e.target.value, amount: t?.amount || 0, split_cash: t?.amount || 0, use_credit: false, split: false })
                 }}
                 style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
-                {SESSION_TYPES.map(t => (
-                  <option key={t.value} value={t.value}>
-                    {t.label}{t.value !== 'Specialized' ? ` — ₱${getRate(payModal.therapist, t.value).toLocaleString()}` : ''}
-                  </option>
-                ))}
+                {sessionTypes.map(t => <option key={t.value} value={t.value}>{t.label}{t.amount > 0 ? ` — ₱${t.amount.toLocaleString()}` : ' — custom amount'}</option>)}
               </select>
             </div>
             <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
-                Amount (₱)
-                {payForm.session_type === 'Specialized' && (
-                  <span style={{ color: '#E24B4A', fontWeight: '500', marginLeft: '6px' }}>— enter manually</span>
-                )}
+                Amount (₱) {isCustomAmount && <span style={{ color: '#E24B4A', fontWeight: '500' }}>— enter manually</span>}
               </label>
               <input type="number" value={payForm.amount}
-                onChange={e => setPayForm({ ...payForm, amount: Number(e.target.value) })}
-                placeholder={payForm.session_type === 'Specialized' ? 'Enter amount...' : ''}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: payForm.session_type === 'Specialized' ? '2px solid #fcc200' : '1px solid #ddd', fontSize: '16px', fontWeight: '500', boxSizing: 'border-box' }} />
-              {payForm.session_type !== 'Specialized' && (
-                <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}>Auto-filled from {getSpecialty(payModal.therapist)} rate — edit if needed</div>
-              )}
+                onChange={e => setPayForm({ ...payForm, amount: Number(e.target.value), split_cash: Number(e.target.value) })}
+                readOnly={!isCustomAmount}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: isCustomAmount ? '2px solid #fcc200' : '1px solid #ddd', fontSize: '16px', fontWeight: '500', boxSizing: 'border-box', background: isCustomAmount ? 'white' : '#f8f9fa' }} />
             </div>
-            <div style={{ marginBottom: '1.25rem' }}>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Mode of payment</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {MOP_OPTIONS.map(mop => (
-                  <button key={mop} onClick={() => setPayForm({ ...payForm, mop })} style={{
-                    padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
-                    border: payForm.mop === mop ? '2px solid #0f4c81' : '1px solid #ddd',
-                    background: payForm.mop === mop ? '#E6F1FB' : 'white',
-                    color: payForm.mop === mop ? '#0f4c81' : '#666',
-                    fontWeight: payForm.mop === mop ? '500' : '400'
-                  }}>{mop}</button>
-                ))}
+            {clientCredit > 0 && (
+              <div style={{ marginBottom: '12px', padding: '10px 12px', background: '#EAF3DE', borderRadius: '8px', border: '1px solid #97C459' }}>
+                <div style={{ fontSize: '12px', fontWeight: '500', color: '#27500A', marginBottom: '8px' }}>Client has ₱{clientCredit.toLocaleString()} credit</div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[
+                    { key: 'full', label: 'Use full credit', active: payForm.use_credit && !payForm.split },
+                    { key: 'split', label: 'Split payment', active: payForm.split },
+                    { key: 'normal', label: 'Pay normally', active: !payForm.use_credit && !payForm.split },
+                  ].map(opt => (
+                    <button key={opt.key} onClick={() => {
+                      if (opt.key === 'full') setPayForm({ ...payForm, use_credit: true, split: false, mop: 'Credit' })
+                      else if (opt.key === 'split') setPayForm({ ...payForm, split: true, use_credit: false, split_credit: Math.min(clientCredit, payForm.amount), split_cash: Math.max(0, payForm.amount - clientCredit) })
+                      else setPayForm({ ...payForm, use_credit: false, split: false })
+                    }} style={{
+                      padding: '6px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', border: 'none',
+                      background: opt.active ? '#27500A' : 'white',
+                      color: opt.active ? 'white' : '#27500A', fontWeight: '500'
+                    }}>{opt.label}</button>
+                  ))}
+                </div>
+                {payForm.split && (
+                  <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#666', display: 'block', marginBottom: '3px' }}>Credit amount</label>
+                      <input type="number" value={payForm.split_credit}
+                        onChange={e => setPayForm({ ...payForm, split_credit: Number(e.target.value), split_cash: Math.max(0, payForm.amount - Number(e.target.value)) })}
+                        style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #97C459', fontSize: '13px', boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#666', display: 'block', marginBottom: '3px' }}>Cash amount</label>
+                      <input type="number" value={payForm.split_cash}
+                        onChange={e => setPayForm({ ...payForm, split_cash: Number(e.target.value), split_credit: Math.max(0, payForm.amount - Number(e.target.value)) })}
+                        style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
+            {!payForm.use_credit && (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Mode of payment</label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {MOP_OPTIONS.map(mop => (
+                    <button key={mop} onClick={() => setPayForm({ ...payForm, mop })} style={{
+                      padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
+                      border: payForm.mop === mop ? '2px solid #0f4c81' : '1px solid #ddd',
+                      background: payForm.mop === mop ? '#E6F1FB' : 'white',
+                      color: payForm.mop === mop ? '#0f4c81' : '#666',
+                      fontWeight: payForm.mop === mop ? '500' : '400'
+                    }}>{mop}</button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div style={{ background: '#EAF3DE', borderRadius: '8px', padding: '10px 14px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#27500A', fontWeight: '500' }}>Total</span>
               <span style={{ color: '#27500A', fontWeight: '700', fontSize: '18px' }}>₱{Number(payForm.amount || 0).toLocaleString()}</span>
@@ -343,6 +442,72 @@ export default function SchedulePage() {
               <button onClick={() => setPayModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
               <button onClick={confirmPayment} disabled={saving || !payForm.amount} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: !payForm.amount ? 0.5 : 1 }}>
                 {saving ? 'Saving...' : `Confirm ₱${Number(payForm.amount || 0).toLocaleString()}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {rescheduleModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Reschedule</h3>
+            <p style={{ margin: '0 0 1.25rem', fontSize: '13px', color: '#999' }}>{rescheduleModal.client_name} · {rescheduleModal.day} {rescheduleModal.time_start}</p>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>New day</label>
+              <select value={rescheduleForm.day} onChange={e => setRescheduleForm({ ...rescheduleForm, day: e.target.value, therapist: '', time_start: '', time_end: '' })}
+                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
+                <option value="">Select day...</option>
+                {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Therapist</label>
+              <select value={rescheduleForm.therapist} onChange={e => setRescheduleForm({ ...rescheduleForm, therapist: e.target.value, time_start: '', time_end: '' })}
+                disabled={!rescheduleForm.day}
+                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', opacity: !rescheduleForm.day ? 0.5 : 1 }}>
+                <option value="">Select therapist...</option>
+                {[...new Set(therapistData.filter(t => t.day === rescheduleForm.day).map(t => t.name))].sort().map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1.5rem' }}>
+              <div>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Start time</label>
+                <select value={rescheduleForm.time_start} onChange={e => setRescheduleForm({ ...rescheduleForm, time_start: e.target.value, time_end: '' })}
+                  disabled={!rescheduleForm.therapist}
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', opacity: !rescheduleForm.therapist ? 0.5 : 1 }}>
+                  <option value="">Start...</option>
+                  {(() => {
+                    const entry = therapistData.find(t => t.name === rescheduleForm.therapist && t.day === rescheduleForm.day)
+                    if (!entry) return null
+                    const slots = []
+                    let mins = parseTime(entry.time_start)
+                    const end = parseTime(entry.time_end)
+                    while (mins < end) { slots.push(formatTime(mins)); mins += 15 }
+                    return slots.map(t => <option key={t} value={t}>{t}</option>)
+                  })()}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>End time</label>
+                <select value={rescheduleForm.time_end} onChange={e => setRescheduleForm({ ...rescheduleForm, time_end: e.target.value })}
+                  disabled={!rescheduleForm.time_start}
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', opacity: !rescheduleForm.time_start ? 0.5 : 1 }}>
+                  <option value="">End...</option>
+                  {[60, 90, 120].map(mins => {
+                    if (!rescheduleForm.time_start) return null
+                    const endMins = parseTime(rescheduleForm.time_start) + mins
+                    const endTime = formatTime(endMins)
+                    return <option key={mins} value={endTime}>{mins === 60 ? '1 hr' : mins === 90 ? '1.5 hrs' : '2 hrs'} ({endTime})</option>
+                  })}
+                </select>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => { setRescheduleModal(null); setRescheduleForm({ day: '', therapist: '', time_start: '', time_end: '' }) }}
+                style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={confirmReschedule} disabled={saving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
+                {saving ? 'Moving...' : 'Confirm reschedule'}
               </button>
             </div>
           </div>
@@ -358,20 +523,23 @@ export default function SchedulePage() {
               <input value={addForm.client_name} onChange={e => setAddForm({ ...addForm, client_name: e.target.value })}
                 list="client-list"
                 style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
-              <datalist id="client-list">
-                {clients.map(c => <option key={c.id} value={c.name} />)}
-              </datalist>
-            </div>
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Therapist</label>
-              <input value={addForm.therapist} onChange={e => setAddForm({ ...addForm, therapist: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+              <datalist id="client-list">{clients.map(c => <option key={c.id} value={c.name} />)}</datalist>
             </div>
             <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Day</label>
-              <select value={addForm.day} onChange={e => setAddForm({ ...addForm, day: e.target.value })}
+              <select value={addForm.day} onChange={e => setAddForm({ ...addForm, day: e.target.value, therapist: '' })}
                 style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
+                <option value="">Select day...</option>
                 {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Therapist</label>
+              <select value={addForm.therapist} onChange={e => setAddForm({ ...addForm, therapist: e.target.value })}
+                disabled={!addForm.day}
+                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', opacity: !addForm.day ? 0.5 : 1 }}>
+                <option value="">Select therapist...</option>
+                {[...new Set(therapistData.filter(t => t.day === addForm.day).map(t => t.name))].sort().map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1.5rem' }}>
@@ -380,7 +548,8 @@ export default function SchedulePage() {
                   <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>{key === 'time_start' ? 'Start' : 'End'}</label>
                   <select value={addForm[key]} onChange={e => setAddForm({ ...addForm, [key]: e.target.value })}
                     style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' }}>
-                    {ALL_TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                    <option value="">Select...</option>
+                    {timeSlots.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
               ))}
@@ -395,153 +564,196 @@ export default function SchedulePage() {
         </div>
       )}
 
-      {advanceModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
-            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Record advance payment</h3>
-            <p style={{ margin: '0 0 1.25rem', fontSize: '13px', color: '#999' }}>Not tied to a specific session — recorded as credit for this client.</p>
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Client</label>
-              <select value={advanceForm.client_name}
-                onChange={e => setAdvanceForm({ ...advanceForm, client_name: e.target.value })}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
-                <option value="">Select client...</option>
-                {clients.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
-              </select>
+      {search && searchedSessions ? (
+        <div>
+          <p style={{ fontSize: '13px', color: '#999', marginBottom: '12px' }}>{searchedSessions.length} result{searchedSessions.length !== 1 ? 's' : ''} for "{search}"</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {searchedSessions.map((s, i) => {
+              const sc = getSessionColor(s)
+              return (
+                <div key={i} style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: '8px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: '500', color: sc.color }}>{s.client_name}</div>
+                    <div style={{ fontSize: '12px', color: sc.color, opacity: 0.8 }}>{s.therapist} · {s.day} {s.time_start}–{s.time_end}</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.6)', color: sc.color }}>{s.status}</span>
+                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.6)', color: sc.color }}>{s.payment}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+      ) : loading ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading...</div>
+
+      ) : sessions.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#999', background: '#f8f9fa', borderRadius: '12px' }}>
+          No sessions yet — finish migration then sessions will auto-generate!
+        </div>
+
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <div style={{ display: 'flex', minWidth: 'fit-content' }}>
+
+            {/* Time column */}
+            <div style={{ flexShrink: 0, width: '70px' }}>
+              <div style={{ height: '60px', background: '#0f4c81', borderBottom: '2px solid #fcc200' }} />
+              {timeSlots.map((slot, i) => (
+                <div key={slot} style={{
+                  height: `${ROW_HEIGHT}px`,
+                  display: 'flex', alignItems: 'center',
+                  paddingLeft: '8px',
+                  fontSize: '10px', color: '#999', fontWeight: '500',
+                  borderBottom: `1px solid ${i % 4 === 0 ? '#e0e0e0' : '#f5f5f5'}`,
+                  background: i % 4 === 0 ? '#fafafa' : 'white',
+                  whiteSpace: 'nowrap', boxSizing: 'border-box'
+                }}>
+                  {i === 0 || i % 4 === 0 ? slot : ''}
+                </div>
+              ))}
             </div>
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Amount (₱)</label>
-              <input type="number" value={advanceForm.amount}
-                onChange={e => setAdvanceForm({ ...advanceForm, amount: e.target.value })}
-                placeholder="Enter amount..."
-                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '16px', fontWeight: '500', boxSizing: 'border-box' }} />
-            </div>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Mode of payment</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {MOP_OPTIONS.map(mop => (
-                  <button key={mop} onClick={() => setAdvanceForm({ ...advanceForm, mop })} style={{
-                    padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
-                    border: advanceForm.mop === mop ? '2px solid #0f4c81' : '1px solid #ddd',
-                    background: advanceForm.mop === mop ? '#E6F1FB' : 'white',
-                    color: advanceForm.mop === mop ? '#0f4c81' : '#666',
-                    fontWeight: advanceForm.mop === mop ? '500' : '400'
-                  }}>{mop}</button>
-                ))}
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setAdvanceModal(false)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
-              <button onClick={recordAdvance} disabled={saving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
-                {saving ? 'Saving...' : `Record ₱${Number(advanceForm.amount || 0).toLocaleString()}`}
-              </button>
-            </div>
+
+            {/* Therapist columns */}
+            {therapists.map(therapist => {
+              const isAbsent = absentTherapists.has(therapist)
+              const therapistEntry = therapistData.find(t => t.name === therapist && t.day === selectedDay)
+              const specialty = therapistEntry?.specialty || 'OT'
+              const therapistSessions = getSessionsForTherapist(therapist)
+
+              return (
+                <div key={therapist} style={{ flexShrink: 0, width: '150px', borderLeft: '1px solid #e0e0e0' }}>
+                  {/* Header */}
+                  <div style={{
+                    height: '60px', background: isAbsent ? '#777' : '#0f4c81', color: 'white',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    borderBottom: '2px solid #fcc200', padding: '4px', gap: '3px'
+                  }}>
+                    <div style={{ fontSize: '11px', fontWeight: '500', textAlign: 'center' }}>{therapist}</div>
+                    <div style={{ fontSize: '10px', opacity: 0.7 }}>{specialty}{therapistEntry?.is_intern ? ' · Intern' : ''}</div>
+                    <button onClick={() => toggleTherapistAbsent(therapist)} style={{
+                      fontSize: '9px', padding: '1px 8px', borderRadius: '10px', border: 'none',
+                      cursor: 'pointer', fontWeight: '500',
+                      background: isAbsent ? '#c00' : 'rgba(255,255,255,0.2)', color: 'white'
+                    }}>{isAbsent ? 'ABSENT' : 'Mark absent'}</button>
+                  </div>
+
+                  {/* Grid body */}
+                  <div style={{ position: 'relative', height: `${totalRows * ROW_HEIGHT}px` }}>
+                    {/* Background rows */}
+                    {timeSlots.map((slot, i) => {
+                      const slotMins = gridStartMins + i * 15
+                      const free = isSlotFree(therapist, slotMins)
+                      return (
+                        <div key={slot} style={{
+                          position: 'absolute', top: `${i * ROW_HEIGHT}px`,
+                          width: '100%', height: `${ROW_HEIGHT}px`,
+                          borderBottom: `1px solid ${i % 4 === 0 ? '#e8e8e8' : '#f5f5f5'}`,
+                          background: isAbsent ? '#f5f5f5' : freeSlotMode && free ? 'rgba(225,245,238,0.6)' : freeSlotMode && !free ? '#f8f8f8' : i % 4 === 0 ? '#fafafa' : 'white',
+                          boxSizing: 'border-box'
+                        }} />
+                      )
+                    })}
+
+                    {/* Session blocks */}
+                    {isAbsent ? (
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: '10px', color: '#bbb', fontWeight: '500' }}>ABSENT</span>
+                      </div>
+                    ) : (
+                      therapistSessions.map((s, si) => {
+                        const startMins = parseTime(s.time_start)
+                        const endMins = parseTime(s.time_end)
+                        const topOffset = ((startMins - gridStartMins) / 15) * ROW_HEIGHT
+                        const height = Math.max(((endMins - startMins) / 15) * ROW_HEIGHT - 2, ROW_HEIGHT - 2)
+                        const sc = getSessionColor(s)
+                        const clientInfo = clients.find(c => c.name === s.client_name)
+                        const hasOutstanding = clientInfo?.outstanding_balance > 0
+                        const isCredited = s.status === 'Absent' && s.notes === 'credited'
+
+                        const sameStart = therapistSessions.filter(x => x.time_start === s.time_start)
+                        const stackIndex = sameStart.indexOf(s)
+                        const stackCount = sameStart.length
+                        const stackedTop = topOffset + 1 + (stackIndex * (height / stackCount))
+                        const stackedHeight = Math.max((height / stackCount) - 2, 14)
+
+                        return (
+                          <div key={si} style={{
+                            position: 'absolute',
+                            top: `${stackCount > 1 ? stackedTop : topOffset + 1}px`,
+                            left: '2%', width: '96%',
+                            height: `${stackCount > 1 ? stackedHeight : height}px`,
+                            background: sc.bg, border: `1px solid ${sc.border}`,
+                            borderRadius: '4px', padding: '3px 5px',
+                            overflow: 'hidden', boxSizing: 'border-box', zIndex: 1
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                              <div style={{ fontSize: '10px', fontWeight: '500', color: sc.color, lineHeight: '1.3' }}>{s.client_name}</div>
+                              <div style={{ display: 'flex', gap: '1px', flexShrink: 0 }}>
+                                {hasOutstanding && <span style={{ fontSize: '8px' }}>⚠️</span>}
+                                {isCredited && <span style={{ fontSize: '8px' }}>💳</span>}
+                              </div>
+                            </div>
+                            {height > 30 && (
+                              <div style={{ fontSize: '9px', color: sc.color, opacity: 0.75, marginBottom: '3px' }}>
+                                {s.time_start}–{s.time_end}
+                              </div>
+                            )}
+                            {height > 45 && (
+                              <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap' }}>
+                                <select value={s.status}
+                                  onChange={e => updateStatus(s, e.target.value)}
+                                  style={{ fontSize: '8px', padding: '1px 2px', borderRadius: '3px', border: '1px solid #ddd', cursor: 'pointer', background: 'white', color: '#444', maxWidth: '72px' }}>
+                                  {[
+                                    { value: 'Pencil', label: 'Pencil' },
+                                    { value: 'Scheduled', label: 'Confirmed' },
+                                    { value: 'Present', label: 'Present' },
+                                    { value: 'Absent', label: 'Absent' },
+                                    { value: 'Cancelled', label: 'Cancelled' },
+                                  ].map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
+                                </select>
+                                {s.payment === 'Unpaid' ? (
+                                  <button onClick={() => openPayModal(s)}
+                                    style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#FCEBEB', color: '#791F1F', cursor: 'pointer', fontWeight: '500' }}>Unpaid</button>
+                                ) : (
+                                  <button onClick={() => reversePayment(s)}
+                                    style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#EAF3DE', color: '#27500A', cursor: 'pointer' }}>Paid ✓</button>
+                                )}
+                                <button onClick={() => { setRescheduleModal(s); setRescheduleForm({ day: '', therapist: '', time_start: '', time_end: '' }) }}
+                                  style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: '1px solid #ddd', background: 'white', color: '#666', cursor: 'pointer' }}>Move</button>
+                                <button onClick={() => deleteSession(s)}
+                                  style={{ fontSize: '8px', padding: '1px 3px', borderRadius: '3px', border: '1px solid #fcc', background: '#fff5f5', color: '#c00', cursor: 'pointer' }}>✕</button>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading...</div>
-      ) : daySessions.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#999', background: '#f8f9fa', borderRadius: '12px' }}>
-          No sessions for {selectedDay} — click Generate this week!
-        </div>
-      ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ borderCollapse: 'collapse', fontSize: '12px', minWidth: '100%' }}>
-            <thead>
-              <tr>
-                <th style={{ padding: '10px 14px', background: '#0f4c81', color: 'white', textAlign: 'left', minWidth: '85px', fontWeight: '500', borderRight: '1px solid #1a5fa0', position: 'sticky', left: 0, zIndex: 3 }}>TIME</th>
-                {therapists.map(t => {
-                  const isAbsent = absentTherapists.has(t)
-                  return (
-                    <th key={t} style={{ padding: '8px 12px', background: isAbsent ? '#777' : '#0f4c81', color: 'white', textAlign: 'center', minWidth: '150px', fontWeight: '500', borderRight: '1px solid #1a5fa0', whiteSpace: 'nowrap' }}>
-                      <div style={{ fontSize: '12px', marginBottom: '4px' }}>{t}</div>
-                      <button onClick={() => toggleAbsent(t)} style={{
-                        fontSize: '10px', padding: '2px 8px', borderRadius: '10px',
-                        border: 'none', cursor: 'pointer', fontWeight: '500',
-                        background: isAbsent ? '#c00' : 'rgba(255,255,255,0.2)',
-                        color: 'white'
-                      }}>{isAbsent ? 'ABSENT' : 'Mark absent'}</button>
-                    </th>
-                  )
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {usedSlots.map((slot, ri) => (
-                <tr key={slot} style={{ background: ri % 2 === 0 ? 'white' : '#fafafa' }}>
-                  <td style={{ padding: '5px 14px', color: '#666', fontSize: '11px', borderRight: '1px solid #e0e0e0', borderBottom: '1px solid #f0f0f0', whiteSpace: 'nowrap', fontWeight: '500', position: 'sticky', left: 0, background: ri % 2 === 0 ? 'white' : '#fafafa', zIndex: 1 }}>{slot}</td>
-                  {therapists.map(therapist => {
-                    const cellSessions = getSessionsForCell(therapist, slot)
-                    const isTarget = dropTarget?.therapist === therapist && dropTarget?.slot === slot
-                    const isAbsent = absentTherapists.has(therapist)
-                    return (
-                      <td key={therapist}
-                        style={{ padding: '3px 4px', borderRight: '1px solid #e0e0e0', borderBottom: '1px solid #f0f0f0', verticalAlign: 'top', background: isAbsent ? '#f5f5f5' : isTarget ? '#E6F1FB' : 'transparent' }}
-                        onDragOver={e => { e.preventDefault(); if (!isAbsent) setDropTarget({ therapist, slot }) }}
-                        onDragLeave={() => setDropTarget(null)}
-                        onDrop={() => { if (!isAbsent) handleDrop(therapist, slot) }}
-                      >
-                        {isAbsent ? (
-                          <div style={{ height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ fontSize: '9px', color: '#bbb' }}>absent</span>
-                          </div>
-                        ) : cellSessions.length > 0 ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                            {cellSessions.map((s, si) => (
-                              <div key={si} draggable
-                                onDragStart={() => setDragSession(s)}
-                                onDragEnd={() => setDragSession(null)}
-                                style={{
-                                  background: s.payment === 'Paid' ? '#EAF3DE' : 'white',
-                                  border: `1px solid ${s.payment === 'Paid' ? '#97C459' : '#e0e0e0'}`,
-                                  borderRadius: '5px', padding: '4px 6px', cursor: 'grab',
-                                  opacity: dragSession?.index === s.index ? 0.4 : 1
-                                }}>
-                                <div style={{ fontWeight: '500', fontSize: '11px', color: '#0f4c81', marginBottom: '3px' }}>{s.client_name}</div>
-                                <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
-                                  <select value={s.status}
-                                    onChange={e => updateStatus(s, e.target.value)}
-                                    onClick={e => e.stopPropagation()}
-                                    style={{ fontSize: '10px', padding: '1px 3px', borderRadius: '3px', border: '1px solid #ddd', cursor: 'pointer', background: STATUS_COLORS[s.status]?.bg, color: STATUS_COLORS[s.status]?.color }}>
-                                    {['Scheduled','Present','Absent','Cancelled'].map(st => <option key={st} value={st}>{st}</option>)}
-                                  </select>
-                                  {s.payment === 'Unpaid' ? (
-                                    <button onClick={() => openPayModal(s)}
-                                      style={{ fontSize: '10px', padding: '1px 5px', borderRadius: '3px', border: 'none', background: '#FCEBEB', color: '#791F1F', cursor: 'pointer', fontWeight: '500' }}>
-                                      Unpaid
-                                    </button>
-                                  ) : (
-                                    <button onClick={() => reversePayment(s)}
-                                      style={{ fontSize: '10px', padding: '1px 5px', borderRadius: '3px', border: 'none', background: '#EAF3DE', color: '#27500A', cursor: 'pointer' }}>
-                                      Paid ✓
-                                    </button>
-                                  )}
-                                  <button onClick={() => deleteSession(s)}
-                                    style={{ fontSize: '10px', padding: '1px 5px', borderRadius: '3px', border: '1px solid #fcc', background: '#fff5f5', color: '#c00', cursor: 'pointer' }}>✕</button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div style={{ height: '24px', borderRadius: '4px', border: isTarget ? '2px dashed #378ADD' : '1px dashed #eee' }} />
-                        )}
-                      </td>
-                    )
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <div style={{ marginTop: '1rem', display: 'flex', gap: '16px', fontSize: '12px', color: '#999', flexWrap: 'wrap' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '10px', height: '10px', background: '#EAF3DE', border: '1px solid #97C459', borderRadius: '2px', display: 'inline-block' }}></span> Paid</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '10px', height: '10px', background: 'white', border: '1px solid #e0e0e0', borderRadius: '2px', display: 'inline-block' }}></span> Unpaid</span>
-        <span style={{ color: '#ccc' }}>· Drag to reschedule · Click Unpaid to record payment · ✕ to delete · Click therapist header to mark absent</span>
+      <div style={{ marginTop: '1rem', display: 'flex', gap: '12px', fontSize: '11px', color: '#999', flexWrap: 'wrap', alignItems: 'center' }}>
+        {[
+          { bg: '#FFFBE6', border: '#FFD666', label: 'Pencil' },
+          { bg: '#E6F1FB', border: '#B5D4F4', label: 'Confirmed/Unpaid or Paid' },
+          { bg: '#EAF3DE', border: '#97C459', label: 'Present + Paid or Cancelled + Paid' },
+          { bg: '#FCEBEB', border: '#F09595', label: 'Absent' },
+          { bg: '#FAEEDA', border: '#EF9F27', label: 'Cancelled + Unpaid' },
+        ].map(item => (
+          <span key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ width: '10px', height: '10px', background: item.bg, border: `1px solid ${item.border}`, borderRadius: '2px', display: 'inline-block' }}></span>
+            {item.label}
+          </span>
+        ))}
+        <span>⚠️ Outstanding balance</span>
+        <span>💳 Payment credited</span>
       </div>
-    </div>
-  )
-}
+    </div>)
+  }

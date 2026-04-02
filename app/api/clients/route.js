@@ -154,3 +154,20 @@ export async function PATCH(request) {
     return Response.json({ success: false, error: error.message })
   }
 }
+
+export async function DELETE(request) {
+  try {
+    const { index } = await request.json()
+    const sheets = getGoogleSheets()
+    const sheetId = await getSheetId('clients')
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: { requests: [{ deleteDimension: {
+        range: { sheetId, dimension: 'ROWS', startIndex: index + 1, endIndex: index + 2 }
+      }}]}
+    })
+    return Response.json({ success: true })
+  } catch (error) {
+    return Response.json({ success: false, error: error.message })
+  }
+}
