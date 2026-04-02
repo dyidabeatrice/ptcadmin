@@ -8,7 +8,9 @@ export async function GET() {
     const blocked = rows.filter(r => r && r[0]).map((row, i) => ({
       index: i,
       id: row[0], therapist: row[1],
-      day: row[2], time_start: row[3], time_end: row[4]
+      day: row[2], time_start: row[3], time_end: row[4],
+      type: row[5] || 'blocked',
+      label: row[6] || ''
     }))
     return Response.json({ success: true, data: blocked })
   } catch (error) {
@@ -26,7 +28,9 @@ export async function POST(request) {
       requestBody: { values: [[
         Date.now().toString(),
         body.therapist, body.day,
-        body.time_start, body.time_end
+        body.time_start, body.time_end,
+        body.type || 'blocked',
+        body.label || ''
       ]]}
     })
     return Response.json({ success: true })

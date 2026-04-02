@@ -17,6 +17,12 @@ const SPECIALTY_COLORS = {
   SPED: { bg: '#EEEDFE', border: '#CECBF6', color: '#3C3489' },
 }
 
+const BLOCK_STYLES = {
+  blocked: { bg: '#555', border: '#444', color: 'white' },
+  admin:   { bg: '#d0d0d0', border: '#aaa', color: '#444' },
+  open:    { bg: '#E1F5EE', border: '#5DCAA5', color: '#085041' },
+}
+
 const BLOCK_DURATIONS = [
   { label: '30 min', mins: 30 },
   { label: '1 hr',   mins: 60 },
@@ -62,6 +68,8 @@ export default function MasterPage() {
   const [search, setSearch] = useState('')
   const [blockModal, setBlockModal] = useState(null)
   const [blockDuration, setBlockDuration] = useState(60)
+  const [blockType, setBlockType] = useState('blocked')
+  const [blockLabel, setBlockLabel] = useState('')
   const [savingBlock, setSavingBlock] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [importPreview, setImportPreview] = useState([])
@@ -105,6 +113,7 @@ export default function MasterPage() {
 
   async function addBlock() {
     if (!blockModal) return
+    if (blockType === 'admin' && !blockLabel.trim()) return alert('Please enter a label')
     setSavingBlock(true)
     const endMins = parseTime(blockModal.time_start) + blockDuration
     const time_end = formatTime(endMins)
@@ -115,11 +124,15 @@ export default function MasterPage() {
         therapist: blockModal.therapist,
         day: selectedDay,
         time_start: blockModal.time_start,
-        time_end
+        time_end,
+        type: blockType,
+        label: blockLabel
       })
     })
     setBlockModal(null)
     setBlockDuration(60)
+    setBlockType('blocked')
+    setBlockLabel('')
     fetchAll()
     setSavingBlock(false)
   }
@@ -157,19 +170,19 @@ export default function MasterPage() {
     return dayBlocked.filter(b => b.therapist === therapistName)
   }
 
-  function isTimeBlocked(therapistName, timeMins) {
-    return getBlockedSlots(therapistName).some(b => {
-      const bStart = parseTime(b.time_start)
-      const bEnd = parseTime(b.time_end)
-      return timeMins >= bStart && timeMins < bEnd
-    })
-  }
-
   function isTimeOccupied(therapistName, timeMins) {
     return getClientSlots(therapistName).some(s => {
       const sStart = parseTime(s.time_start)
       const sEnd = parseTime(s.time_end)
       return timeMins >= sStart && timeMins < sEnd
+    })
+  }
+
+  function isTimeBlocked(therapistName, timeMins) {
+    return getBlockedSlots(therapistName).some(b => {
+      const bStart = parseTime(b.time_start)
+      const bEnd = parseTime(b.time_end)
+      return timeMins >= bStart && timeMins < bEnd
     })
   }
 
@@ -188,6 +201,7 @@ export default function MasterPage() {
     const startMins = parseTime(groupStart)
     const endMins = parseTime(endTime)
     const slots = generateSlots(startMins, endMins)
+    const totalRows = slots.length
 
     return (
       <div style={{ marginBottom: '2.5rem' }}>
@@ -207,7 +221,7 @@ export default function MasterPage() {
                   display: 'flex', alignItems: 'center',
                   paddingLeft: '8px',
                   fontSize: '10px', color: '#999', fontWeight: '500',
-                  borderBottom: '1px solid #f5f5f5',
+                  borderBottom: `1px solid ${i % 4 === 0 ? '#e0e0e0' : '#f5f5f5'}`,
                   background: i % 4 === 0 ? '#fafafa' : 'white',
                   whiteSpace: 'nowrap'
                 }}>
@@ -220,8 +234,6 @@ export default function MasterPage() {
               const sc = SPECIALTY_COLORS[therapist.specialty] || SPECIALTY_COLORS.OT
               const clientSlots = getClientSlots(therapist.name)
               const blockedSlots = getBlockedSlots(therapist.name)
-              const totalMins = endMins - startMins
-              const totalRows = totalMins / 15
 
               return (
                 <div key={therapist.name} style={{ flexShrink: 0, width: '150px', borderLeft: '1px solid #e0e0e0' }}>
@@ -238,21 +250,24 @@ export default function MasterPage() {
                     {slots.map((slot, i) => {
                       const slotMins = startMins + i * 15
                       const occupied = isTimeOccupied(therapist.name, slotMins)
-                      const blocked = isTimeBlocked(therapist.name, slotMins)
+                      const isBlocked = isTimeBlocked(therapist.name, slotMins)
                       return (
                         <div key={slot}
                           onClick={() => {
-                            if (!occupied && !blocked) {
+                            if (!occupied && !isBlocked) {
                               setBlockModal({ therapist: therapist.name, time_start: slot })
                               setBlockDuration(60)
+                              setBlockType('blocked')
+                              setBlockLabel('')
                             }
                           }}
                           style={{
-                            position: 'absolute', top: `${i * ROW_HEIGHT}px`,
+                            position: 'absolute',
+                            top: `${i * ROW_HEIGHT}px`,
                             width: '100%', height: `${ROW_HEIGHT}px`,
                             borderBottom: `1px solid ${i % 4 === 0 ? '#e8e8e8' : '#f5f5f5'}`,
                             background: i % 4 === 0 ? '#fafafa' : 'white',
-                            cursor: occupied || blocked ? 'default' : 'pointer',
+                            cursor: occupied || isBlocked ? 'default' : 'pointer',
                           }}
                         />
                       )
@@ -266,8 +281,6 @@ export default function MasterPage() {
                       const sameSlot = clientSlots.filter(s => s.time_start === slot.time_start)
                       const slotIndex = sameSlot.indexOf(slot)
                       const slotCount = sameSlot.length
-                      const width = '94%'
-                      const left = '3%'
                       const stackedTop = topOffset + 1 + (slotIndex * (height / slotCount))
                       const stackedHeight = Math.max((height / slotCount) - 2, 14)
 
@@ -275,7 +288,8 @@ export default function MasterPage() {
                         <div key={si} style={{
                           position: 'absolute',
                           top: `${slotCount > 1 ? stackedTop : topOffset + 1}px`,
-                          left, width,
+                          left: '3%',
+                          width: '94%',
                           height: `${slotCount > 1 ? stackedHeight : height}px`,
                           background: sc.bg,
                           border: `1px solid ${sc.border}`,
@@ -286,7 +300,7 @@ export default function MasterPage() {
                           zIndex: 1
                         }}>
                           <div style={{ fontSize: '10px', fontWeight: '500', color: sc.color, lineHeight: '1.3' }}>{slot.client_name}</div>
-                          {height > 28 && (
+                          {(slotCount === 1 && height > 28) && (
                             <div style={{ fontSize: '9px', color: sc.color, opacity: 0.7, marginTop: '1px' }}>{slot.time_start}–{slot.time_end}</div>
                           )}
                         </div>
@@ -298,26 +312,37 @@ export default function MasterPage() {
                       const bEndMins = parseTime(b.time_end)
                       const topOffset = ((bStartMins - startMins) / 15) * ROW_HEIGHT
                       const height = Math.max(((bEndMins - bStartMins) / 15) * ROW_HEIGHT - 2, ROW_HEIGHT - 2)
+                      const bStyle = BLOCK_STYLES[b.type] || BLOCK_STYLES.blocked
 
                       return (
                         <div key={bi}
-                          onClick={() => { if (confirm('Remove this blocked slot?')) removeBlock(b.index) }}
+                          onClick={() => { if (confirm('Remove this slot?')) removeBlock(b.index) }}
                           style={{
                             position: 'absolute',
                             top: `${topOffset + 1}px`,
                             left: '2%', width: '96%',
                             height: `${height}px`,
-                            background: '#d0d0d0',
-                            border: '1px solid #aaa',
+                            background: bStyle.bg,
+                            border: `1px solid ${bStyle.border}`,
                             borderRadius: '4px',
                             boxSizing: 'border-box',
                             zIndex: 2,
                             cursor: 'pointer',
                             display: 'flex',
+                            flexDirection: 'column',
                             alignItems: 'center',
-                            justifyContent: 'center'
+                            justifyContent: 'center',
+                            padding: '2px 4px',
+                            overflow: 'hidden'
                           }}>
-                          <div style={{ fontSize: '9px', color: '#666', fontWeight: '500' }}>BLOCKED</div>
+                          {b.type !== 'blocked' && (
+                            <div style={{ fontSize: '9px', color: bStyle.color, fontWeight: '500', textAlign: 'center', lineHeight: '1.3' }}>
+                              {b.type === 'open' ? 'Open for decking' : b.label}
+                            </div>
+                          )}
+                          {b.type === 'open' && b.label && (
+                            <div style={{ fontSize: '8px', color: bStyle.color, opacity: 0.8, textAlign: 'center', marginTop: '1px' }}>{b.label}</div>
+                          )}
                         </div>
                       )
                     })}
@@ -357,7 +382,7 @@ export default function MasterPage() {
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '560px', maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
             <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Import from sheet</h3>
             <p style={{ margin: '0 0 1.25rem', fontSize: '13px', color: '#999' }}>
-              Reads all rows from your <strong style={{ fontWeight: '500' }}>import</strong> tab in Google Sheets. Skips duplicates — safe to run multiple times.
+              Reads all rows from your <strong style={{ fontWeight: '500' }}>import</strong> tab. Skips duplicates — safe to run multiple times.
             </p>
 
             {importResult ? (
@@ -391,7 +416,7 @@ export default function MasterPage() {
                   </div>
                 ) : (
                   <div style={{ marginBottom: '1rem' }}>
-                    <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>{importPreview.length} rows found in import tab:</div>
+                    <div style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>{importPreview.length} rows found:</div>
                     <div style={{ background: '#f8f9fa', borderRadius: '8px', overflow: 'hidden', maxHeight: '300px', overflowY: 'auto' }}>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                         <thead>
@@ -416,7 +441,7 @@ export default function MasterPage() {
                   </div>
                 )}
                 <div style={{ background: '#FAEEDA', border: '1px solid #EF9F27', borderRadius: '8px', padding: '10px 12px', marginBottom: '1rem', fontSize: '12px', color: '#633806' }}>
-                  This will create client records and master schedule entries for all rows. Existing entries will be skipped.
+                  This will create client records and master schedule entries. Existing entries will be skipped.
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <button onClick={() => setShowImport(false)} style={{ flex: 1, padding: '10px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer', background: 'white', color: '#666' }}>Cancel</button>
@@ -432,15 +457,56 @@ export default function MasterPage() {
 
       {blockModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '360px', maxWidth: '90vw' }}>
-            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Block time slot</h3>
-            <p style={{ margin: '0 0 1.25rem', fontSize: '13px', color: '#999' }}>{blockModal.therapist} · {selectedDay} · starting {blockModal.time_start}</p>
-            <div style={{ marginBottom: '1.25rem' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '380px', maxWidth: '90vw' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Mark slot</h3>
+            <p style={{ margin: '0 0 1.25rem', fontSize: '13px', color: '#999' }}>{blockModal.therapist} · {selectedDay} · {blockModal.time_start}</p>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '8px' }}>Type</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {[
+                  { value: 'blocked', label: 'Blocked', sub: 'Therapist not taking a client', color: '#444' },
+                  { value: 'admin',   label: 'Admin / Other', sub: 'Meeting, duties, etc — add a label', color: '#666' },
+                  { value: 'open',    label: 'Open for decking', sub: 'Available for new client — optional note', color: '#085041' },
+                ].map(opt => (
+                  <button key={opt.value} onClick={() => { setBlockType(opt.value); setBlockLabel('') }} style={{
+                    padding: '10px 14px', borderRadius: '8px', cursor: 'pointer', textAlign: 'left',
+                    border: blockType === opt.value ? `2px solid ${opt.color}` : '1px solid #ddd',
+                    background: blockType === opt.value
+                      ? (opt.value === 'open' ? '#E1F5EE' : opt.value === 'admin' ? '#f5f5f5' : '#eee')
+                      : 'white',
+                  }}>
+                    <div style={{ fontSize: '13px', fontWeight: '500', color: opt.color }}>{opt.label}</div>
+                    <div style={{ fontSize: '11px', color: '#aaa', marginTop: '2px' }}>{opt.sub}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {blockType === 'admin' && (
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Label</label>
+                <input value={blockLabel} onChange={e => setBlockLabel(e.target.value)}
+                  placeholder="e.g. Admin Duties, Team Meeting, Training..."
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+            )}
+
+            {blockType === 'open' && (
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Note <span style={{ color: '#aaa', fontWeight: '400' }}>(optional)</span></label>
+                <input value={blockLabel} onChange={e => setBlockLabel(e.target.value)}
+                  placeholder="e.g. CBT only, ST preferred, Morning slot..."
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+            )}
+
+            <div style={{ marginBottom: '1rem' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '8px' }}>Duration</label>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {BLOCK_DURATIONS.map(d => (
                   <button key={d.mins} onClick={() => setBlockDuration(d.mins)} style={{
-                    padding: '7px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px',
+                    padding: '6px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px',
                     border: blockDuration === d.mins ? '2px solid #0f4c81' : '1px solid #ddd',
                     background: blockDuration === d.mins ? '#E6F1FB' : 'white',
                     color: blockDuration === d.mins ? '#0f4c81' : '#666',
@@ -449,13 +515,16 @@ export default function MasterPage() {
                 ))}
               </div>
             </div>
+
             <div style={{ background: '#f8f9fa', borderRadius: '8px', padding: '10px 12px', marginBottom: '1.25rem', fontSize: '13px', color: '#666' }}>
-              Blocked: {blockModal.time_start} – {formatTime(parseTime(blockModal.time_start) + blockDuration)}
+              {blockModal.time_start} – {formatTime(parseTime(blockModal.time_start) + blockDuration)}
             </div>
+
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setBlockModal(null)} style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={() => { setBlockModal(null); setBlockType('blocked'); setBlockLabel('') }}
+                style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
               <button onClick={addBlock} disabled={savingBlock} style={{ flex: 2, padding: '8px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
-                {savingBlock ? 'Saving...' : 'Block this slot'}
+                {savingBlock ? 'Saving...' : 'Save'}
               </button>
             </div>
           </div>
@@ -528,6 +597,7 @@ export default function MasterPage() {
           {START_GROUPS.map(group => (
             <GroupGrid key={group.start} groupStart={group.start} />
           ))}
+
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '1rem', alignItems: 'center' }}>
             {Object.entries(SPECIALTY_COLORS).map(([specialty, colors]) => (
               <span key={specialty} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#666' }}>
@@ -536,15 +606,24 @@ export default function MasterPage() {
               </span>
             ))}
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#666' }}>
-              <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#d0d0d0', border: '1px solid #aaa', display: 'inline-block' }}></span>
-              Blocked · Click empty slot to block · Click gray block to remove
+              <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#555', border: '1px solid #444', display: 'inline-block' }}></span>
+              Blocked
             </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#666' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#d0d0d0', border: '1px solid #aaa', display: 'inline-block' }}></span>
+              Admin/Other
+            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#666' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#E1F5EE', border: '1px solid #5DCAA5', display: 'inline-block' }}></span>
+              Open for decking
+            </span>
+            <span style={{ fontSize: '11px', color: '#ccc' }}>· Click empty slot to mark · Click marked slot to remove</span>
           </div>
         </div>
       )}
 
       <div style={{ marginTop: '1.5rem', padding: '12px 16px', background: '#FAEEDA', borderRadius: '8px', fontSize: '12px', color: '#633806', border: '1px solid #EF9F27' }}>
-        To add/edit client schedules → <a href="/clients" style={{ color: '#633806', fontWeight: '500' }}>Clients page</a> · To add/edit therapists → <a href="/therapists" style={{ color: '#633806', fontWeight: '500' }}>Therapists page</a> · Click any empty slot to add a blocked period
+        Read-only for clients — edit via <a href="/clients" style={{ color: '#633806', fontWeight: '500' }}>Clients page</a> · Add therapists via <a href="/therapists" style={{ color: '#633806', fontWeight: '500' }}>Therapists page</a> · Click any empty slot to mark it
       </div>
     </div>
   )

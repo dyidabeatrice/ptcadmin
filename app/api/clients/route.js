@@ -1,7 +1,7 @@
 import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
+import { getSheetId } from '../../lib/sheets'
 
 async function syncToMaster(sheets, clientName, scheduleStr, isInactive) {
-  const { getSheetId } = await import('../../lib/sheets')
   const masterData = await getSheetData('masterschedule')
   const [, ...masterRows] = masterData
   const sheetId = await getSheetId('masterschedule')
@@ -39,21 +39,45 @@ async function syncToMaster(sheets, clientName, scheduleStr, isInactive) {
   }
 }
 
+function similarity(a, b) {
+  a = a.toLowerCase().trim()
+  b = b.toLowerCase().trim()
+  if (a === b) return 1
+  const longer = a.length > b.length ? a : b
+  const shorter = a.length > b.length ? b : a
+  if (longer.length === 0) return 1
+  const editDistance = (s1, s2) => {
+    const costs = []
+    for (let i = 0; i <= s1.length; i++) {
+      let lastValue = i
+      for (let j = 0; j <= s2.length; j++) {
+        if (i === 0) costs[j] = j
+        else if (j > 0) {
+          let newValue = costs[j - 1]
+          if (s1[i - 1] !== s2[j - 1]) newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1
+          costs[j - 1] = lastValue
+          lastValue = newValue
+        }
+      }
+      if (i > 0) costs[s2.length] = lastValue
+    }
+    return costs[s2.length]
+  }
+  return (longer.length - editDistance(longer, shorter)) / longer.length
+}
+
 export async function GET() {
   try {
     const data = await getSheetData('clients')
     const [, ...rows] = data
     const clients = rows.filter(r => r && r[0]).map((row, i) => ({
       index: i,
-      id: row[0],
-      name: row[1],
-      birthdate: row[2] || '',
-      fb_account: row[3] || '',
-      phone: row[4] || '',
-      address: row[5] || '',
-      notes: row[6] || '',
-      schedule: row[7] || '',
-      status: row[8] || 'active'
+      id: row[0], name: row[1], birthdate: row[2] || '',
+      fb_account: row[3] || '', phone: row[4] || '',
+      address: row[5] || '', notes: row[6] || '',
+      schedule: row[7] || '', status: row[8] || 'active',
+      credit_balance: parseFloat(row[9] || 0),
+      outstanding_balance: parseFloat(row[10] || 0)
     }))
     return Response.json({ success: true, data: clients })
   } catch (error) {
@@ -65,21 +89,32 @@ export async function POST(request) {
   try {
     const body = await request.json()
     const sheets = getGoogleSheets()
-    const id = Date.now().toString()
 
+    if (body.action === 'check_duplicate') {
+      const data = await getSheetData('clients')
+      const [, ...rows] = data
+      const existing = rows.filter(r => r && r[0]).map(r => ({ name: r[1], schedule: r[7] || '' }))
+      const name = body.name?.trim()
+      const exactMatch = existing.find(c => c.name.toLowerCase() === name.toLowerCase())
+      const similarMatches = existing
+        .filter(c => c.name.toLowerCase() !== name.toLowerCase())
+        .filter(c => similarity(c.name, name) >= 0.7)
+        .map(c => ({ name: c.name, similarity: Math.round(similarity(c.name, name) * 100) }))
+        .sort((a, b) => b.similarity - a.similarity)
+        .slice(0, 3)
+
+      return Response.json({ success: true, exact_match: exactMatch || null, similar_matches: similarMatches })
+    }
+
+    const id = Date.now().toString()
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
       range: 'clients', valueInputOption: 'RAW',
       requestBody: { values: [[
-        id,
-        body.name || '',
-        body.birthdate || '',
-        body.fb_account || '',
-        body.phone || '',
-        body.address || '',
-        body.notes || '',
-        body.schedule || '',
-        'active'
+        id, body.name, body.birthdate || '',
+        body.fb_account || '', body.phone || '',
+        body.address || '', body.notes || '',
+        body.schedule || '', 'active', 0, 0
       ]]}
     })
 
@@ -101,22 +136,19 @@ export async function PATCH(request) {
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: `clients!B${sheetRow}:I${sheetRow}`,
+      range: `clients!B${sheetRow}:K${sheetRow}`,
       valueInputOption: 'RAW',
       requestBody: { values: [[
-        body.name || '',
-        body.birthdate || '',
-        body.fb_account || '',
-        body.phone || '',
-        body.address || '',
-        body.notes || '',
-        body.schedule || '',
-        body.status || 'active'
+        body.name, body.birthdate || '',
+        body.fb_account || '', body.phone || '',
+        body.address || '', body.notes || '',
+        body.schedule || '', body.status || 'active',
+        body.credit_balance || 0,
+        body.outstanding_balance || 0
       ]]}
     })
 
     await syncToMaster(sheets, body.name, body.schedule, body.status === 'inactive')
-
     return Response.json({ success: true })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
