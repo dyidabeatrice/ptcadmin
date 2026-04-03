@@ -1,21 +1,63 @@
-<div style={{ display: 'flex', gap: '10px' }}>
-        <button onClick={async () => {
-          if (!confirm('This will wipe the master schedule and rebuild it cleanly from your clients data. Continue?')) return
-          const res = await fetch('/api/master/rebuild', { method: 'POST' })
-          const json = await res.json()
-          if (json.success) {
-            alert(`Done! Master schedule rebuilt with ${json.rebuilt} entries.`)
-            fetchMaster()
-          } else {
-            alert('Rebuild failed: ' + json.error)
+import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../../lib/sheets'
+
+export async function POST() {
+  try {
+    const sheets = getGoogleSheets()
+
+    const clientData = await getSheetData('clients')
+    const [, ...clientRows] = clientData
+
+    const activeClients = clientRows.filter(r => r && r[0] && r[8] !== 'inactive')
+
+    const newRows = []
+    activeClients.forEach(row => {
+      const name = row[1]
+      const scheduleStr = row[7] || ''
+      if (!scheduleStr) return
+
+      const slots = scheduleStr.split(';').map(s => {
+        const [therapist, day, time_start, time_end] = s.split('|')
+        return { therapist, day, time_start, time_end }
+      }).filter(s => s.therapist && s.day && s.time_start && s.time_end)
+
+      slots.forEach((s, i) => {
+        newRows.push([
+          Date.now().toString() + Math.random().toString(36).slice(2) + i,
+          name, s.therapist, s.day, s.time_start, s.time_end
+        ])
+      })
+    })
+
+    const sheetId = await getSheetId('masterschedule')
+
+    // Clear all data except header
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      requestBody: {
+        requests: [{
+          updateCells: {
+            range: {
+              sheetId,
+              startRowIndex: 1
+            },
+            fields: 'userEnteredValue'
           }
-        }} style={{
-          padding: '10px 18px', borderRadius: '8px',
-          border: '1px solid #E24B4A', cursor: 'pointer',
-          fontSize: '13px', background: '#FCEBEB', color: '#791F1F', fontWeight: '500'
-        }}>Rebuild from clients</button>
-        <button onClick={() => { setForm({ ...EMPTY_FORM, day: selectedDay }); setShowForm(true) }} style={{
-          background: '#0f4c81', color: 'white', border: 'none',
-          padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '500'
-        }}>+ Add Recurring Slot</button>
-      </div>
+        }]
+      }
+    })
+
+    // Write new rows
+    if (newRows.length > 0) {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: 'masterschedule',
+        valueInputOption: 'RAW',
+        requestBody: { values: newRows }
+      })
+    }
+
+    return Response.json({ success: true, rebuilt: newRows.length })
+  } catch (error) {
+    return Response.json({ success: false, error: error.message })
+  }
+}

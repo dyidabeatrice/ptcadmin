@@ -81,9 +81,9 @@ export default function MasterPage() {
   async function fetchAll() {
     setLoading(true)
     const [mRes, tRes, bRes] = await Promise.all([
-      fetch('/api/master'),
-      fetch('/api/therapists'),
-      fetch('/api/blocked')
+      fetch('/api/master?t=' + Date.now()),
+      fetch('/api/therapists?t=' + Date.now()),
+      fetch('/api/blocked?t=' + Date.now())
     ])
     const [mJson, tJson, bJson] = await Promise.all([mRes.json(), tRes.json(), bRes.json()])
     if (mJson.success) setMaster(mJson.data)
@@ -371,6 +371,20 @@ export default function MasterPage() {
           <input placeholder="Search client or therapist..."
             value={search} onChange={e => setSearch(e.target.value)}
             style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px', width: '200px' }} />
+          <button onClick={async () => {
+            if (!confirm('Rebuild entire master schedule from clients data? This will clear and rewrite all entries.')) return
+            const res = await fetch('/api/master/rebuild', { method: 'POST' })
+            const json = await res.json()
+            if (json.success) {
+              alert(`Done! Rebuilt ${json.rebuilt} entries.`)
+              fetchAll()
+            } else {
+              alert('Rebuild failed: ' + json.error)
+            }
+          }} style={{
+            padding: '9px 16px', borderRadius: '8px', border: '1px solid #E24B4A',
+            cursor: 'pointer', fontSize: '13px', background: '#FCEBEB', color: '#791F1F', fontWeight: '500'
+          }}>↺ Rebuild from clients</button>
           <button onClick={() => { setShowImport(true); setImportResult(null); fetchImportPreview() }} style={{
             padding: '9px 16px', borderRadius: '8px', border: '1px solid #1D9E75',
             cursor: 'pointer', fontSize: '13px', background: '#EAF3DE', color: '#27500A', fontWeight: '500'

@@ -10,7 +10,9 @@ export async function GET() {
       id: row[0], client_name: row[1], therapist: row[2],
       day: row[3], time_start: row[4], time_end: row[5]
     }))
-    return Response.json({ success: true, data: master })
+    return Response.json({ success: true, data: master }, {
+      headers: { 'Cache-Control': 'no-store' }
+    })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
   }

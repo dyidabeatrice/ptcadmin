@@ -31,7 +31,9 @@ export async function GET() {
       is_intern: row[3] === 'TRUE', day: row[4],
       time_start: row[5], time_end: row[6]
     }))
-    return Response.json({ success: true, data: therapists })
+      return Response.json({ success: true, data: therapists }, {
+      headers: { 'Cache-Control': 'no-store' }
+    })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
   }
