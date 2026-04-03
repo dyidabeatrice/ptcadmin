@@ -1,4 +1,4 @@
-import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../../../lib/sheets'
+import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../../lib/sheets'
 
 const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN
 const PAGE_ACCESS_TOKEN = process.env.META_PAGE_ACCESS_TOKEN
