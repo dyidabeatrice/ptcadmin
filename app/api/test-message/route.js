@@ -9,7 +9,21 @@ export async function GET() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         recipient: { id: '4801456173302861' },
-        message: { text: 'Test from PTCAdmin!' }
+        message: {
+          text: 'Good day! This is a friendly reminder that your child has an OT session tomorrow at 9:00 AM with ABI. Please confirm attendance:',
+          quick_replies: [
+            {
+              content_type: 'text',
+              title: '✓ Yes, we\'ll be there',
+              payload: 'CONFIRM_YES'
+            },
+            {
+              content_type: 'text',
+              title: '✗ Sorry, we can\'t make it',
+              payload: 'CONFIRM_NO'
+            }
+          ]
+        }
       })
     }
   )
