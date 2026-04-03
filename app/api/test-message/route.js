@@ -3,18 +3,17 @@ export async function GET() {
   const PAGE_ID = process.env.META_PAGE_ID
 
   const res = await fetch(
-    `https://graph.facebook.com/v19.0/${PAGE_ID}/messages`,
+    `https://graph.facebook.com/v19.0/${PAGE_ID}/messages?access_token=${PAGE_TOKEN}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         recipient: { id: '4801456173302861' },
-        message: { text: 'Test reminder from PTCAdmin!' },
-        access_token: PAGE_TOKEN
+        message: { text: 'Test from PTCAdmin!' }
       })
     }
   )
 
-  const data = await res.json()
-  return Response.json({ status: res.status, data })
+  const text = await res.text()
+  return Response.json({ status: res.status, raw: text })
 }
