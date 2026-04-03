@@ -1,0 +1,17 @@
+name: Send daily reminders
+
+on:
+  schedule:
+    - cron: '0 10 * * 1-6'  # 6PM Philippine time (UTC+8) = 10AM UTC, Monday-Saturday
+  workflow_dispatch:  # allows manual trigger
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger reminder sending
+        run: |
+          curl -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            ${{ secrets.APP_URL }}/api/messages/cron
