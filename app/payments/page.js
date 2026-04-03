@@ -114,8 +114,7 @@ export default function PaymentsPage() {
 
   const today = new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
   const todayPayments = payments.filter(p => p.date === today)
-  const todayTotal = todayPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
-
+  
   const weekPayments = payments.filter(p => {
     if (!selectedWeek) return false
     const parts = selectedWeek.key.replace('week_', '').split('_')
@@ -126,7 +125,13 @@ export default function PaymentsPage() {
     return pDate >= monday && pDate <= sunday
   })
 
-  const weekTotal = weekPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
+  const todayTotal = todayPayments
+    .filter(p => p.payment_type !== 'refund')
+    .reduce((sum, p) => sum + Number(p.amount || 0), 0)
+  const weekTotal = weekPayments
+    .filter(p => p.payment_type !== 'refund')
+    .reduce((sum, p) => sum + Number(p.amount || 0), 0)
+
   const creditClients = clients.filter(c => c.credit_balance > 0)
   const totalCredits = creditClients.reduce((sum, c) => sum + Number(c.credit_balance || 0), 0)
   const unpaidSessions = weekSessions.filter(s => s.payment === 'Unpaid' && s.status !== 'Cancelled')

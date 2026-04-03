@@ -47,10 +47,10 @@ function getDefaultSessionType(key) {
 function getSessionColor(session) {
   const paid = session.payment === 'Paid'
   const status = session.status
-
   if (status === 'Absent') return { bg: '#FCEBEB', border: '#F09595', color: '#791F1F' }
   if (status === 'Pencil') return { bg: '#FFFBE6', border: '#FFD666', color: '#7C5800' }
   if (status === 'Cancelled' && !paid) return { bg: '#FAEEDA', border: '#EF9F27', color: '#633806' }
+  if (status === 'Present' && !paid) return { bg: '#FAEEDA', border: '#EF9F27', color: '#633806' }
   if ((status === 'Present' && paid) || (status === 'Cancelled' && paid)) return { bg: '#EAF3DE', border: '#97C459', color: '#27500A' }
   return { bg: '#E6F1FB', border: '#B5D4F4', color: '#0C447C' }
 }
@@ -183,7 +183,10 @@ export default function SchedulePage() {
     if (status === 'Absent' && session.payment === 'Paid') { setAbsentConfirm(session); return }
     await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'status', week_key: selectedWeek.key, rowIndex: session.index, status }) })
     fetchSessions(selectedWeek.key)
-  }
+    const cRes = await fetch('/api/clients')
+    const cJson = await cRes.json()
+    if (cJson.success) setClients(cJson.data.filter((c => c.status !== 'inactive'))
+  )}
 
   async function confirmAbsent() {
     await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'absent_paid', week_key: selectedWeek.key, rowIndex: absentConfirm.index, client_name: absentConfirm.client_name, amount: absentConfirm.amount }) })
@@ -395,7 +398,7 @@ export default function SchedulePage() {
                 <div style={{ fontSize: '12px', fontWeight: '500', color: '#27500A', marginBottom: '8px' }}>Client has ₱{clientCredit.toLocaleString()} credit</div>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {[
-                    { key: 'full', label: 'Use full credit', active: payForm.use_credit && !payForm.split },
+                    ...(clientCredit >= payForm.amount ? [{ key: 'full', label: 'Use full credit', active: payForm.use_credit && !payForm.split }] : []),
                     { key: 'split', label: 'Split payment', active: payForm.split },
                     { key: 'normal', label: 'Pay normally', active: !payForm.use_credit && !payForm.split },
                   ].map(opt => (
@@ -715,7 +718,8 @@ export default function SchedulePage() {
                         const sc = getSessionColor(s)
                         const clientInfo = clients.find(c => c.name === s.client_name)
                         const hasOutstanding = clientInfo?.outstanding_balance > 0
-                        const isCredited = s.status === 'Absent' && s.notes === 'credited'
+                        const isCredited = s.notes === 'credited'
+                        const needsWarning = hasOutstanding || (s.payment === 'Unpaid' && (s.status === 'Present' || s.status === 'Cancelled'))
 
                         const sameStart = therapistSessions.filter(x => x.time_start === s.time_start)
                         const stackIndex = sameStart.indexOf(s)
@@ -736,7 +740,7 @@ export default function SchedulePage() {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                               <div style={{ fontSize: '10px', fontWeight: '500', color: sc.color, lineHeight: '1.3' }}>{s.client_name}</div>
                               <div style={{ display: 'flex', gap: '1px', flexShrink: 0 }}>
-                                {hasOutstanding && <span style={{ fontSize: '8px' }}>⚠️</span>}
+                                {needsWarning && <span style={{ fontSize: '8px' }}>⚠️</span>}
                                 {isCredited && <span style={{ fontSize: '8px' }}>💳</span>}
                               </div>
                             </div>

@@ -1,5 +1,4 @@
 import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
-import { getMondayOf, getWeekKey, getWeekDates, getWeekLabel } from '../weeks/route'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
@@ -11,7 +10,7 @@ async function getWeekSheet(weekKey) {
       index: i,
       id: row[0], client_name: row[1], therapist: row[2],
       date: row[3], day: row[4], time_start: row[5], time_end: row[6],
-      session_type: row[7] || '', status: row[8] || 'Scheduled',
+      session_type: row[7] || '', status: row[8] || 'Pencil',
       payment: row[9] || 'Unpaid', mop: row[10] || '',
       amount: parseFloat(row[11] || 0), notes: row[12] || ''
     }))
@@ -46,7 +45,7 @@ export async function POST(request) {
           Date.now().toString() + Math.random().toString(36).slice(2),
           body.client_name, body.therapist, body.date,
           body.day, body.time_start, body.time_end,
-          '', 'Scheduled', 'Unpaid', '', '', ''
+          '', 'Pencil', 'Unpaid', '', '', ''
         ]]}
       })
       return Response.json({ success: true })
@@ -66,24 +65,62 @@ export async function PATCH(request) {
     const sheetRow = body.rowIndex + 2
 
     if (body.action === 'status') {
+      const sessions = await getWeekSheet(weekKey)
+      const session = sessions.find(s => s.index === body.rowIndex)
+      const oldStatus = session?.status
+      const newStatus = body.status
+      const isPaid = session?.payment === 'Paid'
+
       await sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
         range: `${weekKey}!I${sheetRow}`,
         valueInputOption: 'RAW',
-        requestBody: { values: [[body.status]] }
+        requestBody: { values: [[newStatus]] }
       })
+
+      const nowOwes = !isPaid && (newStatus === 'Present' || newStatus === 'Cancelled')
+      const wasOwing = !isPaid && (oldStatus === 'Present' || oldStatus === 'Cancelled')
+
+      if (nowOwes && !wasOwing && session?.client_name) {
+        const rate = session.amount || 0
+        if (rate > 0) {
+          await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/credits`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'add_outstanding', client_name: session.client_name, amount: rate })
+          })
+        }
+      }
+
+      if (wasOwing && !nowOwes && session?.client_name) {
+        const rate = session.amount || 0
+        if (rate > 0) {
+          await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/credits`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'clear_outstanding', client_name: session.client_name, amount: rate })
+          })
+        }
+      }
+
       return Response.json({ success: true })
     }
 
     if (body.action === 'pay') {
       const mop = body.use_credit ? 'Credit' : body.split ? 'Split' : body.mop
 
-      // Update session type (H) — never touch status (I)
       await sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
         range: `${weekKey}!H${sheetRow}`,
         valueInputOption: 'RAW',
         requestBody: { values: [[body.session_type]] }
+      })
+
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${weekKey}!J${sheetRow}:L${sheetRow}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [['Paid', mop, body.amount]] }
       })
 
       // Auto-confirm if still Pencil
@@ -98,32 +135,21 @@ export async function PATCH(request) {
         })
       }
 
-      // Update payment, mop, amount (J, K, L)
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `${weekKey}!J${sheetRow}:L${sheetRow}`,
-        valueInputOption: 'RAW',
-        requestBody: { values: [['Paid', mop, body.amount]] }
-      })
-
-      // Handle credit deduction
       if (body.use_credit || body.split) {
         const creditAmount = body.split ? body.split_credit : body.amount
         await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/credits`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'apply_credit', client_name: body.client_name, amount: creditAmount })
+          body: JSON.stringify({ action: 'apply_credit', client_name: body.client_name, amount: creditAmount, credit_balance: body.credit_balance })
         })
       }
 
-      // Clear outstanding balance
       await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/credits`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'clear_outstanding', client_name: body.client_name, amount: body.amount })
       })
 
-      // Log to payments sheet
       await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
         range: 'payments', valueInputOption: 'RAW',
@@ -139,7 +165,6 @@ export async function PATCH(request) {
     }
 
     if (body.action === 'unpay') {
-      // Reset payment columns only (J, K, L) — never touch status (I)
       await sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
         range: `${weekKey}!J${sheetRow}:L${sheetRow}`,
@@ -147,7 +172,6 @@ export async function PATCH(request) {
         requestBody: { values: [['Unpaid', '', 0]] }
       })
 
-      // Remove from payments sheet
       const payData = await getSheetData('payments')
       const [, ...payRows] = payData
       const payIndex = payRows.findIndex(r => r && r[3] === body.session_id)
@@ -165,14 +189,12 @@ export async function PATCH(request) {
     }
 
     if (body.action === 'absent_paid') {
-      // Mark status as Absent (I only)
       await sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
         range: `${weekKey}!I${sheetRow}`,
         valueInputOption: 'RAW',
         requestBody: { values: [['Absent']] }
       })
-      // Move payment to credit
       await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/credits`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

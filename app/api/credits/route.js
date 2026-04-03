@@ -67,19 +67,19 @@ export async function POST(request) {
   try {
     const body = await request.json()
     const sheets = getGoogleSheets()
+    const today = new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
 
     if (body.action === 'add_credit') {
       const result = await updateClientBalances(body.client_name, body.amount, 0)
       await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
-        range: 'payments',
-        valueInputOption: 'RAW',
+        range: 'payments', valueInputOption: 'RAW',
         requestBody: { values: [[
           Date.now().toString(),
           body.client_name, '',
           'ADVANCE-' + Date.now(),
           body.amount, body.mop,
-          'Advance', body.date,
+          'Advance', body.date || today,
           'advance'
         ]]}
       })
@@ -87,7 +87,9 @@ export async function POST(request) {
     }
 
     if (body.action === 'apply_credit') {
-      const result = await updateClientBalances(body.client_name, -body.amount, -body.amount)
+      // Only deduct the session amount, not the full credit balance
+      const amountToDeduct = Math.min(body.amount, body.credit_balance || body.amount)
+      const result = await updateClientBalances(body.client_name, -amountToDeduct, 0)
       return Response.json({ success: true, ...result })
     }
 
@@ -108,6 +110,19 @@ export async function POST(request) {
 
     if (body.action === 'refund') {
       const result = await updateClientBalances(body.client_name, -body.amount, 0)
+      // Log refund as negative payment so it deducts from totals
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: 'payments', valueInputOption: 'RAW',
+        requestBody: { values: [[
+          Date.now().toString(),
+          body.client_name, '',
+          'REFUND-' + Date.now(),
+          -body.amount, 'Refund',
+          'Refund', today,
+          'refund'
+        ]]}
+      })
       return Response.json({ success: true, ...result })
     }
 

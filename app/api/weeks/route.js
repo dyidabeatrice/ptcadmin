@@ -2,6 +2,21 @@ import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
+const SPECIALTY_RATES = {
+  OT: 1200,
+  ST: 1300,
+  PT: 900,
+  SPED: 900,
+}
+
+function getDefaultAmount(therapistName, therapistList) {
+  const t = therapistList.find(r => r[1] === therapistName)
+  if (!t) return 1200
+  const specialty = t[2] || 'OT'
+  if (t[3] === 'TRUE') return specialty === 'ST' ? 600 : 600 // intern rate
+  return SPECIALTY_RATES[specialty] || 1200
+}
+
 export function getMondayOf(date) {
   const d = new Date(date)
   const day = d.getDay()
@@ -119,6 +134,8 @@ export async function POST(request) {
         const [, ...masterRows] = masterData
         const clientData = await getSheetData('clients')
         const [, ...clientRows] = clientData
+        const therapistData = await getSheetData('therapists')
+        const [, ...therapistRows] = therapistData
 
         const inactiveClients = new Set(
           clientRows.filter(r => r && r[0] && r[9] === 'inactive').map(r => r[1])
@@ -134,12 +151,15 @@ export async function POST(request) {
         const weekDates = getWeekDates(monday)
         const newRows = master
           .filter(m => weekDates[m.day])
-          .map(m => [
+          .map(m => {
+          const amount = getDefaultAmount(m.therapist, therapistRows)
+          return [
             Date.now().toString() + Math.random().toString(36).slice(2),
             m.client_name, m.therapist, weekDates[m.day],
             m.day, m.time_start, m.time_end,
-            '', 'Pencil', 'Unpaid', '', '', ''
-          ])
+            'Regular', 'Pencil', 'Unpaid', '', amount, ''
+          ]
+        })
 
         await createWeekSheet(weekKey, getWeekLabel(monday))
 
