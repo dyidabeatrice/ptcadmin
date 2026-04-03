@@ -69,6 +69,7 @@ export default function SchedulePage() {
   const [notification, setNotification] = useState(null)
   const [absentTherapists, setAbsentTherapists] = useState(new Set())
   const [holidayDays, setHolidayDays] = useState(new Set())
+  const [blockedSlots, setBlockedSlots] = useState([])
   const [freeSlotMode, setFreeSlotMode] = useState(false)
   const [search, setSearch] = useState('')
   const [payModal, setPayModal] = useState(null)
@@ -96,6 +97,10 @@ export default function SchedulePage() {
       setNotification(`Generated ${genJson.created.length} new week${genJson.created.length !== 1 ? 's' : ''}`)
       setTimeout(() => setNotification(null), 4000)
     }
+
+    const bRes = await fetch('/api/blocked')
+    const bJson = await bRes.json()
+    if (bJson.success) setBlockedSlots(bJson.data)
 
     const weeksRes = await fetch('/api/weeks')
     const weeksJson = await weeksRes.json()
@@ -133,6 +138,11 @@ export default function SchedulePage() {
 
   async function switchWeek(week) {
     setSelectedWeek(week)
+
+    const bRes = await fetch('/api/blocked')
+    const bJson = await bRes.json()
+    if (bJson.success) setBlockedSlots(bJson.data)
+    
     setAbsentTherapists(new Set())
     setHolidayDays(new Set())
     setSearch('')
@@ -657,6 +667,40 @@ export default function SchedulePage() {
                       )
                     })}
 
+                    {/* Blocked slots */}
+                    {blockedSlots
+                      .filter(b => b.therapist === therapist && b.day === selectedDay)
+                      .map((b, bi) => {
+                        const bStartMins = parseTime(b.time_start)
+                        const bEndMins = parseTime(b.time_end)
+                        const topOffset = ((bStartMins - gridStartMins) / 15) * ROW_HEIGHT
+                        const height = ((bEndMins - bStartMins) / 15) * ROW_HEIGHT - 2
+                        const isAdmin = b.type === 'admin'
+
+                        return (
+                          <div key={bi} style={{
+                            position: 'absolute',
+                            top: `${topOffset + 1}px`,
+                            left: '2%', width: '96%',
+                            height: `${height}px`,
+                            background: isAdmin ? '#d0d0d0' : '#555',
+                            borderRadius: '4px',
+                            boxSizing: 'border-box',
+                            zIndex: 1,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            overflow: 'hidden'
+                          }}>
+                            {isAdmin && b.label && (
+                              <div style={{ fontSize: '9px', color: '#444', fontWeight: '500', textAlign: 'center', padding: '0 4px' }}>{b.label}</div>
+                            )}
+                          </div>
+                        )
+                      })
+                    }
+
                     {/* Session blocks */}
                     {isAbsent ? (
                       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -687,7 +731,7 @@ export default function SchedulePage() {
                             height: `${stackCount > 1 ? stackedHeight : height}px`,
                             background: sc.bg, border: `1px solid ${sc.border}`,
                             borderRadius: '4px', padding: '3px 5px',
-                            overflow: 'hidden', boxSizing: 'border-box', zIndex: 1
+                            overflow: 'auto', boxSizing: 'border-box', zIndex: 1
                           }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                               <div style={{ fontSize: '10px', fontWeight: '500', color: sc.color, lineHeight: '1.3' }}>{s.client_name}</div>
@@ -701,32 +745,30 @@ export default function SchedulePage() {
                                 {s.time_start}–{s.time_end}
                               </div>
                             )}
-                            {height > 45 && (
-                              <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap' }}>
-                                <select value={s.status}
-                                  onChange={e => updateStatus(s, e.target.value)}
-                                  style={{ fontSize: '8px', padding: '1px 2px', borderRadius: '3px', border: '1px solid #ddd', cursor: 'pointer', background: 'white', color: '#444', maxWidth: '72px' }}>
-                                  {[
-                                    { value: 'Pencil', label: 'Pencil' },
-                                    { value: 'Scheduled', label: 'Confirmed' },
-                                    { value: 'Present', label: 'Present' },
-                                    { value: 'Absent', label: 'Absent' },
-                                    { value: 'Cancelled', label: 'Cancelled' },
-                                  ].map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
-                                </select>
-                                {s.payment === 'Unpaid' ? (
-                                  <button onClick={() => openPayModal(s)}
-                                    style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#FCEBEB', color: '#791F1F', cursor: 'pointer', fontWeight: '500' }}>Unpaid</button>
-                                ) : (
-                                  <button onClick={() => reversePayment(s)}
-                                    style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#EAF3DE', color: '#27500A', cursor: 'pointer' }}>Paid ✓</button>
-                                )}
-                                <button onClick={() => { setRescheduleModal(s); setRescheduleForm({ day: '', therapist: '', time_start: '', time_end: '' }) }}
-                                  style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: '1px solid #ddd', background: 'white', color: '#666', cursor: 'pointer' }}>Move</button>
-                                <button onClick={() => deleteSession(s)}
-                                  style={{ fontSize: '8px', padding: '1px 3px', borderRadius: '3px', border: '1px solid #fcc', background: '#fff5f5', color: '#c00', cursor: 'pointer' }}>✕</button>
-                              </div>
-                            )}
+                            <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap', marginTop: '2px' }}>
+                              <select value={s.status}
+                                onChange={e => updateStatus(s, e.target.value)}
+                                style={{ fontSize: '8px', padding: '1px 2px', borderRadius: '3px', border: '1px solid #ddd', cursor: 'pointer', background: 'white', color: '#444', maxWidth: '72px' }}>
+                                {[
+                                  { value: 'Pencil', label: 'Pencil' },
+                                  { value: 'Scheduled', label: 'Confirmed' },
+                                  { value: 'Present', label: 'Present' },
+                                  { value: 'Absent', label: 'Absent' },
+                                  { value: 'Cancelled', label: 'Cancelled' },
+                                ].map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
+                              </select>
+                              {s.payment === 'Unpaid' ? (
+                                <button onClick={() => openPayModal(s)}
+                                  style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#FCEBEB', color: '#791F1F', cursor: 'pointer', fontWeight: '500' }}>Unpaid</button>
+                              ) : (
+                                <button onClick={() => reversePayment(s)}
+                                  style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#EAF3DE', color: '#27500A', cursor: 'pointer' }}>Paid ✓</button>
+                              )}
+                              <button onClick={() => { setRescheduleModal(s); setRescheduleForm({ day: '', therapist: '', time_start: '', time_end: '' }) }}
+                                style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: '1px solid #ddd', background: 'white', color: '#666', cursor: 'pointer' }}>Move</button>
+                              <button onClick={() => deleteSession(s)}
+                                style={{ fontSize: '8px', padding: '1px 3px', borderRadius: '3px', border: '1px solid #fcc', background: '#fff5f5', color: '#c00', cursor: 'pointer' }}>✕</button>
+                            </div>
                           </div>
                         )
                       })
@@ -755,5 +797,5 @@ export default function SchedulePage() {
         <span>⚠️ Outstanding balance</span>
         <span>💳 Payment credited</span>
       </div>
-    </div>)
-  }
+    </div>
+  )}

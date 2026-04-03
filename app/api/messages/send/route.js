@@ -27,17 +27,17 @@ export async function POST(request) {
     if (body.action === 'send_reminder') {
       const { psid, client_name, therapist, date, time_start, specialty } = body
 
-      const message = `Good day! This is a friendly reminder that ${client_name} has a ${specialty} session tomorrow, ${date} at ${time_start} with ${therapist}. Please confirm attendance:`
+      const message = `Good day! This is a friendly reminder that ${client_name} has a ${specialty} session tomorrow, ${date} at ${time_start} with T. ${therapist}. Please confirm attendance:`
 
       const quickReplies = [
         {
           content_type: 'text',
-          title: '✓ Yes, we\'ll be there',
+          title: '✓ YES',
           payload: 'CONFIRM_YES'
         },
         {
           content_type: 'text',
-          title: '✗ Sorry, we can\'t make it',
+          title: '✗ NO',
           payload: 'CONFIRM_NO'
         }
       ]

@@ -39,6 +39,21 @@ function parseSchedule(str) {
   })
 }
 
+function mergeSchedules(scheduleA, scheduleB) {
+  const slotsA = parseSchedule(scheduleA)
+  const slotsB = parseSchedule(scheduleB)
+  const all = [...slotsA, ...slotsB].filter(s => s.therapist && s.day && s.time_start && s.time_end)
+  const unique = all.filter((slot, index, self) =>
+    index === self.findIndex(s =>
+      s.therapist === slot.therapist &&
+      s.day === slot.day &&
+      s.time_start === slot.time_start &&
+      s.time_end === slot.time_end
+    )
+  )
+  return unique
+}
+
 function similarity(a, b) {
   a = a.toLowerCase().trim()
   b = b.toLowerCase().trim()
@@ -187,14 +202,12 @@ function ClientForm({ data, setData, onSave, onClose, title, saving, therapistDa
           <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Full name</label>
           <input value={data.name} onChange={e => setData({ ...data, name: e.target.value })}
             style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: duplicateWarning?.exact ? '2px solid #E24B4A' : '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
-
           {duplicateWarning?.exact && (
             <div style={{ marginTop: '6px', padding: '10px 12px', borderRadius: '8px', background: '#FCEBEB', border: '1px solid #F09595' }}>
               <div style={{ fontSize: '12px', fontWeight: '500', color: '#791F1F', marginBottom: '4px' }}>⚠️ Client already exists: {duplicateWarning.exact.name}</div>
               <div style={{ fontSize: '11px', color: '#A32D2D' }}>Please edit the existing client instead of creating a new one.</div>
             </div>
           )}
-
           {!duplicateWarning?.exact && duplicateWarning?.similar?.length > 0 && (
             <div style={{ marginTop: '6px', padding: '10px 12px', borderRadius: '8px', background: '#FAEEDA', border: '1px solid #EF9F27' }}>
               <div style={{ fontSize: '12px', fontWeight: '500', color: '#633806', marginBottom: '6px' }}>⚠️ Similar names found — is this the same client?</div>
@@ -217,9 +230,9 @@ function ClientForm({ data, setData, onSave, onClose, title, saving, therapistDa
               style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Facebook account</label>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Facebook account (PSID or profile link)</label>
             <input value={data.fb_account} onChange={e => setData({ ...data, fb_account: e.target.value })}
-              placeholder="e.g. facebook.com/parentname"
+              placeholder="e.g. facebook.com/parentname or PSID number"
               style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
@@ -268,6 +281,10 @@ export default function ClientsPage() {
   const [showInactive, setShowInactive] = useState(false)
   const [loading, setLoading] = useState(true)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [mergeMode, setMergeMode] = useState(false)
+  const [mergeSelected, setMergeSelected] = useState([])
+  const [mergeModal, setMergeModal] = useState(null)
+  const [merging, setMerging] = useState(false)
 
   useEffect(() => {
     fetchClients()
@@ -315,7 +332,7 @@ export default function ClientsPage() {
     setSaving(false)
   }
 
-async function handleDelete(client) {
+  async function handleDelete(client) {
     const res = await fetch('/api/clients', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
@@ -324,6 +341,30 @@ async function handleDelete(client) {
     const json = await res.json()
     if (json.success) { setDeleteConfirm(null); fetchClients() }
     else alert('Error: ' + json.error)
+  }
+
+  async function handleMerge(keeper, deleter, mergedData) {
+    setMerging(true)
+    const res = await fetch('/api/clients', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'merge',
+        keep_id: keeper.id,
+        keep_index: keeper.index,
+        delete_index: deleter.index,
+        delete_name: deleter.name,
+        merged: mergedData
+      })
+    })
+    const json = await res.json()
+    if (json.success) {
+      setMergeModal(null)
+      setMergeSelected([])
+      setMergeMode(false)
+      fetchClients()
+    } else alert('Merge failed: ' + json.error)
+    setMerging(false)
   }
 
   async function toggleStatus(client) {
@@ -347,6 +388,7 @@ async function handleDelete(client) {
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ color: '#0f4c81', margin: '0 0 4px' }}>Clients</h1>
@@ -364,12 +406,38 @@ async function handleDelete(client) {
             background: showInactive ? '#FCEBEB' : 'white',
             color: showInactive ? '#791F1F' : '#666'
           }}>{showInactive ? 'Show active' : 'Show inactive'}</button>
+          <button onClick={() => { setMergeMode(!mergeMode); setMergeSelected([]) }} style={{
+            padding: '8px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '500',
+            border: '1px solid #0f4c81',
+            background: mergeMode ? '#0f4c81' : 'white',
+            color: mergeMode ? 'white' : '#0f4c81'
+          }}>{mergeMode ? 'Cancel merge' : 'Merge duplicates'}</button>
           <button onClick={() => { setForm(EMPTY_FORM); setShowForm(true) }} style={{
             background: '#0f4c81', color: 'white', border: 'none',
             padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '500'
           }}>+ Add client</button>
         </div>
       </div>
+
+      {mergeMode && (
+        <div style={{ background: '#E6F1FB', border: '1px solid #B5D4F4', borderRadius: '8px', padding: '10px 16px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: '13px', color: '#0C447C' }}>
+            {mergeSelected.length === 0 && 'Select 2 clients to merge'}
+            {mergeSelected.length === 1 && `${mergeSelected[0].name} selected — select one more`}
+            {mergeSelected.length === 2 && `${mergeSelected[0].name} + ${mergeSelected[1].name} — ready to merge`}
+          </span>
+          {mergeSelected.length === 2 && (
+            <button onClick={() => {
+              const a = mergeSelected[0]
+              const b = mergeSelected[1]
+              const mergedSchedule = mergeSchedules(a.schedule, b.schedule)
+              setMergeModal({ a, b, keepIndex: 0, mergedSchedule })
+            }} style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>
+              Merge these two →
+            </button>
+          )}
+        </div>
+      )}
 
       {showForm && <ClientForm data={form} setData={setForm} onSave={handleAdd} onClose={() => setShowForm(false)} title="New client" saving={saving} therapistData={therapistData} clients={clients} />}
       {editClient && <ClientForm data={editClient} setData={setEditClient} onSave={handleEdit} onClose={() => setEditClient(null)} title="Edit client" saving={saving} therapistData={therapistData} clients={clients} />}
@@ -379,10 +447,10 @@ async function handleDelete(client) {
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
             <h3 style={{ margin: '0 0 0.5rem', color: '#E24B4A' }}>Delete client</h3>
             <p style={{ margin: '0 0 0.5rem', fontSize: '14px', color: '#333' }}>
-              Are you sure you want to permanently delete <strong>{deleteConfirm.name}</strong>?
+              Permanently delete <strong>{deleteConfirm.name}</strong>?
             </p>
             <p style={{ margin: '0 0 1.5rem', fontSize: '12px', color: '#999' }}>
-              This will remove them from the clients list and master schedule. This cannot be undone. Use this only to remove duplicates.
+              This removes them from clients and master schedule. Cannot be undone. Use only to remove duplicates.
             </p>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setDeleteConfirm(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
@@ -394,10 +462,80 @@ async function handleDelete(client) {
         </div>
       )}
 
+      {mergeModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '620px', maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Merge clients</h3>
+            <p style={{ margin: '0 0 1.5rem', fontSize: '13px', color: '#999' }}>Choose which record to keep. Schedules will be automatically combined.</p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1.5rem' }}>
+              {[mergeModal.a, mergeModal.b].map((client, ci) => (
+                <div key={ci} style={{ background: '#f8f9fa', borderRadius: '8px', padding: '12px', border: `2px solid ${mergeModal.keepIndex === ci ? '#0f4c81' : '#e0e0e0'}` }}>
+                  <div style={{ fontSize: '13px', fontWeight: '500', color: '#0f4c81', marginBottom: '8px' }}>{client.name}</div>
+                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>FB: {client.fb_account || '—'}</div>
+                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>Phone: {client.phone || '—'}</div>
+                  <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
+                    Credit: ₱{Number(client.credit_balance || 0).toLocaleString()} · Outstanding: ₱{Number(client.outstanding_balance || 0).toLocaleString()}
+                  </div>
+                  <button onClick={() => setMergeModal({ ...mergeModal, keepIndex: ci })} style={{
+                    width: '100%', padding: '6px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '500',
+                    background: mergeModal.keepIndex === ci ? '#0f4c81' : '#e0e0e0',
+                    color: mergeModal.keepIndex === ci ? 'white' : '#666'
+                  }}>Keep this record</button>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ fontSize: '13px', fontWeight: '500', color: '#0f4c81', marginBottom: '8px' }}>
+                Combined schedule ({mergeModal.mergedSchedule.length} slots):
+              </div>
+              {mergeModal.mergedSchedule.length === 0 ? (
+                <div style={{ fontSize: '13px', color: '#999' }}>No schedule slots found</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {mergeModal.mergedSchedule.map((s, i) => (
+                    <span key={i} style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '10px', background: '#E6F1FB', color: '#0C447C', display: 'inline-block', width: 'fit-content' }}>
+                      {s.therapist} · {s.day} {s.time_start}–{s.time_end}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ background: '#FAEEDA', borderRadius: '8px', padding: '10px 12px', marginBottom: '1.5rem', fontSize: '12px', color: '#633806' }}>
+              ⚠️ This will permanently delete one record and update all week sheets and payment records. Credits and outstanding balances will be combined. Cannot be undone.
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => { setMergeModal(null); setMergeSelected([]) }} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={() => {
+                const keeper = mergeModal.keepIndex === 0 ? mergeModal.a : mergeModal.b
+                const deleter = mergeModal.keepIndex === 0 ? mergeModal.b : mergeModal.a
+                handleMerge(keeper, deleter, {
+                  name: keeper.name,
+                  birthdate: keeper.birthdate || deleter.birthdate || '',
+                  fb_account: keeper.fb_account || deleter.fb_account || '',
+                  phone: keeper.phone || deleter.phone || '',
+                  address: keeper.address || deleter.address || '',
+                  notes: [keeper.notes, deleter.notes].filter(Boolean).join(' / '),
+                  schedule: scheduleString(mergeModal.mergedSchedule),
+                  credit_balance: (Number(keeper.credit_balance) || 0) + (Number(deleter.credit_balance) || 0),
+                  outstanding_balance: (Number(keeper.outstanding_balance) || 0) + (Number(deleter.outstanding_balance) || 0)
+                })
+              }} disabled={merging} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
+                {merging ? 'Merging...' : 'Confirm merge'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
           <thead>
             <tr style={{ background: '#f8f9fa' }}>
+              {mergeMode && <th style={{ padding: '12px 16px', borderBottom: '1px solid #e0e0e0', width: '40px' }}></th>}
               {['Name', 'FB Account', 'Phone', 'Schedule', 'Balance', 'Actions'].map(h => (
                 <th key={h} style={{ padding: '12px 16px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>{h}</th>
               ))}
@@ -405,22 +543,37 @@ async function handleDelete(client) {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>Loading...</td></tr>
+              <tr><td colSpan={mergeMode ? 7 : 6} style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>Loading...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>
+              <tr><td colSpan={mergeMode ? 7 : 6} style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>
                 {showInactive ? 'No inactive clients' : 'No clients yet'}
               </td></tr>
             ) : filtered.map((c, i) => {
               const schedules = parseSchedule(c.schedule)
               const isInactive = c.status === 'inactive'
+              const isSelectedForMerge = mergeSelected.some(s => s.index === c.index)
               return (
-                <tr key={i} style={{ borderBottom: '1px solid #f0f0f0', opacity: isInactive ? 0.55 : 1 }}>
+                <tr key={i} style={{ borderBottom: '1px solid #f0f0f0', opacity: isInactive ? 0.55 : 1, background: isSelectedForMerge ? '#EAF3DE' : 'white' }}>
+                  {mergeMode && (
+                    <td style={{ padding: '12px 16px' }}>
+                      <input type="checkbox"
+                        checked={isSelectedForMerge}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            if (mergeSelected.length < 2) setMergeSelected([...mergeSelected, c])
+                          } else {
+                            setMergeSelected(mergeSelected.filter(s => s.index !== c.index))
+                          }
+                        }}
+                        disabled={mergeSelected.length >= 2 && !isSelectedForMerge}
+                        style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                      />
+                    </td>
+                  )}
                   <td style={{ padding: '12px 16px', fontWeight: '500', color: '#0f4c81' }}>
                     {c.name}
                     {c.outstanding_balance > 0 && (
-                      <span style={{ marginLeft: '6px', fontSize: '10px', padding: '1px 6px', borderRadius: '8px', background: '#FCEBEB', color: '#791F1F', fontWeight: '500' }}>
-                        ⚠️ Unpaid
-                      </span>
+                      <span style={{ marginLeft: '6px', fontSize: '10px', padding: '1px 6px', borderRadius: '8px', background: '#FCEBEB', color: '#791F1F', fontWeight: '500' }}>⚠️ Unpaid</span>
                     )}
                   </td>
                   <td style={{ padding: '12px 16px', color: '#185FA5', fontSize: '12px' }}>{c.fb_account || '—'}</td>
@@ -438,35 +591,39 @@ async function handleDelete(client) {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       {c.credit_balance > 0 && (
                         <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A', whiteSpace: 'nowrap' }}>
-                          💳 ₱{c.credit_balance.toLocaleString()} credit
+                          💳 ₱{Number(c.credit_balance).toLocaleString()} credit
                         </span>
                       )}
                       {c.outstanding_balance > 0 && (
                         <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#FCEBEB', color: '#791F1F', whiteSpace: 'nowrap' }}>
-                          ⚠️ ₱{c.outstanding_balance.toLocaleString()} due
+                          ⚠️ ₱{Number(c.outstanding_balance).toLocaleString()} due
                         </span>
                       )}
-                      {c.credit_balance === 0 && c.outstanding_balance === 0 && (
+                      {!c.credit_balance && !c.outstanding_balance && (
                         <span style={{ fontSize: '11px', color: '#aaa' }}>—</span>
                       )}
                     </div>
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                      {!isInactive && (
+                      {!isInactive && !mergeMode && (
                         <button onClick={() => setEditClient({ ...c, therapists: parseSchedule(c.schedule) })}
                           style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '5px', border: '1px solid #ddd', cursor: 'pointer', background: 'white', color: '#444' }}>Edit</button>
                       )}
-                      <button onClick={() => toggleStatus(c)}
-                        style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer',
-                          border: isInactive ? '1px solid #97C459' : '1px solid #fcc',
-                          background: isInactive ? '#EAF3DE' : '#fff5f5',
-                          color: isInactive ? '#27500A' : '#c00'
-                        }}>{isInactive ? 'Reactivate' : 'Deactivate'}</button>
-                      <button onClick={() => setDeleteConfirm(c)}
-                        style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', border: '1px solid #E24B4A', background: '#fff5f5', color: '#E24B4A' }}>
-                        Delete
-                      </button>
+                      {!mergeMode && (
+                        <button onClick={() => toggleStatus(c)}
+                          style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer',
+                            border: isInactive ? '1px solid #97C459' : '1px solid #fcc',
+                            background: isInactive ? '#EAF3DE' : '#fff5f5',
+                            color: isInactive ? '#27500A' : '#c00'
+                          }}>{isInactive ? 'Reactivate' : 'Deactivate'}</button>
+                      )}
+                      {!mergeMode && (
+                        <button onClick={() => setDeleteConfirm(c)}
+                          style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', border: '1px solid #E24B4A', background: '#fff5f5', color: '#E24B4A' }}>
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
