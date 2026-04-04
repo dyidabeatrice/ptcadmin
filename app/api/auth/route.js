@@ -5,13 +5,14 @@ const STAFF_PASSWORD = process.env.STAFF_PASSWORD
 export async function POST(request) {
   try {
     const { password } = await request.json()
+    
     if (password === STAFF_PASSWORD) {
-      const cookieStore = cookies()
+      const cookieStore = await cookies()
       cookieStore.set('ptc_auth', 'authenticated', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 365 // 1 year — never expires
+        maxAge: 60 * 60 * 24 * 365
       })
       return Response.json({ success: true })
     }
@@ -22,7 +23,7 @@ export async function POST(request) {
 }
 
 export async function DELETE() {
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   cookieStore.delete('ptc_auth')
   return Response.json({ success: true })
 }

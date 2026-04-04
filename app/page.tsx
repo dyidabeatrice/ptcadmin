@@ -1,83 +1,203 @@
 'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
-export default function LoginPage() {
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+export default function HomePage() {
+  const [scrolled, setScrolled] = useState(false)
 
-  async function handleLogin() {
-    if (!password) return
-    setLoading(true)
-    setError('')
-    const res = await fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password })
-    })
-    const json = await res.json()
-    if (json.success) {
-      router.push('/dashboard')
-    } else {
-      setError('Incorrect password. Please try again.')
-      setLoading(false)
-    }
-  }
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 40)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const services = [
+    { icon: '🧠', name: 'Occupational Therapy', desc: 'Building independence in daily activities and sensory processing' },
+    { icon: '💬', name: 'Speech Therapy', desc: 'Communication, language development, and fluency' },
+    { icon: '🏃', name: 'Physical Therapy', desc: 'Motor skills, strength, and physical development' },
+    { icon: '📚', name: 'Special Education Tutorials', desc: 'Individualized academic support for children with special needs' },
+    { icon: '🎮', name: 'Playgroup Classes', desc: 'Social skills and peer interaction in a structured environment' },
+    { icon: '🧩', name: 'Cognitive Behavioral Therapy', desc: 'Managing emotions, behavior, and thought patterns' },
+    { icon: '👄', name: 'Oral Placement Therapy', desc: 'Improving oral motor function and feeding skills' },
+    { icon: '🔤', name: 'AAC', desc: 'Augmentative & Alternative Communication systems' },
+    { icon: '🗣️', name: 'PROMPT Therapy', desc: 'Tactile-kinesthetic approach to speech motor control' },
+    { icon: '✋', name: 'Sensory Integration', desc: 'Processing and responding to sensory information' },
+    { icon: '🍽️', name: 'Pediatric Dysphagia', desc: 'Feeding therapy and swallowing difficulties' },
+  ]
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0f4c81 0%, #1a6db5 100%)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '2rem', fontFamily: 'sans-serif'
-    }}>
-      <div style={{
-        background: '#fff', borderRadius: '16px', padding: '2.5rem',
-        width: '100%', maxWidth: '400px',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+    <div style={{ fontFamily: 'sans-serif', background: '#fff', color: '#1a1a2e', minHeight: '100vh' }}>
+
+      {/* Navbar */}
+      <nav style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+        padding: '0 2rem',
+        background: scrolled ? 'rgba(255,255,255,0.97)' : 'transparent',
+        boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.08)' : 'none',
+        transition: 'all 0.3s ease',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        height: '70px'
       }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <img src="/logo.png" alt="Potentials Therapy Center" style={{ height: '60px', objectFit: 'contain', marginBottom: '1rem' }} />
-          <h2 style={{ color: '#0f4c81', margin: '0 0 4px', fontSize: '20px', fontWeight: '600' }}>Staff Access</h2>
-          <p style={{ color: '#999', margin: 0, fontSize: '13px' }}>PTCAdmin — Clinic Management</p>
+        <img src="/logo.png" alt="Potentials Therapy Center" style={{ height: '44px', objectFit: 'contain' }} />
+        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+          {[
+            { label: 'Home', href: '#home' },
+            { label: 'Services', href: '#services' },
+            { label: 'Find Us', href: '#location' },
+            { label: 'Privacy', href: '/privacy' },
+          ].map(l => (
+            <a key={l.label} href={l.href} style={{
+              fontSize: '14px',
+              color: scrolled ? '#0f4c81' : '#fff',
+              textDecoration: 'none', fontWeight: '500',
+              transition: 'opacity 0.2s'
+            }}>{l.label}</a>
+          ))}
+          <Link href="/login" style={{
+            padding: '9px 20px', borderRadius: '6px',
+            background: '#fcc200', color: '#0f4c81',
+            textDecoration: 'none', fontSize: '13px', fontWeight: '700'
+          }}>Staff Login</Link>
         </div>
+      </nav>
 
-        <div style={{ marginBottom: '16px' }}>
-          <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px', fontWeight: '500' }}>Password</label>
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleLogin()}
-            placeholder="Enter staff password..."
-            style={{
-              width: '100%', padding: '12px 14px', borderRadius: '8px',
-              border: error ? '2px solid #E24B4A' : '1px solid #ddd',
-              fontSize: '15px', boxSizing: 'border-box', outline: 'none'
-            }}
-          />
-          {error && <div style={{ color: '#E24B4A', fontSize: '12px', marginTop: '6px' }}>{error}</div>}
+      {/* Hero */}
+      <section id="home" style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #0f4c81 0%, #1a6db5 50%, #0d3d6b 100%)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'column', textAlign: 'center',
+        padding: '8rem 2rem 4rem', position: 'relative', overflow: 'hidden'
+      }}>
+        <div style={{ position: 'absolute', top: '-100px', right: '-100px', width: '500px', height: '500px', borderRadius: '50%', background: 'rgba(252,194,0,0.08)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '-150px', left: '-150px', width: '600px', height: '600px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+
+        <img src="/logobig.png" alt="Potentials Therapy Center" 
+            style={{ width: '250px', objectFit: 'contain', marginBottom: '1.5rem', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))'
+        }} />
+
+        <h1 style={{
+          fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: '#fff',
+          fontWeight: '700', margin: '0 0 1rem', lineHeight: '1.2',
+          maxWidth: '700px'
+        }}>Potentials Therapy Center</h1>
+
+        <p style={{
+          fontSize: 'clamp(1rem, 2vw, 1.2rem)', color: 'rgba(255,255,255,0.8)',
+          maxWidth: '560px', lineHeight: '1.7', margin: '0 0 2.5rem'
+        }}>
+          unlocking your child's best
+        </p>
+
+        <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <a href="#services" style={{
+            padding: '14px 32px', borderRadius: '8px',
+            background: '#fcc200', color: '#0f4c81',
+            textDecoration: 'none', fontSize: '15px', fontWeight: '700'
+          }}>Our Services</a>
+          <a href="#location" style={{
+            padding: '14px 32px', borderRadius: '8px',
+            background: 'rgba(255,255,255,0.15)', color: '#fff',
+            textDecoration: 'none', fontSize: '15px', fontWeight: '500',
+            border: '1px solid rgba(255,255,255,0.3)'
+          }}>Find Us</a>
         </div>
+      </section>
 
-        <button
-          onClick={handleLogin}
-          disabled={loading || !password}
-          style={{
-            width: '100%', padding: '13px', borderRadius: '8px',
-            border: 'none', background: '#0f4c81', color: '#fff',
-            fontSize: '15px', fontWeight: '600', cursor: 'pointer',
-            opacity: loading || !password ? 0.6 : 1
-          }}
-        >
-          {loading ? 'Signing in...' : 'Sign in'}
-        </button>
-
-        <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
-          <a href="/" style={{ fontSize: '12px', color: '#999', textDecoration: 'none' }}>← Back to website</a>
+      {/* Services */}
+      <section id="services" style={{ padding: '6rem 2rem', background: '#f8f9fb' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <div style={{ fontSize: '12px', letterSpacing: '0.15em', color: '#fcc200', fontWeight: '700', marginBottom: '12px', textTransform: 'uppercase' }}>What We Offer</div>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: 0, fontWeight: '700' }}>Our Therapy Services</h2>
+            <p style={{ color: '#666', marginTop: '12px', fontSize: '16px', maxWidth: '500px', margin: '12px auto 0' }}>
+              Comprehensive, evidence-based therapies tailored to each child's unique needs.
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+            {services.map((s, i) => (
+              <div key={i} style={{
+                background: '#fff', borderRadius: '12px', padding: '1.5rem',
+                border: '1px solid #e8edf5',
+              }}>
+                <div style={{ fontSize: '28px', marginBottom: '10px' }}>{s.icon}</div>
+                <div style={{ fontSize: '15px', fontWeight: '600', color: '#0f4c81', marginBottom: '6px' }}>{s.name}</div>
+                <div style={{ fontSize: '13px', color: '#888', lineHeight: '1.6' }}>{s.desc}</div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* Location */}
+      <section id="location" style={{ padding: '6rem 2rem', background: '#fff' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: '12px', letterSpacing: '0.15em', color: '#fcc200', fontWeight: '700', marginBottom: '12px', textTransform: 'uppercase' }}>Where To Find Us</div>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 1.5rem', fontWeight: '700' }}>Visit Our Clinic</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '20px', flexShrink: 0 }}>📍</span>
+                <div>
+                  <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>Address</div>
+                  <div style={{ color: '#666', fontSize: '14px', lineHeight: '1.6' }}>
+                    Unit 2A, #72, MIC Building, Bukidnon Street<br />
+                    Brgy. Ramon Magsaysay, Bago Bantay<br />
+                    Quezon City, Philippines 1105<br />
+                    <span style={{ color: '#999', fontSize: '13px' }}>Near SM Grass Residence, SM North Edsa Annex</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '20px', flexShrink: 0 }}>✉️</span>
+                <div>
+                  <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>Email</div>
+                  <a href="mailto:potentialstherapycenter@gmail.com" style={{ color: '#0f4c81', fontSize: '14px', textDecoration: 'none' }}>
+                    potentialstherapycenter@gmail.com
+                  </a>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                <span style={{ fontSize: '20px', flexShrink: 0 }}>📱</span>
+                <div>
+                  <div style={{ fontWeight: '600', color: '#333', marginBottom: '8px' }}>Follow Us</div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <a href="https://www.facebook.com/potentialstherapycenter" target="_blank" rel="noopener noreferrer" style={{
+                      padding: '8px 16px', borderRadius: '6px', background: '#1877f2', color: '#fff',
+                      textDecoration: 'none', fontSize: '13px', fontWeight: '500'
+                    }}>Facebook</a>
+                    <a href="https://www.instagram.com/potentialstherapycenter/" target="_blank" rel="noopener noreferrer" style={{
+                      padding: '8px 16px', borderRadius: '6px', background: '#e1306c', color: '#fff',
+                      textDecoration: 'none', fontSize: '13px', fontWeight: '500'
+                    }}>Instagram</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', height: '380px' }}>
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3859.9362508724644!2d121.02258107404421!3d14.65955918583378!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397b7d948f8a53d%3A0xbeb6658438477430!2sPotentials%20Therapy%20Center!5e0!3m2!1sfr!2sfr!4v1775319508687!5m2!1sfr!2sfr"
+              width="100%" height="100%"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer style={{ background: '#0f4c81', color: 'rgba(255,255,255,0.7)', padding: '2rem', textAlign: 'center' }}>
+        <div style={{ fontSize: '13px', marginBottom: '8px' }}>
+          © {new Date().getFullYear()} Potentials Therapy Center · Quezon City, Philippines
+        </div>
+        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', fontSize: '13px' }}>
+          <a href="/privacy" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Privacy Policy</a>
+          <a href="mailto:potentialstherapycenter@gmail.com" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Contact</a>
+          <Link href="/login" style={{ color: '#fcc200', textDecoration: 'none', fontWeight: '500' }}>Staff Login</Link>
+        </div>
+      </footer>
     </div>
   )
 }
