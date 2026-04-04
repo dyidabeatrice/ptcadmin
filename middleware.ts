@@ -5,7 +5,12 @@ const PUBLIC_PATHS = ['/', '/login', '/privacy', '/api/auth']
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const isPublic = PUBLIC_PATHS.some(p => pathname === p || pathname.startsWith('/api/auth'))
+  const isPublic = pathname === '/' || 
+    pathname === '/login' || 
+    pathname === '/privacy' || 
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/logo')
   const isAuth = request.cookies.get('ptc_auth')?.value === 'authenticated'
 
   if (!isPublic && !isAuth) {
