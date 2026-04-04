@@ -16,7 +16,7 @@ export async function GET(request) {
       for (const weekKey of weekSheets) {
         const data = await getSheetData(weekKey)
         const [, ...rows] = data
-        rows.filter(r => r && r[0] && r[9] === 'Unpaid' && r[8] !== 'Cancelled' && r[8] !== 'Pencil').forEach(row => {
+        rows.filter(r => r && r[0] && r[9] === 'Unpaid' && (r[8] === 'Present' || r[8] === 'Cancelled')).forEach(row => {
           unpaid.push({
             week_key: weekKey,
             index: rows.indexOf(row),
