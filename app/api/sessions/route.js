@@ -1,5 +1,7 @@
 import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
 
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+
 async function getWeekSheet(weekKey) {
   try {
     const data = await getSheetData(weekKey)
@@ -15,13 +17,6 @@ async function getWeekSheet(weekKey) {
   } catch {
     return []
   }
-}
-
-function getPHTDate() {
-  return new Date().toLocaleDateString('en-PH', {
-    timeZone: 'Asia/Manila',
-    year: 'numeric', month: 'short', day: 'numeric'
-  })
 }
 
 export async function GET(request) {
@@ -114,7 +109,6 @@ export async function PATCH(request) {
     if (body.action === 'pay') {
       const mop = body.use_credit ? 'Credit' : body.split ? 'Split' : body.mop
 
-      // Update session type
       await sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
         range: `${weekKey}!H${sheetRow}`,
@@ -122,7 +116,6 @@ export async function PATCH(request) {
         requestBody: { values: [[body.session_type]] }
       })
 
-      // Update payment status
       await sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
         range: `${weekKey}!J${sheetRow}:L${sheetRow}`,
@@ -142,7 +135,6 @@ export async function PATCH(request) {
         })
       }
 
-      // Handle credit deduction
       if (body.use_credit || body.split) {
         const creditAmount = body.split ? body.split_credit : body.amount
         await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/credits`, {
@@ -152,30 +144,20 @@ export async function PATCH(request) {
         })
       }
 
-      // Clear outstanding
       await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/credits`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'clear_outstanding', client_name: body.client_name, amount: body.amount })
       })
 
-      // Log to payments sheet
-      const paymentId = Date.now().toString() + Math.random().toString(36).slice(2)
-      const payDate = getPHTDate()
       await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
-        range: 'payments',
-        valueInputOption: 'RAW',
+        range: 'payments', valueInputOption: 'RAW',
         requestBody: { values: [[
-          paymentId,
-          body.client_name,
-          body.therapist,
-          body.session_id || body.rowIndex.toString(),
-          body.amount,
-          mop,
-          body.session_type || 'Regular',
-          payDate,
-          'session'
+          Date.now().toString(),
+          body.client_name, body.therapist,
+          body.session_id, body.amount, mop,
+          body.session_type, body.date, 'session'
         ]]}
       })
 
@@ -203,11 +185,11 @@ export async function PATCH(request) {
         })
       }
 
-      // Add back to outstanding if Present or Cancelled
+      // Add back to outstanding if session is Present or Cancelled
       const unpaidSessions = await getWeekSheet(weekKey)
       const unpaidSession = unpaidSessions.find(s => s.index === body.rowIndex)
       if (unpaidSession && (unpaidSession.status === 'Present' || unpaidSession.status === 'Cancelled')) {
-        const rate = unpaidSession.amount || body.amount || 0
+        const rate = unpaidSession.amount || 0
         if (rate > 0) {
           await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/credits`, {
             method: 'POST',
