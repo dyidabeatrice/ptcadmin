@@ -108,6 +108,7 @@ export async function PATCH(request) {
 
     if (body.action === 'pay') {
       const mop = body.use_credit ? 'Credit' : body.split ? 'Split' : body.mop
+      const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://potentialstherapycenter.com/'
 
       await sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
@@ -135,34 +136,48 @@ export async function PATCH(request) {
         })
       }
 
-      if (body.use_credit || body.split) {
-        const creditAmount = body.split ? body.split_credit : body.amount
-        await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/credits`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'apply_credit', client_name: body.client_name, amount: creditAmount, credit_balance: body.credit_balance })
-        })
-      }
-
-      await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/credits`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'clear_outstanding', client_name: body.client_name, amount: body.amount })
+      // Log to payments sheet FIRST before any credits calls
+      const payDate = new Date().toLocaleDateString('en-PH', {
+        timeZone: 'Asia/Manila',
+        year: 'numeric', month: 'short', day: 'numeric'
       })
-
       await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
-        range: 'payments', valueInputOption: 'RAW',
+        range: 'payments',
+        valueInputOption: 'RAW',
         requestBody: { values: [[
-          Date.now().toString(),
+          Date.now().toString() + Math.random().toString(36).slice(2),
           body.client_name, body.therapist,
-          body.session_id, body.amount, mop,
-          body.session_type, body.date, 'session'
+          body.session_id || `${weekKey}-${body.rowIndex}`,
+          body.amount, mop,
+          body.session_type || 'Regular',
+          payDate,
+          'session'
         ]]}
       })
 
+      // Credits calls after — wrapped so they don't block the response
+      try {
+        if (body.use_credit || body.split) {
+          const creditAmount = body.split ? body.split_credit : body.amount
+          await fetch(`${baseUrl}/api/credits`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'apply_credit', client_name: body.client_name, amount: creditAmount, credit_balance: body.credit_balance })
+          })
+        }
+        await fetch(`${baseUrl}/api/credits`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'clear_outstanding', client_name: body.client_name, amount: body.amount })
+        })
+      } catch (creditError) {
+        console.error('Credit update failed:', creditError)
+      }
+
       return Response.json({ success: true })
     }
+
 
     if (body.action === 'unpay') {
       await sheets.spreadsheets.values.update({
