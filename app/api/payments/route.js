@@ -1,7 +1,36 @@
 import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url)
+
+    if (searchParams.get('action') === 'outstanding') {
+      const sheets = getGoogleSheets()
+      const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID })
+      const weekSheets = spreadsheet.data.sheets
+        .map(s => s.properties.title)
+        .filter(t => t.startsWith('week_'))
+        .sort()
+
+      const unpaid = []
+      for (const weekKey of weekSheets) {
+        const data = await getSheetData(weekKey)
+        const [, ...rows] = data
+        rows.filter(r => r && r[0] && r[9] === 'Unpaid' && r[8] !== 'Cancelled' && r[8] !== 'Pencil').forEach(row => {
+          unpaid.push({
+            week_key: weekKey,
+            index: rows.indexOf(row),
+            id: row[0], client_name: row[1], therapist: row[2],
+            date: row[3], day: row[4], time_start: row[5], time_end: row[6],
+            session_type: row[7] || 'Regular', status: row[8],
+            amount: parseFloat(row[11] || 0)
+          })
+        })
+      }
+
+      return Response.json({ success: true, data: unpaid })
+    }
+
     const data = await getSheetData('payments')
     const [, ...rows] = data
     if (!rows || rows.length === 0) return Response.json({ success: true, data: [] })

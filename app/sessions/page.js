@@ -185,8 +185,8 @@ export default function SchedulePage() {
     fetchSessions(selectedWeek.key)
     const cRes = await fetch('/api/clients')
     const cJson = await cRes.json()
-    if (cJson.success) setClients(cJson.data.filter((c => c.status !== 'inactive'))
-  )}
+    if (cJson.success) setClients(cJson.data.filter(c => c.status !== 'inactive'))
+  }
 
   async function confirmAbsent() {
     await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'absent_paid', week_key: selectedWeek.key, rowIndex: absentConfirm.index, client_name: absentConfirm.client_name, amount: absentConfirm.amount }) })
@@ -586,8 +586,11 @@ export default function SchedulePage() {
               return (
                 <div key={i} style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: '8px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ fontWeight: '500', color: sc.color }}>{s.client_name}</div>
-                    <div style={{ fontSize: '12px', color: sc.color, opacity: 0.8 }}>{s.therapist} · {s.day} {s.time_start}–{s.time_end}</div>
+                    <div style={{ fontWeight: '500', color: sc.color }}>
+                    {s.client_name}
+                    {(() => { const ci = clients.find(c => c.name === s.client_name); return (ci?.outstanding_balance > 0 || (s.payment === 'Unpaid' && (s.status === 'Present' || s.status === 'Cancelled'))) ? <span style={{ marginLeft: '4px', fontSize: '10px' }}>⚠️</span> : null })()}
+                  </div>
+                  <div style={{ fontSize: '12px', color: sc.color, opacity: 0.8 }}>{s.therapist} · {s.day} {s.time_start}–{s.time_end}</div>
                   </div>
                   <div style={{ display: 'flex', gap: '6px' }}>
                     <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.6)', color: sc.color }}>{s.status}</span>
@@ -741,7 +744,6 @@ export default function SchedulePage() {
                               <div style={{ fontSize: '10px', fontWeight: '500', color: sc.color, lineHeight: '1.3' }}>{s.client_name}</div>
                               <div style={{ display: 'flex', gap: '1px', flexShrink: 0 }}>
                                 {needsWarning && <span style={{ fontSize: '8px' }}>⚠️</span>}
-                                {isCredited && <span style={{ fontSize: '8px' }}>💳</span>}
                               </div>
                             </div>
                             {height > 30 && (
@@ -799,7 +801,6 @@ export default function SchedulePage() {
           </span>
         ))}
         <span>⚠️ Outstanding balance</span>
-        <span>💳 Payment credited</span>
       </div>
     </div>
   )}

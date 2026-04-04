@@ -3,6 +3,147 @@ import { useState, useEffect } from 'react'
 
 const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
 
+function OutstandingTab({ clients }) {
+  const [unpaidSessions, setUnpaidSessions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [payModal, setPayModal] = useState(null)
+  const [payForm, setPayForm] = useState({ mop: 'Cash', amount: 0 })
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => { fetchOutstanding() }, [])
+
+  async function fetchOutstanding() {
+    setLoading(true)
+    const res = await fetch('/api/payments?action=outstanding')
+    const json = await res.json()
+    if (json.success) setUnpaidSessions(json.data)
+    setLoading(false)
+  }
+
+  async function settlePayment() {
+    setSaving(true)
+    await fetch('/api/sessions', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'pay',
+        week_key: payModal.week_key,
+        rowIndex: payModal.index,
+        session_id: payModal.id,
+        client_name: payModal.client_name,
+        therapist: payModal.therapist,
+        date: payModal.date,
+        session_type: payModal.session_type || 'Regular',
+        mop: payForm.mop,
+        amount: payForm.amount,
+        use_credit: false,
+        split: false
+      })
+    })
+    setPayModal(null)
+    fetchOutstanding()
+    setSaving(false)
+  }
+
+  const grouped = unpaidSessions.reduce((acc, s) => {
+    if (!acc[s.client_name]) acc[s.client_name] = []
+    acc[s.client_name].push(s)
+    return acc
+  }, {})
+
+  const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
+
+  return (
+    <div>
+      {payModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '380px', maxWidth: '90vw' }}>
+            <h3 style={{ margin: '0 0 1rem', color: '#0f4c81' }}>Settle payment</h3>
+            <div style={{ background: '#f8f9fa', borderRadius: '8px', padding: '10px 12px', marginBottom: '1rem' }}>
+              <div style={{ fontWeight: '500', color: '#0f4c81' }}>{payModal.client_name}</div>
+              <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>{payModal.therapist} · {payModal.date} · {payModal.time_start}</div>
+              <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>Status: {payModal.status}</div>
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Amount (₱)</label>
+              <input type="number" value={payForm.amount}
+                onChange={e => setPayForm({ ...payForm, amount: Number(e.target.value) })}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '16px', fontWeight: '500', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Mode of payment</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {MOP_OPTIONS.map(mop => (
+                  <button key={mop} onClick={() => setPayForm({ ...payForm, mop })} style={{
+                    padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
+                    border: payForm.mop === mop ? '2px solid #0f4c81' : '1px solid #ddd',
+                    background: payForm.mop === mop ? '#E6F1FB' : 'white',
+                    color: payForm.mop === mop ? '#0f4c81' : '#666',
+                    fontWeight: payForm.mop === mop ? '500' : '400'
+                  }}>{mop}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setPayModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={settlePayment} disabled={saving || !payForm.amount} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
+                {saving ? 'Saving...' : `Settle ₱${Number(payForm.amount || 0).toLocaleString()}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading outstanding sessions...</div>
+      ) : Object.keys(grouped).length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#1D9E75', background: '#EAF3DE', borderRadius: '12px' }}>
+          All caught up — no outstanding balances!
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([clientName, sessions]) => {
+            const client = clients.find(c => c.name === clientName)
+            const total = sessions.reduce((sum, s) => sum + Number(s.amount || 0), 0)
+            return (
+              <div key={clientName} style={{ background: 'white', borderRadius: '12px', border: '1px solid #F09595', overflow: 'hidden' }}>
+                <div style={{ background: '#FFF5F5', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <span style={{ fontWeight: '500', color: '#791F1F', fontSize: '14px' }}>{clientName}</span>
+                    {client?.credit_balance > 0 && (
+                      <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#EAF3DE', color: '#27500A' }}>
+                        💳 ₱{Number(client.credit_balance).toLocaleString()} credit available
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ fontWeight: '700', color: '#791F1F', fontSize: '16px' }}>₱{total.toLocaleString()} due</span>
+                </div>
+                <div style={{ padding: '8px' }}>
+                  {sessions.map((s, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: '6px', marginBottom: '4px', background: '#f8f9fa', border: '1px solid #e0e0e0' }}>
+                      <div>
+                        <div style={{ fontSize: '13px', color: '#333' }}>{s.date} · {s.time_start}–{s.time_end}</div>
+                        <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>{s.therapist} · {s.status} · {s.session_type}</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '13px', fontWeight: '500', color: '#E24B4A' }}>₱{Number(s.amount || 0).toLocaleString()}</span>
+                        <button onClick={() => { setPayModal(s); setPayForm({ mop: 'Cash', amount: s.amount || 0 }) }} style={{
+                          padding: '5px 12px', borderRadius: '6px', border: 'none',
+                          background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '500'
+                        }}>Settle</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function PaymentsPage() {
   const [payments, setPayments] = useState([])
   const [clients, setClients] = useState([])
@@ -158,8 +299,8 @@ export default function PaymentsPage() {
 
   const tabs = [
     { key: 'transactions', label: 'Transactions' },
-    { key: 'credits', label: `Credits (${creditClients.length})` },
-    { key: 'outstanding', label: `Outstanding (${outstandingClients.length})` },
+    { key: 'credits', label: `Credits` },
+    { key: 'outstanding', label: `Outstanding` },
   ]
 
   return (
@@ -256,7 +397,7 @@ export default function PaymentsPage() {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading...</div>
       ) : (
-        <>
+        <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '1.5rem' }}>
             {[
               { label: "Today's collections", value: `₱${todayTotal.toLocaleString()}`, sub: `${todayPayments.length} payments`, color: '#fcc200' },
@@ -384,44 +525,9 @@ export default function PaymentsPage() {
           )}
 
           {activeTab === 'outstanding' && (
-            <div>
-              {outstandingClients.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '3rem', color: '#1D9E75', background: '#EAF3DE', borderRadius: '12px' }}>
-                  All caught up — no outstanding balances!
-                </div>
-              ) : (
-                <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', overflow: 'hidden' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                    <thead>
-                      <tr style={{ background: '#f8f9fa' }}>
-                        {['Client', 'Outstanding balance', 'Credit available', 'Net owed'].map(h => (
-                          <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {outstandingClients.sort((a, b) => b.outstanding_balance - a.outstanding_balance).map((c, i) => {
-                        const net = Math.max(0, (c.outstanding_balance || 0) - (c.credit_balance || 0))
-                        return (
-                          <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                            <td style={{ padding: '10px 16px', fontWeight: '500', color: '#0f4c81' }}>{c.name}</td>
-                            <td style={{ padding: '10px 16px', color: '#E24B4A', fontWeight: '500' }}>₱{Number(c.outstanding_balance || 0).toLocaleString()}</td>
-                            <td style={{ padding: '10px 16px', color: '#1D9E75' }}>
-                              {c.credit_balance > 0 ? `₱${Number(c.credit_balance).toLocaleString()}` : '—'}
-                            </td>
-                            <td style={{ padding: '10px 16px', fontWeight: '600', color: net > 0 ? '#E24B4A' : '#1D9E75' }}>
-                              {net > 0 ? `₱${net.toLocaleString()}` : '✓ Covered by credit'}
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+            <OutstandingTab clients={clients} />
           )}
-        </>
+        </div>
       )}
     </div>
   )

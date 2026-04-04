@@ -169,7 +169,7 @@ export async function PATCH(request) {
         spreadsheetId: SPREADSHEET_ID,
         range: `${weekKey}!J${sheetRow}:L${sheetRow}`,
         valueInputOption: 'RAW',
-        requestBody: { values: [['Unpaid', '', 0]] }
+        requestBody: { values: [['Unpaid', '', body.amount || 0]] }
       })
 
       const payData = await getSheetData('payments')
@@ -183,6 +183,20 @@ export async function PATCH(request) {
             range: { sheetId, dimension: 'ROWS', startIndex: payIndex + 1, endIndex: payIndex + 2 }
           }}]}
         })
+      }
+
+      // Add back to outstanding if session is Present or Cancelled
+      const unpaidSessions = await getWeekSheet(weekKey)
+      const unpaidSession = unpaidSessions.find(s => s.index === body.rowIndex)
+      if (unpaidSession && (unpaidSession.status === 'Present' || unpaidSession.status === 'Cancelled')) {
+        const rate = unpaidSession.amount || 0
+        if (rate > 0) {
+          await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/credits`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'add_outstanding', client_name: body.client_name, amount: rate })
+          })
+        }
       }
 
       return Response.json({ success: true })
