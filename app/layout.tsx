@@ -9,6 +9,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
+        <meta name="facebook-domain-verification" content="87rzobk3xkzrf5ndn7cdaiovyodrtb" />
+
         <style>{`
           * { box-sizing: border-box; }
           body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
