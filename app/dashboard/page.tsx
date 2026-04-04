@@ -49,7 +49,7 @@ export default function Dashboard() {
   }, [])
 
   const today = new Date()
-  const todayDay = today.toLocaleDateString('en-PH', { weekday: 'long' })
+  const todayDay = today.toLocaleDateString('en-US', { weekday: 'long' })
   const todayDate = today.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
   const todayStr = today.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
