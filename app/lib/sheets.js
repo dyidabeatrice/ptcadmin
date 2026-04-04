@@ -34,3 +34,18 @@ export function getGoogleSheets() {
 }
 
 export const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID
+
+export function getPHTDate() {
+  return new Date().toLocaleDateString('en-PH', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric', month: 'short', day: 'numeric'
+  })
+}
+
+export function getPHTDateTime() {
+  return new Date().toLocaleString('en-PH', {
+    timeZone: 'Asia/Manila',
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: true
+  })
+}

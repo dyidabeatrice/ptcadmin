@@ -49,7 +49,7 @@ export default function Dashboard() {
   }, [])
 
   const today = new Date()
-  const todayDay = today.toLocaleDateString('en-US', { weekday: 'long' })
+  const todayDay = today.toLocaleDateString('en-PH', { weekday: 'long' })
   const todayDate = today.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
   const todayStr = today.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
@@ -69,7 +69,7 @@ export default function Dashboard() {
     <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
 
       <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ color: '#0f4c81', margin: '0 0 4px' }}>Good morning</h1>
+        <h1 style={{ color: '#0f4c81', margin: '0 0 4px' }}>Hello!</h1>
         <p style={{ margin: 0, fontSize: '14px', color: '#999' }}>{todayStr}</p>
       </div>
 
