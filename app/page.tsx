@@ -1,203 +1,234 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
-export default function HomePage() {
-  const [scrolled, setScrolled] = useState(false)
+export default function Dashboard() {
+  const [clients, setClients] = useState<any[]>([])
+  const [payments, setPayments] = useState<any[]>([])
+  const [messages, setMessages] = useState<any[]>([])
+  const [todaySessions, setTodaySessions] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
+    async function load() {
+      const [cRes, pRes, mRes, wRes] = await Promise.all([
+        fetch('/api/clients'),
+        fetch('/api/payments'),
+        fetch('/api/messages'),
+        fetch('/api/weeks')
+      ])
+      const [cJson, pJson, mJson, wJson] = await Promise.all([
+        cRes.json(), pRes.json(), mRes.json(), wRes.json()
+      ])
+      if (cJson.success) setClients(cJson.data)
+      if (pJson.success) setPayments(pJson.data)
+      if (mJson.success) setMessages(mJson.data)
+
+      if (wJson.success && wJson.data.length > 0) {
+        const today = new Date()
+        const day = today.getDay()
+        const monday = new Date(today)
+        monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1))
+        const y = monday.getFullYear()
+        const m = String(monday.getMonth() + 1).padStart(2, '0')
+        const d = String(monday.getDate()).padStart(2, '0')
+        const currentKey = `week_${y}_${m}_${d}`
+        const currentWeek = wJson.data.find((w: any) => w.key === currentKey)
+        if (currentWeek) {
+          const sRes = await fetch(`/api/sessions?week=${currentKey}`)
+          const sJson = await sRes.json()
+          if (sJson.success) {
+            const todayDay = today.toLocaleDateString('en-US', { weekday: 'long' })
+            setTodaySessions(sJson.data.filter((s: any) => s.day === todayDay))
+          }
+        }
+      }
+      setLoading(false)
+    }
+    load()
   }, [])
 
-  const services = [
-    { icon: '🧠', name: 'Occupational Therapy', desc: 'Building independence in daily activities and sensory processing' },
-    { icon: '💬', name: 'Speech Therapy', desc: 'Communication, language development, and fluency' },
-    { icon: '🏃', name: 'Physical Therapy', desc: 'Motor skills, strength, and physical development' },
-    { icon: '📚', name: 'Special Education Tutorials', desc: 'Individualized academic support for children with special needs' },
-    { icon: '🎮', name: 'Playgroup Classes', desc: 'Social skills and peer interaction in a structured environment' },
-    { icon: '🧩', name: 'Cognitive Behavioral Therapy', desc: 'Managing emotions, behavior, and thought patterns' },
-    { icon: '👄', name: 'Oral Placement Therapy', desc: 'Improving oral motor function and feeding skills' },
-    { icon: '🔤', name: 'AAC', desc: 'Augmentative & Alternative Communication systems' },
-    { icon: '🗣️', name: 'PROMPT Therapy', desc: 'Tactile-kinesthetic approach to speech motor control' },
-    { icon: '✋', name: 'Sensory Integration', desc: 'Processing and responding to sensory information' },
-    { icon: '🍽️', name: 'Pediatric Dysphagia', desc: 'Feeding therapy and swallowing difficulties' },
-  ]
+  const today = new Date()
+  const todayDay = today.toLocaleDateString('en-US', { weekday: 'long' })
+  const todayDate = today.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+  const todayStr = today.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+
+  const presentToday = todaySessions.filter(s => s.status === 'Present').length
+  const absentToday = todaySessions.filter(s => s.status === 'Absent').length
+  const unpaidToday = todaySessions.filter(s => s.payment === 'Unpaid' && s.status !== 'Cancelled')
+  const todayPayments = payments.filter(p => p.date === todayDate && p.payment_type !== 'refund')
+  const todayTotal = todayPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
+  const pendingMessages = messages.filter((m: any) => !m.sent)
+  const activeClients = clients.filter(c => c.status !== 'inactive')
+  const therapistsToday = [...new Set(todaySessions.map(s => s.therapist))].sort()
+  const absentTherapists = [...new Set(todaySessions.filter(s => s.status === 'Absent').map(s => s.therapist))]
+  const clientsWithCredit = clients.filter(c => c.credit_balance > 0)
+  const clientsWithOutstanding = clients.filter(c => c.outstanding_balance > 0)
 
   return (
-    <div style={{ fontFamily: 'sans-serif', background: '#fff', color: '#1a1a2e', minHeight: '100vh' }}>
+    <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
 
-      {/* Navbar */}
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        padding: '0 2rem',
-        background: scrolled ? 'rgba(255,255,255,0.97)' : 'transparent',
-        boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.08)' : 'none',
-        transition: 'all 0.3s ease',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        height: '70px'
-      }}>
-        <img src="/logo.png" alt="Potentials Therapy Center" style={{ height: '44px', objectFit: 'contain' }} />
-        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <h1 style={{ color: '#0f4c81', margin: '0 0 4px' }}>Good morning</h1>
+        <p style={{ margin: 0, fontSize: '14px', color: '#999' }}>{todayStr}</p>
+      </div>
+
+      <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1rem 1.25rem', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
           {[
-            { label: 'Home', href: '#home' },
-            { label: 'Services', href: '#services' },
-            { label: 'Find Us', href: '#location' },
-            { label: 'Privacy', href: '/privacy' },
+            { href: '/sessions', label: 'View schedule', color: '#fcc200', text: '#0f4c81' },
+            { href: '/clients', label: 'Add new client', color: '#0f4c81', text: 'white' },
+            { href: '/messages', label: 'Send reminders', color: '#0f4c81', text: 'white' },
+            { href: '/payments', label: 'View payments', color: '#1D9E75', text: 'white' },
+            { href: '/master', label: 'Master schedule', color: '#0f4c81', text: 'white' },
           ].map(l => (
-            <a key={l.label} href={l.href} style={{
-              fontSize: '14px',
-              color: scrolled ? '#0f4c81' : '#fff',
-              textDecoration: 'none', fontWeight: '500',
-              transition: 'opacity 0.2s'
-            }}>{l.label}</a>
+            <Link key={l.label} href={l.href} style={{
+              padding: '10px 18px', borderRadius: '8px',
+              background: l.color, color: l.text,
+              textDecoration: 'none', fontSize: '13px', fontWeight: '500'
+            }}>{l.label}</Link>
           ))}
-          <Link href="/login" style={{
-            padding: '9px 20px', borderRadius: '6px',
-            background: '#fcc200', color: '#0f4c81',
-            textDecoration: 'none', fontSize: '13px', fontWeight: '700'
-          }}>Staff Login</Link>
         </div>
-      </nav>
+      </div>
 
-      {/* Hero */}
-      <section id="home" style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #0f4c81 0%, #1a6db5 50%, #0d3d6b 100%)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexDirection: 'column', textAlign: 'center',
-        padding: '8rem 2rem 4rem', position: 'relative', overflow: 'hidden'
-      }}>
-        <div style={{ position: 'absolute', top: '-100px', right: '-100px', width: '500px', height: '500px', borderRadius: '50%', background: 'rgba(252,194,0,0.08)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '-150px', left: '-150px', width: '600px', height: '600px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
-
-        <img src="/logobig.png" alt="Potentials Therapy Center" 
-            style={{ width: '250px', objectFit: 'contain', marginBottom: '1.5rem', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))'
-        }} />
-
-        <h1 style={{
-          fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: '#fff',
-          fontWeight: '700', margin: '0 0 1rem', lineHeight: '1.2',
-          maxWidth: '700px'
-        }}>Potentials Therapy Center</h1>
-
-        <p style={{
-          fontSize: 'clamp(1rem, 2vw, 1.2rem)', color: 'rgba(255,255,255,0.8)',
-          maxWidth: '560px', lineHeight: '1.7', margin: '0 0 2.5rem'
-        }}>
-          unlocking your child's best
-        </p>
-
-        <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <a href="#services" style={{
-            padding: '14px 32px', borderRadius: '8px',
-            background: '#fcc200', color: '#0f4c81',
-            textDecoration: 'none', fontSize: '15px', fontWeight: '700'
-          }}>Our Services</a>
-          <a href="#location" style={{
-            padding: '14px 32px', borderRadius: '8px',
-            background: 'rgba(255,255,255,0.15)', color: '#fff',
-            textDecoration: 'none', fontSize: '15px', fontWeight: '500',
-            border: '1px solid rgba(255,255,255,0.3)'
-          }}>Find Us</a>
-        </div>
-      </section>
-
-      {/* Services */}
-      <section id="services" style={{ padding: '6rem 2rem', background: '#f8f9fb' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <div style={{ fontSize: '12px', letterSpacing: '0.15em', color: '#fcc200', fontWeight: '700', marginBottom: '12px', textTransform: 'uppercase' }}>What We Offer</div>
-            <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: 0, fontWeight: '700' }}>Our Therapy Services</h2>
-            <p style={{ color: '#666', marginTop: '12px', fontSize: '16px', maxWidth: '500px', margin: '12px auto 0' }}>
-              Comprehensive, evidence-based therapies tailored to each child's unique needs.
-            </p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
-            {services.map((s, i) => (
-              <div key={i} style={{
-                background: '#fff', borderRadius: '12px', padding: '1.5rem',
-                border: '1px solid #e8edf5',
-              }}>
-                <div style={{ fontSize: '28px', marginBottom: '10px' }}>{s.icon}</div>
-                <div style={{ fontSize: '15px', fontWeight: '600', color: '#0f4c81', marginBottom: '6px' }}>{s.name}</div>
-                <div style={{ fontSize: '13px', color: '#888', lineHeight: '1.6' }}>{s.desc}</div>
-              </div>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading...</div>
+      ) : (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '2rem' }}>
+            {[
+              { label: "Today's sessions", value: todaySessions.length, sub: `${presentToday} present · ${absentToday} absent`, color: '#0f4c81', href: '/sessions' },
+              { label: "Today's collections", value: `₱${todayTotal.toLocaleString()}`, sub: `${todayPayments.length} payments`, color: '#fcc200', href: '/payments' },
+              { label: 'Unpaid today', value: unpaidToday.length, sub: 'needs collection', color: '#E24B4A', href: '/payments' },
+              { label: 'Pending messages', value: pendingMessages.length, sub: 'to send', color: '#185FA5', href: '/messages' },
+              { label: 'Outstanding', value: clientsWithOutstanding.length, sub: 'clients with balance due', color: '#E24B4A', href: '/payments' },
+            ].map((card, i) => (
+              <Link key={i} href={card.href} style={{ textDecoration: 'none' }}>
+                <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem', borderTop: `4px solid ${card.color}`, cursor: 'pointer' }}>
+                  <div style={{ fontSize: '12px', color: '#999', marginBottom: '6px' }}>{card.label}</div>
+                  <div style={{ fontSize: '24px', fontWeight: '700', color: '#0f4c81', marginBottom: '4px' }}>{card.value}</div>
+                  <div style={{ fontSize: '11px', color: '#aaa' }}>{card.sub}</div>
+                </div>
+              </Link>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* Location */}
-      <section id="location" style={{ padding: '6rem 2rem', background: '#fff' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }}>
-          <div>
-            <div style={{ fontSize: '12px', letterSpacing: '0.15em', color: '#fcc200', fontWeight: '700', marginBottom: '12px', textTransform: 'uppercase' }}>Where To Find Us</div>
-            <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 1.5rem', fontWeight: '700' }}>Visit Our Clinic</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '2rem' }}>
+
+            <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0, color: '#0f4c81', fontSize: '15px' }}>Today — {todayDay}</h3>
+                <Link href="/sessions" style={{ fontSize: '12px', color: '#185FA5', textDecoration: 'none' }}>Full schedule →</Link>
+              </div>
+              {todaySessions.length === 0 ? (
+                <p style={{ color: '#999', fontSize: '13px', margin: 0 }}>No sessions today — go to Schedule to generate this week!</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '280px', overflowY: 'auto' }}>
+                  {todaySessions.map((s, i) => {
+                    const paid = s.payment === 'Paid'
+                    const status = s.status
+                    let bg = '#f8f9fa'
+                    let border = '#e0e0e0'
+                    if (paid && status === 'Present') { bg = '#EAF3DE'; border = '#97C459' }
+                    else if (!paid && (status === 'Present' || status === 'Cancelled')) { bg = '#FAEEDA'; border = '#EF9F27' }
+                    else if (status === 'Absent') { bg = '#FCEBEB'; border = '#F09595' }
+                    return (
+                      <div key={i} style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        padding: '8px 10px', borderRadius: '6px', background: bg, border: `1px solid ${border}`
+                      }}>
+                        <div>
+                          <div style={{ fontSize: '13px', fontWeight: '500', color: '#0f4c81' }}>{s.client_name}</div>
+                          <div style={{ fontSize: '11px', color: '#999' }}>{s.therapist} · {s.time_start}</div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '4px' }}>
+                          <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '10px', background: 'rgba(255,255,255,0.7)', color: '#444' }}>{status}</span>
+                          <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '10px', background: paid ? '#EAF3DE' : '#FCEBEB', color: paid ? '#27500A' : '#791F1F' }}>{s.payment}</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '20px', flexShrink: 0 }}>📍</span>
-                <div>
-                  <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>Address</div>
-                  <div style={{ color: '#666', fontSize: '14px', lineHeight: '1.6' }}>
-                    Unit 2A, #72, MIC Building, Bukidnon Street<br />
-                    Brgy. Ramon Magsaysay, Bago Bantay<br />
-                    Quezon City, Philippines 1105<br />
-                    <span style={{ color: '#999', fontSize: '13px' }}>Near SM Grass Residence, SM North Edsa Annex</span>
+
+              <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem' }}>
+                <h3 style={{ margin: '0 0 10px', color: '#0f4c81', fontSize: '15px' }}>Therapists today</h3>
+                {therapistsToday.length === 0 ? (
+                  <p style={{ color: '#999', fontSize: '13px', margin: 0 }}>No sessions generated yet for today.</p>
+                ) : (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {(therapistsToday as string[]).map(t => {
+                      const isAbsent = (absentTherapists as string[]).includes(t)
+                      return (
+                        <span key={t} style={{
+                          fontSize: '12px', padding: '4px 10px', borderRadius: '20px',
+                          background: isAbsent ? '#FCEBEB' : '#E6F1FB',
+                          color: isAbsent ? '#791F1F' : '#0C447C',
+                          border: `1px solid ${isAbsent ? '#F09595' : '#B5D4F4'}`,
+                          textDecoration: isAbsent ? 'line-through' : 'none'
+                        }}>{t}{isAbsent ? ' · absent' : ''}</span>
+                      )
+                    })}
                   </div>
-                </div>
+                )}
               </div>
-              <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '20px', flexShrink: 0 }}>✉️</span>
-                <div>
-                  <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>Email</div>
-                  <a href="mailto:potentialstherapycenter@gmail.com" style={{ color: '#0f4c81', fontSize: '14px', textDecoration: 'none' }}>
-                    potentialstherapycenter@gmail.com
-                  </a>
+
+              <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem', flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <h3 style={{ margin: 0, color: '#0f4c81', fontSize: '15px' }}>Pending messages</h3>
+                  <Link href="/messages" style={{ fontSize: '12px', color: '#185FA5', textDecoration: 'none' }}>View all →</Link>
                 </div>
-              </div>
-              <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '20px', flexShrink: 0 }}>📱</span>
-                <div>
-                  <div style={{ fontWeight: '600', color: '#333', marginBottom: '8px' }}>Follow Us</div>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <a href="https://www.facebook.com/potentialstherapycenter" target="_blank" rel="noopener noreferrer" style={{
-                      padding: '8px 16px', borderRadius: '6px', background: '#1877f2', color: '#fff',
-                      textDecoration: 'none', fontSize: '13px', fontWeight: '500'
-                    }}>Facebook</a>
-                    <a href="https://www.instagram.com/potentialstherapycenter/" target="_blank" rel="noopener noreferrer" style={{
-                      padding: '8px 16px', borderRadius: '6px', background: '#e1306c', color: '#fff',
-                      textDecoration: 'none', fontSize: '13px', fontWeight: '500'
-                    }}>Instagram</a>
+                {pendingMessages.length === 0 ? (
+                  <p style={{ color: '#1D9E75', fontSize: '13px', margin: 0 }}>All caught up!</p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto' }}>
+                    {pendingMessages.slice(0, 5).map((m: any, i: number) => (
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 10px', borderRadius: '6px', background: '#f8f9fa', border: '1px solid #e0e0e0' }}>
+                        <div>
+                          <div style={{ fontSize: '13px', fontWeight: '500', color: '#0f4c81' }}>{m.client_name}</div>
+                          <div style={{ fontSize: '11px', color: '#aaa' }}>{m.type}</div>
+                        </div>
+                        <Link href="/messages" style={{ fontSize: '11px', color: '#185FA5', textDecoration: 'none', alignSelf: 'center' }}>Send →</Link>
+                      </div>
+                    ))}
+                    {pendingMessages.length > 5 && (
+                      <Link href="/messages" style={{ fontSize: '12px', color: '#185FA5', textDecoration: 'none', textAlign: 'center', padding: '4px' }}>
+                        +{pendingMessages.length - 5} more →
+                      </Link>
+                    )}
                   </div>
-                </div>
+                )}
               </div>
+
             </div>
           </div>
-          <div style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', height: '380px' }}>
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3859.9362508724644!2d121.02258107404421!3d14.65955918583378!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397b7d948f8a53d%3A0xbeb6658438477430!2sPotentials%20Therapy%20Center!5e0!3m2!1sfr!2sfr!4v1775319508687!5m2!1sfr!2sfr"
-              width="100%" height="100%"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-            />
-          </div>
-        </div>
-      </section>
 
-      {/* Footer */}
-      <footer style={{ background: '#0f4c81', color: 'rgba(255,255,255,0.7)', padding: '2rem', textAlign: 'center' }}>
-        <div style={{ fontSize: '13px', marginBottom: '8px' }}>
-          © {new Date().getFullYear()} Potentials Therapy Center · Quezon City, Philippines
-        </div>
-        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', fontSize: '13px' }}>
-          <a href="/privacy" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Privacy Policy</a>
-          <a href="mailto:potentialstherapycenter@gmail.com" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Contact</a>
-          <Link href="/login" style={{ color: '#fcc200', textDecoration: 'none', fontWeight: '500' }}>Staff Login</Link>
-        </div>
-      </footer>
+          {clientsWithOutstanding.length > 0 && (
+            <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0, color: '#0f4c81', fontSize: '15px' }}>Outstanding balances — needs follow-up</h3>
+                <Link href="/payments" style={{ fontSize: '12px', color: '#185FA5', textDecoration: 'none' }}>View all →</Link>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
+                {clientsWithOutstanding.slice(0, 8).map((c, i) => (
+                  <div key={i} style={{ padding: '8px 12px', borderRadius: '8px', background: '#FFF5F5', border: '1px solid #F09595' }}>
+                    <div style={{ fontSize: '13px', fontWeight: '500', color: '#791F1F' }}>{c.name}</div>
+                    <div style={{ fontSize: '11px', color: '#aaa', marginTop: '2px' }}>₱{Number(c.outstanding_balance).toLocaleString()} outstanding</div>
+                  </div>
+                ))}
+                {clientsWithOutstanding.length > 8 && (
+                  <Link href="/payments" style={{ padding: '8px 12px', borderRadius: '8px', background: '#f8f9fa', border: '1px solid #e0e0e0', fontSize: '12px', color: '#185FA5', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    +{clientsWithOutstanding.length - 8} more →
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
