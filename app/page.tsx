@@ -33,8 +33,8 @@ export default function HomePage() {
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
         padding: '0 2rem',
-        background: scrolled ? 'rgba(255,255,255,0.97)' : 'transparent',
-        boxShadow: scrolled ? '0 2px 20px rgba(0,0,0,0.08)' : 'none',
+        background: scrolled ? '#545454' : 'transparent',
+        boxShadow: scrolled ? '0 2px 20px #00000014' : 'none',
         transition: 'all 0.3s ease',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         height: '70px'
@@ -84,9 +84,6 @@ export default function HomePage() {
         overflow: 'hidden'
       }}>
 
-        <div style={{ position: 'absolute', top: '-100px', right: '-100px', width: '500px', height: '500px', borderRadius: '50%', background: 'rgba(252,194,0,0.08)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '-150px', left: '-150px', width: '600px', height: '600px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
-
         <img src="/logobig.png" alt="Potentials Therapy Center" 
             style={{ width: '250px', objectFit: 'contain', marginBottom: '1.5rem', filter: 'drop-shadow(0 4px 6px rgba(255,255,255,0.9))'
         }} />
@@ -112,13 +109,13 @@ export default function HomePage() {
           }}>Book an Appointment</a>
           <a href="#services" style={{
             padding: '14px 32px', borderRadius: '8px',
-            background: '#545454', color: '#545454',
+            background: '#ffffff', color: '#545454',
             textDecoration: 'none', fontSize: '15px', fontWeight: '500',
             border: '1px solid #545454'
           }}>Our Services</a>
           <a href="#location" style={{
             padding: '14px 32px', borderRadius: '8px',
-            background: '#545454', color: '#545454',
+            background: '#ffffff', color: '#545454',
             textDecoration: 'none', fontSize: '15px', fontWeight: '500',
             border: '1px solid #545454'
           }}>Find Us</a>
