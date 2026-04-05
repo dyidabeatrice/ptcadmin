@@ -30,11 +30,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {[
               { href: '/dashboard', label: 'Dashboard' },
               { href: '/sessions', label: 'Schedule' },
+              { href: '/payments', label: 'Payments' },
               { href: '/clients', label: 'Clients' },
               { href: '/master', label: 'Master' },
-              { href: '/therapists', label: 'Therapists' },
-              { href: '/payments', label: 'Payments' },
+              { href: '/documents', label: 'Reports' },
               { href: '/messages', label: 'Messages' },
+              { href: '/therapists', label: 'Therapists' },
             ].map(l => (
               <Link key={l.href} href={l.href} style={{
                 color: pathname === l.href ? '#fcc200' : 'rgba(255,255,255,0.8)',
