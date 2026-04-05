@@ -11,9 +11,8 @@ export default function Dashboard() {
 
   const [currentTime, setCurrentTime] = useState('')
 
-  const now = new Date();
-  const offset = 8 * 60; // GMT+8 in minutes
-  const gmt8Time = new Date(now.getTime() + (offset - now.getTimezoneOffset()) * 60000);
+  const now = new Date()
+  const gmt8Time = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
 
   useEffect(() => {
     async function load() {

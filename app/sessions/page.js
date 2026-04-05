@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday', 'Sunday']
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
 const SESSION_TYPES = {
   OT:        [{ value: 'OT Session', label: 'OT Session', amount: 1200 }, { value: 'Initial Evaluation', label: 'Initial Evaluation', amount: 2800 }, { value: 'IEP', label: 'IEP', amount: 1800 }, { value: 'Specialized', label: 'Specialized', amount: 0 }, { value: 'Cancellation Fee', label: 'Cancellation Fee', amount: 0 }],
