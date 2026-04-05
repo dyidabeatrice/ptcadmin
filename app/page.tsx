@@ -67,7 +67,7 @@ export default function HomePage() {
       {/* Hero */}
       <section id="home" style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #0f4c81 0%, #1a6db5 50%, #0d3d6b 100%)',
+        background: 'linear-gradient(135deg, 135deg, #dce9f4 0%, #fdf4d1 100%)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         flexDirection: 'column', textAlign: 'center',
         padding: '8rem 2rem 4rem', position: 'relative', overflow: 'hidden'
@@ -76,7 +76,7 @@ export default function HomePage() {
         <div style={{ position: 'absolute', bottom: '-150px', left: '-150px', width: '600px', height: '600px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
 
         <img src="/logobig.png" alt="Potentials Therapy Center" 
-            style={{ width: '250px', objectFit: 'contain', marginBottom: '1.5rem', filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)), drop-shadow(0 0 20px rgba(255,255,255,0.35))'
+            style={{ width: '250px', objectFit: 'contain', marginBottom: '1.5rem', filter: 'drop-shadow(0 4px 6px rgba(255,255,255,0.9))'
         }} />
 
         <h1 style={{
