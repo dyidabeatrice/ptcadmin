@@ -193,7 +193,7 @@ export default function HomePage() {
                     Unit 2A, #72, MIC Building, Bukidnon Street<br />
                     Brgy. Ramon Magsaysay, Bago Bantay<br />
                     Quezon City, Philippines 1105<br />
-                    <span style={{ color: '#999', fontSize: '13px' }}>Near SM Grass Residence, SM North Edsa Annex</span>
+                    <span style={{ color: '#999', fontSize: '13px' }}>Near Grass Residences, SM North Edsa Annex</span>
                   </div>
                 </div>
               </div>
