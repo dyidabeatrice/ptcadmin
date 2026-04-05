@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react'
 
 const DOC_TYPES = [
   { value: 'Initial Evaluation', label: 'Initial Evaluation', info: 'Reprint only — no fee', amount: 0, custom: false },
-  { value: 'Progress Report - Regular', label: 'Progress Report (Regular)', info: 'Minimum 2 weeks processing', amount: 750, custom: false },
-  { value: 'Progress Report - Rushed', label: 'Progress Report (Rushed)', info: '1–2 weeks processing', amount: 1000, custom: false },
+  { value: 'Progress Report - Regular', label: 'Progress Report (Regular)', info: 'Minimum 2 weeks processing', amount: 0, custom: true },
+  { value: 'Progress Report - Rushed', label: 'Progress Report (Rushed)', info: '1–2 weeks processing', amount: 0, custom: true },
   { value: 'Endorsement Notes', label: 'Endorsement Notes', info: 'Custom amount', amount: 0, custom: true },
   { value: 'Home Program', label: 'Home Program', info: 'Custom amount', amount: 0, custom: true },
 ]
@@ -33,7 +33,8 @@ export default function DocumentsPage() {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [payModal, setPayModal] = useState(null)
-  const [payAmount, setPayAmount] = useState(0)
+  const [payForm, setPayForm] = useState({ amount: 0, mop: 'Cash', use_credit: false, split: false, split_credit: 0, split_cash: 0 })
+  const [clientCredit, setClientCredit] = useState(0)
   const [filterStatus, setFilterStatus] = useState('All')
 
   const [form, setForm] = useState({
@@ -90,7 +91,6 @@ export default function DocumentsPage() {
     if (!form.client_name) return 'Please select a client'
     if (!form.therapist) return 'Please select a therapist'
     if (!form.doc_type) return 'Please select a document type'
-    if (!form.deadline) return 'Please select a deadline date'
     return null
   }
 
@@ -117,12 +117,41 @@ export default function DocumentsPage() {
     fetchAll()
   }
 
-  async function settlePayment() {
+    async function settlePayment() {
+    const mop = payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop
+    const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
+
     await fetch('/api/documents', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'pay', index: payModal.index, client_name: payModal.client_name, amount: payAmount })
+      body: JSON.stringify({ action: 'pay', index: payModal.index, client_name: payModal.client_name, amount: payForm.amount, mop })
     })
+
+    await fetch('/api/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'log',
+        client_name: payModal.client_name,
+        therapist: payModal.therapist,
+        session_id: `DOC-${payModal.id}`,
+        amount: payForm.amount,
+        mop,
+        session_type: payModal.doc_type,
+        date: today,
+        payment_type: 'document'
+      })
+    })
+
+    if (payForm.use_credit || payForm.split) {
+      const creditAmount = payForm.split ? payForm.split_credit : payForm.amount
+      await fetch('/api/credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'apply_credit', client_name: payModal.client_name, amount: creditAmount, credit_balance: clientCredit })
+      })
+    }
+
     setPayModal(null)
     fetchAll()
   }
@@ -163,23 +192,78 @@ export default function DocumentsPage() {
       </div>
 
       {/* Pay modal */}
-      {payModal && (
+            {payModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '380px', maxWidth: '90vw' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '420px', maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
             <h3 style={{ margin: '0 0 1rem', color: '#0f4c81' }}>Record payment</h3>
             <div style={{ background: '#f8f9fa', borderRadius: '8px', padding: '10px 12px', marginBottom: '1rem' }}>
               <div style={{ fontWeight: '500', color: '#0f4c81' }}>{payModal.client_name}</div>
               <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>{payModal.doc_type}</div>
+              {clientCredit > 0 && <div style={{ marginTop: '6px', fontSize: '12px', color: '#27500A', background: '#EAF3DE', padding: '4px 8px', borderRadius: '6px', display: 'inline-block' }}>💳 Credit: ₱{clientCredit.toLocaleString()}</div>}
             </div>
-            <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Amount (₱)</label>
-              <input type="number" value={payAmount} onChange={e => setPayAmount(Number(e.target.value))}
+              <input type="number" value={payForm.amount} onChange={e => setPayForm({ ...payForm, amount: Number(e.target.value), split_cash: Number(e.target.value) })}
                 style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '16px', fontWeight: '500', boxSizing: 'border-box' }} />
             </div>
+            {clientCredit > 0 && (
+              <div style={{ marginBottom: '12px', padding: '10px 12px', background: '#EAF3DE', borderRadius: '8px', border: '1px solid #97C459' }}>
+                <div style={{ fontSize: '12px', fontWeight: '500', color: '#27500A', marginBottom: '8px' }}>Client has ₱{clientCredit.toLocaleString()} credit</div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[
+                    ...(clientCredit >= payForm.amount ? [{ key: 'full', label: 'Use full credit', active: payForm.use_credit && !payForm.split }] : []),
+                    { key: 'split', label: 'Split payment', active: payForm.split },
+                    { key: 'normal', label: 'Pay normally', active: !payForm.use_credit && !payForm.split },
+                  ].map(opt => (
+                    <button key={opt.key} onClick={() => {
+                      if (opt.key === 'full') setPayForm({ ...payForm, use_credit: true, split: false, mop: 'Credit' })
+                      else if (opt.key === 'split') setPayForm({ ...payForm, split: true, use_credit: false, split_credit: Math.min(clientCredit, payForm.amount), split_cash: Math.max(0, payForm.amount - clientCredit) })
+                      else setPayForm({ ...payForm, use_credit: false, split: false })
+                    }} style={{
+                      padding: '6px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', border: 'none',
+                      background: opt.active ? '#27500A' : 'white',
+                      color: opt.active ? 'white' : '#27500A', fontWeight: '500'
+                    }}>{opt.label}</button>
+                  ))}
+                </div>
+                {payForm.split && (
+                  <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#666', display: 'block', marginBottom: '3px' }}>Credit amount</label>
+                      <input type="number" value={payForm.split_credit}
+                        onChange={e => setPayForm({ ...payForm, split_credit: Number(e.target.value), split_cash: Math.max(0, payForm.amount - Number(e.target.value)) })}
+                        style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #97C459', fontSize: '13px', boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#666', display: 'block', marginBottom: '3px' }}>Cash amount</label>
+                      <input type="number" value={payForm.split_cash}
+                        onChange={e => setPayForm({ ...payForm, split_cash: Number(e.target.value), split_credit: Math.max(0, payForm.amount - Number(e.target.value)) })}
+                        style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {!payForm.use_credit && (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Mode of payment</label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {['Cash', 'BDO', 'Union Bank'].map(mop => (
+                    <button key={mop} onClick={() => setPayForm({ ...payForm, mop })} style={{
+                      padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
+                      border: payForm.mop === mop ? '2px solid #0f4c81' : '1px solid #ddd',
+                      background: payForm.mop === mop ? '#E6F1FB' : 'white',
+                      color: payForm.mop === mop ? '#0f4c81' : '#666',
+                      fontWeight: payForm.mop === mop ? '500' : '400'
+                    }}>{mop}</button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setPayModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
-              <button onClick={settlePayment} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
-                Confirm ₱{Number(payAmount || 0).toLocaleString()}
+              <button onClick={settlePayment} disabled={!payForm.amount} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
+                Confirm ₱{Number(payForm.amount || 0).toLocaleString()}
               </button>
             </div>
           </div>
@@ -252,10 +336,7 @@ export default function DocumentsPage() {
                     Date needed <span style={{ color: '#E24B4A' }}>*</span>
                   </label>
                   <input type="date" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: !form.deadline ? '2px solid #EF9F27' : '1px solid #97C459', fontSize: '14px', boxSizing: 'border-box' }} />
-                  {!form.deadline && (
-                    <div style={{ marginTop: '6px', fontSize: '12px', color: '#633806' }}>⚠️ Please set a deadline date</div>
-                  )}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
                 </div>
 
                 <div style={{ marginBottom: '1.5rem' }}>
@@ -369,9 +450,15 @@ export default function DocumentsPage() {
                       {r.amount > 0 ? `₱${Number(r.amount).toLocaleString()}` : 'No fee'}
                     </td>
                     <td style={{ padding: '10px 16px' }}>
-                      <button onClick={() => {
+                      <button onClick={async () => {
                         if (r.status === 'Outstanding') {
-                          if (r.amount > 0) { setPayModal(r); setPayAmount(r.amount) }
+                        if (r.amount > 0) {
+                          setPayModal(r)
+                          setPayForm({ amount: r.amount, mop: 'Cash', use_credit: false, split: false, split_credit: 0, split_cash: r.amount })
+                          const cRes = await fetch(`/api/credits?client=${encodeURIComponent(r.client_name)}`)
+                          const cJson = await cRes.json()
+                          if (cJson.success) setClientCredit(cJson.credit_balance || 0)
+                        }
                           else updateStatus(r, 'Ready for Release')
                         } else if (r.status === 'Ready for Release') {
                           updateStatus(r, 'Completed')

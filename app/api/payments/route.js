@@ -28,6 +28,21 @@ export async function GET(request) {
         })
       }
 
+      // Also include outstanding document fees
+      const reportData = await getSheetData('reports')
+      const [, ...reportRows] = reportData
+      reportRows.filter(r => r && r[0] && r[8] === 'Outstanding' && parseFloat(r[7] || 0) > 0).forEach(row => {
+        unpaid.push({
+          week_key: null,
+          index: reportRows.indexOf(row),
+          id: row[0], client_name: row[1], therapist: row[2],
+          date: row[4], day: '', time_start: '', time_end: '',
+          session_type: row[6], status: 'Outstanding',
+          amount: parseFloat(row[7] || 0),
+          is_document: true
+        })
+      })
+
       return Response.json({ success: true, data: unpaid })
     }
 
@@ -51,18 +66,23 @@ export async function POST(request) {
   try {
     const body = await request.json()
     const sheets = getGoogleSheets()
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: SPREADSHEET_ID,
-      range: 'payments', valueInputOption: 'RAW',
-      requestBody: { values: [[
-        Date.now().toString(),
-        body.client_name, body.therapist || '',
-        body.session_id || '', body.amount,
-        body.mop, body.session_type || '',
-        body.date, body.payment_type || 'session'
-      ]]}
-    })
-    return Response.json({ success: true })
+
+    if (body.action === 'log') {
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: 'payments', valueInputOption: 'RAW',
+        requestBody: { values: [[
+          Date.now().toString() + Math.random().toString(36).slice(2),
+          body.client_name, body.therapist || '',
+          body.session_id, body.amount, body.mop,
+          body.session_type, body.date,
+          body.payment_type || 'document'
+        ]]}
+      })
+      return Response.json({ success: true })
+    }
+
+    return Response.json({ success: false, error: 'Unknown action' })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
   }
