@@ -33,7 +33,7 @@ export default function HomePage() {
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
         padding: '0 2rem',
-        background: scrolled ? '#545454' : 'transparent',
+        background: scrolled ? '#ffffff' : 'transparent',
         boxShadow: scrolled ? '0 2px 20px #00000014' : 'none',
         transition: 'all 0.3s ease',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -54,7 +54,7 @@ export default function HomePage() {
                 rel={l.href.startsWith('http') ? 'noopener noreferrer' : undefined} 
                 style={{
                     fontSize: '14px',
-                    color: scrolled ? '#0f4c81' : '#fff',
+                    color: scrolled ? '#0f4c81' : '#545454',
                     textDecoration: 'none', fontWeight: '500',
                     transition: 'opacity 0.2s'
             }}>{l.label}</a>
