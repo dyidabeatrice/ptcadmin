@@ -2,6 +2,10 @@ export default function PrivacyPolicy() {
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', padding: '3rem 2rem', fontFamily: 'sans-serif', color: '#333', lineHeight: '1.7' }}>
       
+      <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+          <a href="/" style={{ fontSize: '12px', color: '#999', textDecoration: 'none' }}>← Back to website</a>
+      </div>
+
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ color: '#0f4c81', fontSize: '28px', fontWeight: '600', marginBottom: '8px' }}>Privacy Policy</h1>
         <p style={{ color: '#999', fontSize: '14px' }}>Potentials Therapy Center · Last updated: April 2026</p>

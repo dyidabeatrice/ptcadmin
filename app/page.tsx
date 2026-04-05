@@ -23,6 +23,7 @@ export default function HomePage() {
     { icon: '🗣️', name: 'PROMPT Therapy', desc: 'Tactile-kinesthetic approach to speech motor control' },
     { icon: '✋', name: 'Sensory Integration', desc: 'Processing and responding to sensory information' },
     { icon: '🍽️', name: 'Pediatric Dysphagia', desc: 'Feeding therapy and swallowing difficulties' },
+    { icon: '🌈', name: '..and more!', desc: 'All tailored to your child’s unique developmental needs'}
   ]
 
   return (
@@ -38,7 +39,7 @@ export default function HomePage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         height: '70px'
       }}>
-        <img src="/logo.png" alt="Potentials Therapy Center" style={{ height: '44px', objectFit: 'contain' }} />
+        <img src="/logonowords.png" alt="Potentials Therapy Center" style={{ background:'transparent', height: '44px', objectFit: 'contain' }} />
         <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
           {[
             { label: 'Home', href: '#home' },
@@ -86,14 +87,20 @@ export default function HomePage() {
           fontSize: 'clamp(1rem, 2vw, 1.2rem)', color: 'rgba(255,255,255,0.8)',
           maxWidth: '560px', lineHeight: '1.7', margin: '0 0 2.5rem'
         }}>
-          unlocking your child's best
+          🔹 unlocking your child’s best 🔸
         </p>
 
         <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <a href="#services" style={{
+          <a href="http://m.me/potentialstherapycenter" style={{
             padding: '14px 32px', borderRadius: '8px',
             background: '#fcc200', color: '#0f4c81',
             textDecoration: 'none', fontSize: '15px', fontWeight: '700'
+          }}>Book an Appointment</a>
+          <a href="#services" style={{
+            padding: '14px 32px', borderRadius: '8px',
+            background: 'rgba(255,255,255,0.15)', color: '#fff',
+            textDecoration: 'none', fontSize: '15px', fontWeight: '500',
+            border: '1px solid rgba(255,255,255,0.3)'
           }}>Our Services</a>
           <a href="#location" style={{
             padding: '14px 32px', borderRadius: '8px',
