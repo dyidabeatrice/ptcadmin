@@ -20,26 +20,49 @@ function OutstandingTab({ clients, onSettle }) {
     setLoading(false)
   }
 
-  async function settlePayment() {
+    async function settlePayment() {
     setSaving(true)
-    await fetch('/api/sessions', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'pay',
-        week_key: payModal.week_key,
-        rowIndex: payModal.index,
-        session_id: payModal.id,
-        client_name: payModal.client_name,
-        therapist: payModal.therapist,
-        date: payModal.date,
-        session_type: payModal.session_type || 'Regular',
-        mop: payForm.mop,
-        amount: payForm.amount,
-        use_credit: false,
-        split: false
+    const isPartial = payForm.amount < payModal.amount
+
+    if (isPartial) {
+      // Record as advance/partial — don't mark session as paid
+      const today = new Date().toLocaleDateString('en-PH', {
+        timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric'
       })
-    })
+      await fetch('/api/credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add_credit',
+          client_name: payModal.client_name,
+          amount: payForm.amount,
+          mop: payForm.mop,
+          date: today,
+          note: `Partial payment for ${payModal.date}`
+        })
+      })
+    } else {
+      // Full payment — mark session as paid
+      await fetch('/api/sessions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'pay',
+          week_key: payModal.week_key,
+          rowIndex: payModal.index,
+          session_id: payModal.id,
+          client_name: payModal.client_name,
+          therapist: payModal.therapist,
+          date: payModal.date,
+          session_type: payModal.session_type || 'Regular',
+          mop: payForm.mop,
+          amount: payForm.amount,
+          use_credit: false,
+          split: false
+        })
+      })
+    }
+
     setPayModal(null)
     fetchOutstanding()
     onSettle()
@@ -68,6 +91,16 @@ function OutstandingTab({ clients, onSettle }) {
               <input type="number" value={payForm.amount}
                 onChange={e => setPayForm({ ...payForm, amount: Number(e.target.value) })}
                 style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '16px', fontWeight: '500', boxSizing: 'border-box' }} />
+              {payForm.amount > 0 && payForm.amount < (payModal?.amount || 0) && (
+                <div style={{ marginTop: '6px', padding: '8px 10px', borderRadius: '6px', background: '#FAEEDA', border: '1px solid #EF9F27', fontSize: '12px', color: '#633806' }}>
+                  ⚠️ Partial payment — ₱{((payModal?.amount || 0) - payForm.amount).toLocaleString()} remaining. Will be recorded as advance credit.
+                </div>
+              )}
+              {payForm.amount > 0 && payForm.amount >= (payModal?.amount || 0) && (
+                <div style={{ marginTop: '6px', padding: '8px 10px', borderRadius: '6px', background: '#EAF3DE', border: '1px solid #97C459', fontSize: '12px', color: '#27500A' }}>
+                  ✓ Full payment — session will be marked as paid.
+                </div>
+              )}
             </div>
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Mode of payment</label>
@@ -348,7 +381,7 @@ export default function PaymentsPage() {
           <button onClick={() => setAdvanceModal(true)} style={{
             padding: '9px 16px', borderRadius: '8px', border: '1px solid #1D9E75',
             cursor: 'pointer', fontSize: '13px', background: '#EAF3DE', color: '#27500A', fontWeight: '500'
-          }}>+ Advance payment</button>
+          }}>+ Advance / Partial Payment</button>
         </div>
       </div>
 
@@ -368,7 +401,7 @@ export default function PaymentsPage() {
       {advanceModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
-            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Record advance payment</h3>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Record advance / partial payment</h3>
             <p style={{ margin: '0 0 1.25rem', fontSize: '13px', color: '#999' }}>Stored as credit — not tied to a specific session.</p>
             <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Client</label>

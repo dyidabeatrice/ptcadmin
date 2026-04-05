@@ -9,6 +9,12 @@ export default function Dashboard() {
   const [todaySessions, setTodaySessions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
+  const [currentTime, setCurrentTime] = useState('')
+
+  const now = new Date();
+  const offset = 8 * 60; // GMT+8 in minutes
+  const gmt8Time = new Date(now.getTime() + (offset - now.getTimezoneOffset()) * 60000);
+
   useEffect(() => {
     async function load() {
       const [cRes, pRes, mRes, wRes] = await Promise.all([
@@ -25,7 +31,7 @@ export default function Dashboard() {
       if (mJson.success) setMessages(mJson.data)
 
       if (wJson.success && wJson.data.length > 0) {
-        const today = new Date()
+        const today = gmt8Time
         const day = today.getDay()
         const monday = new Date(today)
         monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1))
@@ -48,7 +54,18 @@ export default function Dashboard() {
     load()
   }, [])
 
-  const today = new Date()
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      const timeString = now.toLocaleString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hour12: false });
+      setCurrentTime(timeString);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 60000);
+    return () => clearInterval(interval);
+  }, [])
+
+  const today = gmt8Time
   const todayDay = today.toLocaleDateString('en-US', { weekday: 'long' })
   const todayDate = today.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
   const todayStr = today.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
@@ -69,8 +86,8 @@ export default function Dashboard() {
     <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
 
       <div style={{ marginBottom: '1.5rem' }}>
-        <h1 style={{ color: '#0f4c81', margin: '0 0 4px' }}>Good morning</h1>
-        <p style={{ margin: 0, fontSize: '14px', color: '#999' }}>{todayStr}</p>
+        <h1 style={{ color: '#0f4c81', margin: '0 0 4px' }}>{todayStr}</h1>
+        <p style={{ margin: 0, fontSize: '14px', color: '#999' }}>{currentTime} (GMT+8)</p>
       </div>
 
       <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1rem 1.25rem', marginBottom: '2rem' }}>
