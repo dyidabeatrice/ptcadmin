@@ -2,11 +2,6 @@
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 
-export const metadata = {
-  title: "Potentials Therapy Center",
-  description: "unlocking your child's best — OT, ST, PT, SPED",
-}
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isPublicPage = ['/', '/login', '/privacy'].includes(pathname)
@@ -14,6 +9,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
+        <title>Potentials Therapy Center</title>
+        <link rel="icon" href="/favicon.ico" />
+        <style>{`
+          * { box-sizing: border-box; }
+          body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+          input, select, button, textarea { font-family: inherit; }
+        `}</style>
+
         <meta name="facebook-domain-verification" content="87rzobk3xkzrf5ndn7cdaiovyodrtb" />
 
         <style>{`
