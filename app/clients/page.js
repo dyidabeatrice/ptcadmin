@@ -78,7 +78,9 @@ function similarity(a, b) {
 function TherapistRows({ therapists, setTherapists, therapistData }) {
   function getTherapistsForDay(day) {
     if (!day) return []
-    return [...new Set(therapistData.filter(t => t.day === day).map(t => t.name))].sort()
+    const filtered = therapistData.filter(t => t.day === day)
+    console.log('therapists for day', day, filtered)
+    return [...new Set(filtered.map(t => t.name))].sort()
   }
 
   function getTimeSlotsForTherapist(day, name) {

@@ -712,12 +712,7 @@ export default function SchedulePage() {
                     }
 
                     {/* Session blocks */}
-                    {isAbsent ? (
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontSize: '10px', color: '#bbb', fontWeight: '500' }}>ABSENT</span>
-                      </div>
-                    ) : (
-                      therapistSessions.map((s, si) => {
+                    {therapistSessions.map((s, si) => {
                         const startMins = parseTime(s.time_start)
                         const endMins = parseTime(s.time_end)
                         const topOffset = ((startMins - gridStartMins) / 15) * ROW_HEIGHT
@@ -782,7 +777,7 @@ export default function SchedulePage() {
                           </div>
                         )
                       })
-                    )}
+                    }
                   </div>
                 </div>
               )
