@@ -71,8 +71,8 @@ async function sendSessionReminders() {
       const message = `Good day! This is a friendly reminder that ${clientName} has a ${specialty} session tomorrow, ${tomorrowDate} at ${timeStart} with T. ${therapist}. Please confirm attendance:`
 
       const quickReplies = [
-        { content_type: 'text', title: "✓ Yes", payload: 'CONFIRM_YES' },
-        { content_type: 'text', title: "✗ No", payload: 'CONFIRM_NO' }
+        { content_type: 'text', title: "✓ YES", payload: 'CONFIRM_YES' },
+        { content_type: 'text', title: "✗ NO", payload: 'CONFIRM_NO' }
       ]
 
       const result = await sendMessengerMessage(client.psid, message, quickReplies)

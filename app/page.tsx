@@ -141,6 +141,37 @@ export default function HomePage() {
         </div>
       </section>
 
+            {/* How to Avail Services */}
+      <section id="how-to-avail" style={{ padding: '6rem 2rem', background: '#f8f9fb' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <div style={{ fontSize: '12px', letterSpacing: '0.15em', color: '#fcc200', fontWeight: '700', marginBottom: '12px', textTransform: 'uppercase' }}>How to Avail Our Services</div>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: 0, fontWeight: '700' }}>Get Started With Us</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '25px' }}>
+            {[
+              { num: '01', title: 'Get a Referral', content: 'Obtain a referral from a developmental pediatrician. Your child may be recommended for Physical Therapy, Occupational Therapy, Speech Therapy, or Playschool Services.' },
+              { num: '02', title: 'Initial Contact', content: 'Call or visit Potentials Therapy Center to check service availability, enrollment steps, new client acceptance, and cost of services.' },
+              { num: '03', title: 'Assessment & Evaluation', content: 'Schedule the initial assessment to determine needs and create a therapy plan. Bring relevant records and referral letters.' },
+              { num: '04', title: 'Enroll in Services', content: 'Fill out registration forms with personal and medical details. Schedule therapy sessions right after registration.' },
+              { num: '05', title: 'Attend Therapy Sessions', content: 'Attend sessions as recommended. Complete home exercises provided by therapists to support progress.' },
+              { num: '06', title: 'Monitor Progress', content: 'Communicate regularly with your child\'s therapists about goals, progress, and any concerns.' },
+            ].map((step, i) => (
+              <div key={i} style={{
+                background: 'white', padding: '25px', borderRadius: '14px',
+                border: '2px solid #fcc200', boxShadow: '0 4px 10px rgba(0,0,0,0.05)'
+              }}>
+                <h3 style={{ color: '#0f4c81', marginTop: 0 }}>{step.num} • {step.title}</h3>
+                <p style={{ color: '#666', lineHeight: '1.6', margin: 0 }}>{step.content}</p>
+              </div>
+            ))}
+          </div>
+          <h3 style={{ textAlign: 'center', marginTop: '50px', color: '#0f4c81', fontWeight: '600' }}>
+            Work with us to unlock the best in your child! 💙💛
+          </h3>
+        </div>
+      </section>
+
       {/* Location */}
       <section id="location" style={{ padding: '6rem 2rem', background: '#fff' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }}>
