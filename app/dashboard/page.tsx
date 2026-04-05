@@ -76,10 +76,8 @@ export default function Dashboard() {
   const todayPayments = payments.filter(p => p.date === todayDate && p.payment_type !== 'refund')
   const todayTotal = todayPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
   const pendingMessages = messages.filter((m: any) => !m.sent)
-  const activeClients = clients.filter(c => c.status !== 'inactive')
   const therapistsToday = [...new Set(todaySessions.map(s => s.therapist))].sort()
   const absentTherapists = [...new Set(todaySessions.filter(s => s.status === 'Absent').map(s => s.therapist))]
-  const clientsWithCredit = clients.filter(c => c.credit_balance > 0)
   const clientsWithOutstanding = clients.filter(c => c.outstanding_balance > 0)
 
   return (
