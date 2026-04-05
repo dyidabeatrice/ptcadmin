@@ -2,6 +2,11 @@
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 
+export const metadata = {
+  title: "Potentials Therapy Center",
+  description: "unlocking your child's best — OT, ST, PT, SPED",
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isPublicPage = ['/', '/login', '/privacy'].includes(pathname)
@@ -29,10 +34,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/dashboard" style={{ color: '#fcc200', fontWeight: '700', textDecoration: 'none', fontSize: '15px', marginRight: '8px' }}>PTC</Link>
             {[
               { href: '/dashboard', label: 'Dashboard' },
-              { href: '/sessions', label: 'Schedule' },
-              { href: '/payments', label: 'Payments' },
               { href: '/clients', label: 'Clients' },
               { href: '/master', label: 'Master' },
+              { href: '/sessions', label: 'Schedule' },
+              { href: '/payments', label: 'Payments' },
               { href: '/documents', label: 'Reports' },
               { href: '/messages', label: 'Messages' },
               { href: '/therapists', label: 'Therapists' },
