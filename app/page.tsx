@@ -67,7 +67,7 @@ export default function HomePage() {
       {/* Hero */}
       <section id="home" style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #dce9f4 0%, #dce9f4 50%, #fdf4d1 100%)',
+        background: 'linear-gradient(135deg, #0f4c81 0%, #1a6db5 50%, #0d3d6b 100%)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         flexDirection: 'column', textAlign: 'center',
         padding: '8rem 2rem 4rem', position: 'relative', overflow: 'hidden'
