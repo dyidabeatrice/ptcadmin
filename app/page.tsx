@@ -109,13 +109,13 @@ export default function HomePage() {
           }}>Book an Appointment</a>
           <a href="#services" style={{
             padding: '14px 32px', borderRadius: '8px',
-            background: 'transparent', color: '#545454',
+            background: '#efefef', color: '#545454',
             textDecoration: 'none', fontSize: '15px', fontWeight: '500',
             border: '1px solid #545454'
           }}>Our Services</a>
           <a href="#location" style={{
             padding: '14px 32px', borderRadius: '8px',
-            background: 'transparent', color: '#545454',
+            background: '#efefef', color: '#545454',
             textDecoration: 'none', fontSize: '15px', fontWeight: '500',
             border: '1px solid #545454'
           }}>Find Us</a>
