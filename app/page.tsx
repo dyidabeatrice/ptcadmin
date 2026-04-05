@@ -70,11 +70,20 @@ export default function HomePage() {
       {/* Hero */}
       <section id="home" style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #0f4c81 0%, #1a6db5 50%, #0d3d6b 100%)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexDirection: 'column', textAlign: 'center',
-        padding: '8rem 2rem 4rem', position: 'relative', overflow: 'hidden'
+        backgroundImage: 'url("/hero.png")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        textAlign: 'center',
+        padding: '8rem 2rem 4rem',
+        position: 'relative',
+        overflow: 'hidden'
       }}>
+
         <div style={{ position: 'absolute', top: '-100px', right: '-100px', width: '500px', height: '500px', borderRadius: '50%', background: 'rgba(252,194,0,0.08)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: '-150px', left: '-150px', width: '600px', height: '600px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
 
@@ -83,13 +92,13 @@ export default function HomePage() {
         }} />
 
         <h1 style={{
-          fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: '#fff',
+          fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: '#545454',
           fontWeight: '700', margin: '0 0 1rem', lineHeight: '1.2',
           maxWidth: '700px'
         }}>Potentials Therapy Center</h1>
 
         <p style={{
-          fontSize: 'clamp(1rem, 2vw, 1.2rem)', color: 'rgba(255,255,255,0.8)',
+          fontSize: 'clamp(1rem, 2vw, 1.2rem)', color: '#545454',
           maxWidth: '560px', lineHeight: '1.7', margin: '0 0 2.5rem'
         }}>
           🔹 unlocking your child’s best 🔸
@@ -103,15 +112,15 @@ export default function HomePage() {
           }}>Book an Appointment</a>
           <a href="#services" style={{
             padding: '14px 32px', borderRadius: '8px',
-            background: 'rgba(255,255,255,0.15)', color: '#fff',
+            background: '#545454', color: '#545454',
             textDecoration: 'none', fontSize: '15px', fontWeight: '500',
-            border: '1px solid rgba(255,255,255,0.3)'
+            border: '1px solid #545454'
           }}>Our Services</a>
           <a href="#location" style={{
             padding: '14px 32px', borderRadius: '8px',
-            background: 'rgba(255,255,255,0.15)', color: '#fff',
+            background: '#545454', color: '#545454',
             textDecoration: 'none', fontSize: '15px', fontWeight: '500',
-            border: '1px solid rgba(255,255,255,0.3)'
+            border: '1px solid #545454'
           }}>Find Us</a>
         </div>
       </section>
