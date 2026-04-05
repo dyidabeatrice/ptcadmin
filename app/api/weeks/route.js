@@ -119,7 +119,7 @@ export async function POST(request) {
     if (body.action === 'generate') {
       const sheets = getGoogleSheets()
       const existingWeeks = await getWeekSheets()
-      const today = new Date()
+      const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
       const currentMonday = getMondayOf(today)
       const created = []
 
