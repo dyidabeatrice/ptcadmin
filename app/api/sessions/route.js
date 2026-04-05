@@ -250,10 +250,38 @@ export async function PATCH(request) {
     }
 
     if (body.action === 'therapist_absent') {
-      return Response.json({ success: true, cancelled: 0 })
+      const sheetId = await getSheetId('blocked')
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: 'blocked', valueInputOption: 'RAW',
+        requestBody: { values: [[
+          Date.now().toString(),
+          body.therapist, body.day,
+          '8:00 AM', '6:00 PM',
+          'absent', `Absent ${body.week_key}`
+        ]]}
+      })
+      return Response.json({ success: true })
     }
 
     if (body.action === 'therapist_undo_absent') {
+      const blockedData = await getSheetData('blocked')
+      const [, ...rows] = blockedData
+      const absentIndex = rows.findIndex(r =>
+        r && r[1] === body.therapist &&
+        r[2] === body.day &&
+        r[5] === 'absent' &&
+        r[6]?.includes(body.week_key)
+      )
+      if (absentIndex !== -1) {
+        const sheetId = await getSheetId('blocked')
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId: SPREADSHEET_ID,
+          requestBody: { requests: [{ deleteDimension: {
+            range: { sheetId, dimension: 'ROWS', startIndex: absentIndex + 1, endIndex: absentIndex + 2 }
+          }}]}
+        })
+      }
       return Response.json({ success: true })
     }
 

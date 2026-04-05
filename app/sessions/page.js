@@ -102,6 +102,13 @@ export default function SchedulePage() {
     const bJson = await bRes.json()
     if (bJson.success) setBlockedSlots(bJson.data)
 
+    const absentFromBlocked = new Set(
+      (bJson.data || [])
+        .filter(b => b.type === 'absent')
+        .map(b => b.therapist)
+    )
+    setAbsentTherapists(absentFromBlocked)
+
     const weeksRes = await fetch('/api/weeks')
     const weeksJson = await weeksRes.json()
     if (weeksJson.success && weeksJson.data.length > 0) {
@@ -280,14 +287,21 @@ export default function SchedulePage() {
     fetchSessions(selectedWeek.key)
   }
 
-  async function toggleTherapistAbsent(therapist) {
+    async function toggleTherapistAbsent(therapist) {
     const isAbsent = absentTherapists.has(therapist)
     if (isAbsent) {
       setAbsentTherapists(prev => { const n = new Set(prev); n.delete(therapist); return n })
+      await fetch('/api/sessions', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'therapist_undo_absent', week_key: selectedWeek.key, therapist, day: selectedDay })
+      })
     } else {
       if (!confirm(`Mark ${therapist} as absent for ${selectedDay}?`)) return
       setAbsentTherapists(prev => new Set([...prev, therapist]))
-      alert(`${therapist} marked absent. Go to Messages to send absence notices.`)
+      await fetch('/api/sessions', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'therapist_absent', week_key: selectedWeek.key, therapist, day: selectedDay })
+      })
     }
   }
 
