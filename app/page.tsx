@@ -142,7 +142,7 @@ export default function HomePage() {
       </section>
 
             {/* How to Avail Services */}
-      <section id="how-to-avail" style={{ padding: '6rem 2rem', background: '#f8f9fb' }}>
+      <section id="how-to-avail" style={{ padding: '6rem 2rem', background: '#e9ebee' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
             <div style={{ fontSize: '12px', letterSpacing: '0.15em', color: '#fcc200', fontWeight: '700', marginBottom: '12px', textTransform: 'uppercase' }}>How to Avail Our Services</div>
