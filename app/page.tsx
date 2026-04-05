@@ -85,7 +85,7 @@ export default function HomePage() {
       }}>
 
         <img src="/logobig.png" alt="Potentials Therapy Center" 
-            style={{ width: '250px', objectFit: 'contain', marginBottom: '1.5rem', filter: 'drop-shadow(0 4px 6px rgba(255,255,255,0.9))'
+            style={{ width: '300px', objectFit: 'contain', marginBottom: '1.5rem'
         }} />
 
         <h1 style={{
@@ -109,13 +109,13 @@ export default function HomePage() {
           }}>Book an Appointment</a>
           <a href="#services" style={{
             padding: '14px 32px', borderRadius: '8px',
-            background: '#ffffff', color: '#545454',
+            background: 'transparent', color: '#545454',
             textDecoration: 'none', fontSize: '15px', fontWeight: '500',
             border: '1px solid #545454'
           }}>Our Services</a>
           <a href="#location" style={{
             padding: '14px 32px', borderRadius: '8px',
-            background: '#ffffff', color: '#545454',
+            background: 'transparent', color: '#545454',
             textDecoration: 'none', fontSize: '15px', fontWeight: '500',
             border: '1px solid #545454'
           }}>Find Us</a>
