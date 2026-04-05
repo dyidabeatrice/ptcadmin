@@ -386,11 +386,10 @@ export default function PaymentsPage() {
   }
 
   const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
-  const todayPayments = payments.filter(p => p.date === today)
-  const todayTotal = todayPayments
-    .filter(p => p.payment_type !== 'refund')
-    .reduce((sum, p) => sum + Number(p.amount || 0), 0)
-
+  const todayPayments = payments.filter(p => p.date === today && p.payment_type !== 'refund')
+  const todayRefunds = payments.filter(p => p.date === today && p.payment_type === 'refund')
+  const todayTotal = todayPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0) 
+    - todayRefunds.reduce((sum, p) => sum + Math.abs(Number(p.amount || 0)), 0)
 
   const weekPayments = payments.filter(p => {
     if (!selectedWeek) return false

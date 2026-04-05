@@ -22,14 +22,16 @@ async function getSheetId(sheets, sheetName) {
 
 export async function GET() {
   try {
-    const data = await getSheetData('therapists')
+    const data = await getSheetData('therapists!A:H')
     const [, ...rows] = data
     if (!rows || rows.length === 0) return Response.json({ success: true, data: [] })
     const therapists = rows.filter(r => r && r[0]).map((row, i) => ({
       index: i,
       id: row[0], name: row[1], specialty: row[2],
       is_intern: row[3] === 'TRUE', day: row[4],
-      time_start: row[5], time_end: row[6]
+      time_start: row[5], time_end: row[6],
+      email: row[7] || ''
+
     }))
       return Response.json({ success: true, data: therapists }, {
       headers: { 'Cache-Control': 'no-store' }
