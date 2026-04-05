@@ -334,7 +334,7 @@ export default function DocumentsPage() {
 
                 <div style={{ marginBottom: '12px' }}>
                   <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
-                    Date needed <span style={{ color: '#E24B4A' }}>*</span>
+                    Date needed
                   </label>
                   <input type="date" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })}
                     style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />

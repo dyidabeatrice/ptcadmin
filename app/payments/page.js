@@ -386,10 +386,31 @@ export default function PaymentsPage() {
   }
 
   const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
-  const todayPayments = payments.filter(p => p.date === today && p.payment_type !== 'refund')
+  const todayPayments = payments.filter(p => {
+    if (!p.date) return false
+    const pDate = parsePaymentDate(p.date)
+    if (!pDate) return false
+    const t = gmt8Time
+    return pDate.getFullYear() === t.getFullYear() &&
+      pDate.getMonth() === t.getMonth() &&
+      pDate.getDate() === t.getDate() &&
+      p.payment_type !== 'refund'
+  })
   const todayRefunds = payments.filter(p => p.date === today && p.payment_type === 'refund')
   const todayTotal = todayPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0) 
     - todayRefunds.reduce((sum, p) => sum + Math.abs(Number(p.amount || 0)), 0)
+
+  function parsePaymentDate(dateStr) {
+    if (!dateStr) return null
+    const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
+    const parts = dateStr.replace(',', '').split(' ')
+    if (parts.length !== 3) return null
+    const month = months[parts[0]]
+    const day = parseInt(parts[1])
+    const year = parseInt(parts[2])
+    if (month === undefined || isNaN(day) || isNaN(year)) return null
+    return new Date(year, month, day)
+  }
 
   const weekPayments = payments.filter(p => {
     if (!selectedWeek) return false
@@ -398,9 +419,8 @@ export default function PaymentsPage() {
     const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
     const sunday = new Date(monday)
     sunday.setDate(sunday.getDate() + 6)
-    // Parse 'Apr 5, 2026' format
-    const pDate = new Date(p.date)
-    if (isNaN(pDate.getTime())) return false
+    const pDate = parsePaymentDate(p.date)
+    if (!pDate) return false
     return pDate >= monday && pDate <= sunday
   })
 
