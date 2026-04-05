@@ -113,7 +113,7 @@ export default function SchedulePage() {
     const weeksJson = await weeksRes.json()
     if (weeksJson.success && weeksJson.data.length > 0) {
       setWeeks(weeksJson.data)
-      const today = new Date()
+      const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
       const monday = getMondayOf(today)
       const currentKey = getWeekKey(monday)
       const current = weeksJson.data.find(w => w.key === currentKey) || weeksJson.data[weeksJson.data.length - 1]

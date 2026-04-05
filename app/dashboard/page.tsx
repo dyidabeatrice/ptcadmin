@@ -44,7 +44,7 @@ export default function Dashboard() {
           const sRes = await fetch(`/api/sessions?week=${currentKey}`)
           const sJson = await sRes.json()
           if (sJson.success) {
-            const todayDay = today.toLocaleDateString('en-US', { weekday: 'long' })
+            const todayDay = today.toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'long' })
             setTodaySessions(sJson.data.filter((s: any) => s.day === todayDay))
           }
         }
@@ -57,7 +57,7 @@ export default function Dashboard() {
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      const timeString = now.toLocaleString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hour12: false });
+      const timeString = now.toLocaleString('en-US', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hour12: true });
       setCurrentTime(timeString);
     };
     updateTime();
