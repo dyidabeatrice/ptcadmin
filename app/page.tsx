@@ -39,7 +39,7 @@ export default function HomePage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         height: '70px'
       }}>
-        <img src="/logonowords.png" alt="Potentials Therapy Center" style={{ background:'transparent', height: '44px', objectFit: 'contain' }} />
+        <img src="/logobig.png" alt="Potentials Therapy Center" style={{ background:'transparent', height: '44px', objectFit: 'contain' }} />
         <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
           {[
             { label: 'Home', href: '#home' },
