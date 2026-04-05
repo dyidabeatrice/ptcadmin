@@ -283,16 +283,12 @@ export default function SchedulePage() {
   async function toggleTherapistAbsent(therapist) {
     const isAbsent = absentTherapists.has(therapist)
     if (isAbsent) {
-      if (!confirm(`Undo absence for ${therapist}?`)) return
       setAbsentTherapists(prev => { const n = new Set(prev); n.delete(therapist); return n })
-      await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'therapist_undo_absent', week_key: selectedWeek.key, therapist, day: selectedDay }) })
     } else {
       if (!confirm(`Mark ${therapist} as absent for ${selectedDay}?`)) return
       setAbsentTherapists(prev => new Set([...prev, therapist]))
-      await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'therapist_absent', week_key: selectedWeek.key, therapist, day: selectedDay }) })
       alert(`${therapist} marked absent. Go to Messages to send absence notices.`)
     }
-    fetchSessions(selectedWeek.key)
   }
 
   const therapistKey = payModal ? getTherapistKey(payModal.therapist, therapistData) : 'OT'

@@ -246,52 +246,14 @@ export async function PATCH(request) {
     }
 
     if (body.action === 'holiday') {
-      const sessions = await getWeekSheet(weekKey)
-      const daySessions = sessions.filter(s => s.day === body.day && s.status !== 'Cancelled')
-      for (const s of daySessions) {
-        await sheets.spreadsheets.values.update({
-          spreadsheetId: SPREADSHEET_ID,
-          range: `${weekKey}!I${s.index + 2}`,
-          valueInputOption: 'RAW',
-          requestBody: { values: [['Cancelled']] }
-        })
-      }
-      return Response.json({ success: true, cancelled: daySessions.length })
+      return Response.json({ success: true, cancelled: 0 })
     }
 
     if (body.action === 'therapist_absent') {
-      const sessions = await getWeekSheet(weekKey)
-      const therapistSessions = sessions.filter(s =>
-        s.therapist === body.therapist &&
-        s.day === body.day &&
-        s.status !== 'Cancelled'
-      )
-      for (const s of therapistSessions) {
-        await sheets.spreadsheets.values.update({
-          spreadsheetId: SPREADSHEET_ID,
-          range: `${weekKey}!I${s.index + 2}`,
-          valueInputOption: 'RAW',
-          requestBody: { values: [['Cancelled']] }
-        })
-      }
-      return Response.json({ success: true, cancelled: therapistSessions.length })
+      return Response.json({ success: true, cancelled: 0 })
     }
 
     if (body.action === 'therapist_undo_absent') {
-      const sessions = await getWeekSheet(weekKey)
-      const therapistSessions = sessions.filter(s =>
-        s.therapist === body.therapist &&
-        s.day === body.day &&
-        s.status === 'Cancelled'
-      )
-      for (const s of therapistSessions) {
-        await sheets.spreadsheets.values.update({
-          spreadsheetId: SPREADSHEET_ID,
-          range: `${weekKey}!I${s.index + 2}`,
-          valueInputOption: 'RAW',
-          requestBody: { values: [['Scheduled']] }
-        })
-      }
       return Response.json({ success: true })
     }
 
