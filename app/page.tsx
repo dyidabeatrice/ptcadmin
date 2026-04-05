@@ -49,11 +49,14 @@ export default function HomePage() {
             { label: 'Book an Appointment', href: 'http://m.me/potentialstherapycenter' },
             { label: 'Join us', href: 'https://www.facebook.com/potentialstherapycenter/posts/pfbid02jYUPkwgLuufCSg8j3jvz5rZrGqmP7Qvk9x5qWQbV187zTLSNbLdA51yJ5yd7gB2Ll'}
           ].map(l => (
-            <a key={l.label} href={l.href} style={{
-              fontSize: '14px',
-              color: scrolled ? '#0f4c81' : '#fff',
-              textDecoration: 'none', fontWeight: '500',
-              transition: 'opacity 0.2s'
+            <a key={l.label} href={l.href}
+                target={l.href.startsWith('http') ? '_blank' : undefined}
+                rel={l.href.startsWith('http') ? 'noopener noreferrer' : undefined} 
+                style={{
+                    fontSize: '14px',
+                    color: scrolled ? '#0f4c81' : '#fff',
+                    textDecoration: 'none', fontWeight: '500',
+                    transition: 'opacity 0.2s'
             }}>{l.label}</a>
           ))}
           <Link href="/login" style={{
@@ -93,7 +96,7 @@ export default function HomePage() {
         </p>
 
         <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <a href="http://m.me/potentialstherapycenter" style={{
+          <a target="_blank" rel="noopener noreferrer" href="http://m.me/potentialstherapycenter" style={{
             padding: '14px 32px', borderRadius: '8px',
             background: '#fcc200', color: '#0f4c81',
             textDecoration: 'none', fontSize: '15px', fontWeight: '700'
@@ -161,7 +164,7 @@ export default function HomePage() {
                 <span style={{ fontSize: '20px', flexShrink: 0 }}>✉️</span>
                 <div>
                   <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>Email</div>
-                  <a href="mailto:potentialstherapycenter@gmail.com" style={{ color: '#0f4c81', fontSize: '14px', textDecoration: 'none' }}>
+                  <a target="_blank" rel="noopener noreferrer" href="mailto:potentialstherapycenter@gmail.com" style={{ color: '#0f4c81', fontSize: '14px', textDecoration: 'none' }}>
                     potentialstherapycenter@gmail.com
                   </a>
                 </div>
@@ -171,11 +174,11 @@ export default function HomePage() {
                 <div>
                   <div style={{ fontWeight: '600', color: '#333', marginBottom: '8px' }}>Follow Us</div>
                   <div style={{ display: 'flex', gap: '10px' }}>
-                    <a href="https://www.facebook.com/potentialstherapycenter" target="_blank" rel="noopener noreferrer" style={{
+                    <a target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/potentialstherapycenter" style={{
                       padding: '8px 16px', borderRadius: '6px', background: '#1877f2', color: '#fff',
                       textDecoration: 'none', fontSize: '13px', fontWeight: '500'
                     }}>Facebook</a>
-                    <a href="https://www.instagram.com/potentialstherapycenter/" target="_blank" rel="noopener noreferrer" style={{
+                    <a target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/potentialstherapycenter/" style={{
                       padding: '8px 16px', borderRadius: '6px', background: '#e1306c', color: '#fff',
                       textDecoration: 'none', fontSize: '13px', fontWeight: '500'
                     }}>Instagram</a>
@@ -203,7 +206,7 @@ export default function HomePage() {
         </div>
         <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', fontSize: '13px' }}>
           <a href="/privacy" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Privacy Policy</a>
-          <a href="mailto:potentialstherapycenter@gmail.com" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Contact</a>
+          <a target="_blank" rel="noopener noreferrer"href="mailto:potentialstherapycenter@gmail.com" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Contact</a>
           <Link href="/login" style={{ color: '#fcc200', textDecoration: 'none', fontWeight: '500' }}>Staff Login</Link>
         </div>
       </footer>

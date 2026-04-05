@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 
 const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
 
-function OutstandingTab({ clients }) {
+function OutstandingTab({ clients, onSettle }) {
   const [unpaidSessions, setUnpaidSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [payModal, setPayModal] = useState(null)
@@ -42,6 +42,7 @@ function OutstandingTab({ clients }) {
     })
     setPayModal(null)
     fetchOutstanding()
+    onSettle()
     setSaving(false)
   }
 
@@ -50,8 +51,6 @@ function OutstandingTab({ clients }) {
     acc[s.client_name].push(s)
     return acc
   }, {})
-
-  const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
 
   return (
     <div>
@@ -123,7 +122,7 @@ function OutstandingTab({ clients }) {
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: '6px', marginBottom: '4px', background: '#f8f9fa', border: '1px solid #e0e0e0' }}>
                       <div>
                         <div style={{ fontSize: '13px', color: '#333' }}>{s.date} · {s.time_start}–{s.time_end}</div>
-                        <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>{s.therapist} · {s.status} · {s.session_type}</div>
+                        <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>{s.therapist} · {s.status} · {s.session_type || 'Regular'}</div>
                       </div>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                         <span style={{ fontSize: '13px', fontWeight: '500', color: '#E24B4A' }}>₱{Number(s.amount || 0).toLocaleString()}</span>
@@ -160,6 +159,10 @@ export default function PaymentsPage() {
   const [refundModal, setRefundModal] = useState(null)
   const [refundAmount, setRefundAmount] = useState('')
   const [saving, setSaving] = useState(false)
+  const [exportMonth, setExportMonth] = useState(() => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  })
 
   useEffect(() => { fetchAll() }, [])
 
@@ -215,7 +218,7 @@ export default function PaymentsPage() {
     if (!advanceForm.client_name) return alert('Please select a client')
     if (!advanceForm.amount || Number(advanceForm.amount) <= 0) return alert('Please enter an amount')
     setSaving(true)
-    const today = new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+    const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
     await fetch('/api/credits', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -241,11 +244,7 @@ export default function PaymentsPage() {
     await fetch('/api/credits', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'refund',
-        client_name: refundModal.name,
-        amount: Number(refundAmount)
-      })
+      body: JSON.stringify({ action: 'refund', client_name: refundModal.name, amount: Number(refundAmount) })
     })
     setRefundModal(null)
     setRefundAmount('')
@@ -253,9 +252,44 @@ export default function PaymentsPage() {
     setSaving(false)
   }
 
-  const today = new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
-  const todayPayments = payments.filter(p => p.date === today)
-  
+  function exportToExcel() {
+    const [year, month] = exportMonth.split('-').map(Number)
+    const monthName = new Date(year, month - 1).toLocaleString('en-PH', { month: 'long' })
+
+    const monthPayments = payments.filter(p => {
+      if (!p.date) return false
+      const d = new Date(p.date)
+      return d.getFullYear() === year && d.getMonth() + 1 === month
+    })
+
+    if (monthPayments.length === 0) return alert(`No payments found for ${monthName} ${year}`)
+
+    const rows = [
+      ['Date', 'Client Name', 'Session Type', 'Amount (₱)', 'Mode of Payment', 'Type'],
+      ...monthPayments.map(p => [
+        p.date, p.client_name, p.session_type || 'Regular',
+        Number(p.amount || 0), p.mop, p.payment_type === 'advance' ? 'Advance' : p.payment_type === 'refund' ? 'Refund' : 'Session'
+      ])
+    ]
+
+    const totalRow = ['TOTAL', '', '', monthPayments.filter(p => p.payment_type !== 'refund').reduce((sum, p) => sum + Number(p.amount || 0), 0), '', '']
+    rows.push([])
+    rows.push(totalRow)
+
+    const csv = rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `PTC_Payments_${monthName}_${year}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
+  const todayPayments = payments.filter(p => p.date === today && p.payment_type !== 'refund')
+  const todayTotal = todayPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
+
   const weekPayments = payments.filter(p => {
     if (!selectedWeek) return false
     const parts = selectedWeek.key.replace('week_', '').split('_')
@@ -266,23 +300,17 @@ export default function PaymentsPage() {
     return pDate >= monday && pDate <= sunday
   })
 
-  const todayTotal = todayPayments
-    .filter(p => p.payment_type !== 'refund')
-    .reduce((sum, p) => sum + Number(p.amount || 0), 0)
   const weekTotal = weekPayments
     .filter(p => p.payment_type !== 'refund')
     .reduce((sum, p) => sum + Number(p.amount || 0), 0)
 
   const creditClients = clients.filter(c => c.credit_balance > 0)
   const totalCredits = creditClients.reduce((sum, c) => sum + Number(c.credit_balance || 0), 0)
-  const unpaidSessions = weekSessions.filter(s => s.payment === 'Unpaid' && s.status !== 'Cancelled')
-  const unpaidTotal = unpaidSessions.reduce((sum, s) => {
-    const amount = Number(s.amount || 0)
-    return sum + amount
-  }, 0)
+  const unpaidSessions = weekSessions.filter(s => s.payment === 'Unpaid' && s.status !== 'Cancelled' && s.status !== 'Pencil')
+  const outstandingClients = clients.filter(c => c.outstanding_balance > 0)
 
   const mopTotals = MOP_OPTIONS.reduce((acc, mop) => {
-    acc[mop] = weekPayments.filter(p => p.mop === mop).reduce((sum, p) => sum + Number(p.amount || 0), 0)
+    acc[mop] = weekPayments.filter(p => p.mop === mop && p.payment_type !== 'refund').reduce((sum, p) => sum + Number(p.amount || 0), 0)
     return acc
   }, {})
 
@@ -291,16 +319,15 @@ export default function PaymentsPage() {
     const matchMop = filterMop === 'All' || p.mop === filterMop
     const matchType = filterType === 'All' ||
       (filterType === 'Advance' && p.payment_type === 'advance') ||
-      (filterType === 'Session' && p.payment_type !== 'advance')
+      (filterType === 'Refund' && p.payment_type === 'refund') ||
+      (filterType === 'Session' && p.payment_type === 'session')
     return matchSearch && matchMop && matchType
   }).sort((a, b) => Number(b.id) - Number(a.id))
 
-  const outstandingClients = clients.filter(c => c.outstanding_balance > 0)
-
   const tabs = [
     { key: 'transactions', label: 'Transactions' },
-    { key: 'credits', label: `Credits` },
-    { key: 'outstanding', label: `Outstanding` },
+    { key: 'credits', label: `Credits (${creditClients.length})` },
+    { key: 'outstanding', label: 'Outstanding' },
   ]
 
   return (
@@ -325,6 +352,19 @@ export default function PaymentsPage() {
         </div>
       </div>
 
+      {/* Export section */}
+      <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1rem 1.25rem', marginBottom: '1.5rem', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: '13px', color: '#666', fontWeight: '500' }}>Export payments:</span>
+        <input type="month" value={exportMonth} onChange={e => setExportMonth(e.target.value)}
+          style={{ padding: '7px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px' }} />
+        <button onClick={exportToExcel} style={{
+          padding: '8px 16px', borderRadius: '8px', border: '1px solid #0f4c81',
+          cursor: 'pointer', fontSize: '13px', background: '#E6F1FB', color: '#0f4c81', fontWeight: '500'
+        }}>⬇ Export CSV</button>
+        <span style={{ fontSize: '12px', color: '#aaa' }}>Downloads as CSV — open with Excel or Google Sheets</span>
+      </div>
+
+      {/* Advance payment modal */}
       {advanceModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
@@ -370,6 +410,7 @@ export default function PaymentsPage() {
         </div>
       )}
 
+      {/* Refund modal */}
       {refundModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '380px', maxWidth: '90vw' }}>
@@ -397,13 +438,15 @@ export default function PaymentsPage() {
       {loading ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading...</div>
       ) : (
-        <div>
+        <>
+          {/* Summary cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '1.5rem' }}>
             {[
               { label: "Today's collections", value: `₱${todayTotal.toLocaleString()}`, sub: `${todayPayments.length} payments`, color: '#fcc200' },
-              { label: 'This week collected', value: `₱${weekTotal.toLocaleString()}`, sub: `${weekPayments.length} payments`, color: '#1D9E75' },
+              { label: 'This week collected', value: `₱${weekTotal.toLocaleString()}`, sub: `${weekPayments.filter(p => p.payment_type !== 'refund').length} payments`, color: '#1D9E75' },
               { label: 'Credits held', value: `₱${totalCredits.toLocaleString()}`, sub: `${creditClients.length} clients`, color: '#0f4c81' },
               { label: 'Unpaid this week', value: unpaidSessions.length, sub: 'sessions', color: '#E24B4A' },
+              { label: 'Outstanding', value: outstandingClients.length, sub: 'clients with balance', color: '#EF9F27' },
             ].map((card, i) => (
               <div key={i} style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem', borderTop: `4px solid ${card.color}` }}>
                 <div style={{ fontSize: '12px', color: '#999', marginBottom: '6px' }}>{card.label}</div>
@@ -413,6 +456,7 @@ export default function PaymentsPage() {
             ))}
           </div>
 
+          {/* Tabs */}
           <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', padding: '4px', background: '#f0f0f0', borderRadius: '10px', width: 'fit-content' }}>
             {tabs.map(tab => (
               <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
@@ -425,27 +469,26 @@ export default function PaymentsPage() {
             ))}
           </div>
 
+          {/* Transactions tab */}
           {activeTab === 'transactions' && (
             <div>
               <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', flex: 1 }}>
-                  <input placeholder="Search client..." value={search} onChange={e => setSearch(e.target.value)}
-                    style={{ padding: '7px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px', width: '180px' }} />
-                  {['All','Session','Advance'].map(f => (
-                    <button key={f} onClick={() => setFilterType(f)} style={{
-                      padding: '7px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '12px',
-                      background: filterType === f ? '#0f4c81' : '#f0f0f0',
-                      color: filterType === f ? 'white' : '#666'
-                    }}>{f}</button>
-                  ))}
-                  {['All', ...MOP_OPTIONS].map(m => (
-                    <button key={m} onClick={() => setFilterMop(m)} style={{
-                      padding: '7px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '12px',
-                      background: filterMop === m ? '#185FA5' : '#f0f0f0',
-                      color: filterMop === m ? 'white' : '#666'
-                    }}>{m}</button>
-                  ))}
-                </div>
+                <input placeholder="Search client..." value={search} onChange={e => setSearch(e.target.value)}
+                  style={{ padding: '7px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px', width: '180px' }} />
+                {['All', 'Session', 'Advance', 'Refund'].map(f => (
+                  <button key={f} onClick={() => setFilterType(f)} style={{
+                    padding: '7px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '12px',
+                    background: filterType === f ? '#0f4c81' : '#f0f0f0',
+                    color: filterType === f ? 'white' : '#666'
+                  }}>{f}</button>
+                ))}
+                {['All', ...MOP_OPTIONS].map(m => (
+                  <button key={m} onClick={() => setFilterMop(m)} style={{
+                    padding: '7px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '12px',
+                    background: filterMop === m ? '#185FA5' : '#f0f0f0',
+                    color: filterMop === m ? 'white' : '#666'
+                  }}>{m}</button>
+                ))}
               </div>
 
               <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
@@ -468,27 +511,26 @@ export default function PaymentsPage() {
                   </thead>
                   <tbody>
                     {filtered.length === 0 ? (
-                      <tr><td colSpan="7" style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>No payments found</td></tr>
+                      <tr><td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: '#999' }}>No payments found</td></tr>
                     ) : filtered.map((p, i) => (
-                      <tr key={i} style={{ borderBottom: '1px solid #f0f0f0', background: p.payment_type === 'advance' ? '#FAFFF8' : 'white' }}>
+                      <tr key={i} style={{ borderBottom: '1px solid #f0f0f0', background: p.payment_type === 'refund' ? '#FFF5F5' : p.payment_type === 'advance' ? '#FAFFF8' : 'white' }}>
                         <td style={{ padding: '10px 16px', fontWeight: '500', color: '#0f4c81' }}>{p.client_name}</td>
                         <td style={{ padding: '10px 16px', color: '#666' }}>{p.therapist || '—'}</td>
                         <td style={{ padding: '10px 16px' }}>
-                          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
-                            background: p.session_type === 'Advance' ? '#EAF3DE' : '#E6F1FB',
-                            color: p.session_type === 'Advance' ? '#27500A' : '#0C447C'
-                          }}>{p.session_type || 'Regular'}</span>
+                          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#E6F1FB', color: '#0C447C' }}>{p.session_type || 'Regular'}</span>
                         </td>
-                        <td style={{ padding: '10px 16px', fontWeight: '500', color: '#1D9E75' }}>₱{Number(p.amount || 0).toLocaleString()}</td>
+                        <td style={{ padding: '10px 16px', fontWeight: '500', color: p.payment_type === 'refund' ? '#E24B4A' : '#1D9E75' }}>
+                          {p.payment_type === 'refund' ? '-' : ''}₱{Math.abs(Number(p.amount || 0)).toLocaleString()}
+                        </td>
                         <td style={{ padding: '10px 16px' }}>
                           <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#E6F1FB', color: '#0C447C' }}>{p.mop}</span>
                         </td>
                         <td style={{ padding: '10px 16px', color: '#999', fontSize: '12px', whiteSpace: 'nowrap' }}>{p.date}</td>
                         <td style={{ padding: '10px 16px' }}>
                           <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
-                            background: p.payment_type === 'advance' ? '#EAF3DE' : '#f0f0f0',
-                            color: p.payment_type === 'advance' ? '#27500A' : '#666'
-                          }}>{p.payment_type === 'advance' ? 'Advance' : 'Session'}</span>
+                            background: p.payment_type === 'refund' ? '#FCEBEB' : p.payment_type === 'advance' ? '#EAF3DE' : '#f0f0f0',
+                            color: p.payment_type === 'refund' ? '#791F1F' : p.payment_type === 'advance' ? '#27500A' : '#666'
+                          }}>{p.payment_type === 'advance' ? 'Advance' : p.payment_type === 'refund' ? 'Refund' : 'Session'}</span>
                         </td>
                       </tr>
                     ))}
@@ -498,6 +540,7 @@ export default function PaymentsPage() {
             </div>
           )}
 
+          {/* Credits tab */}
           {activeTab === 'credits' && (
             <div>
               {creditClients.length === 0 ? (
@@ -524,10 +567,11 @@ export default function PaymentsPage() {
             </div>
           )}
 
+          {/* Outstanding tab */}
           {activeTab === 'outstanding' && (
-            <OutstandingTab clients={clients} />
+            <OutstandingTab clients={clients} onSettle={fetchAll} />
           )}
-        </div>
+        </>
       )}
     </div>
   )
