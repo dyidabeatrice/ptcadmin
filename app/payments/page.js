@@ -287,10 +287,15 @@ export default function PaymentsPage() {
     setLoading(false)
   }
 
-  function getMondayOf(date) {
+    function getMondayOf(date) {
     const d = new Date(date)
     const day = d.getDay()
-    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1))
+    // If Sunday, go forward to next Monday instead of back to last Monday
+    if (day === 0) {
+      d.setDate(d.getDate() + 1)
+    } else {
+      d.setDate(d.getDate() - (day - 1))
+    }
     return d
   }
 
@@ -385,13 +390,7 @@ export default function PaymentsPage() {
     URL.revokeObjectURL(url)
   }
 
-  const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
-  const todayPayments = payments.filter(p => p.date === today && p.payment_type !== 'refund')
-  const todayRefunds = payments.filter(p => p.date === today && p.payment_type === 'refund')
-  const todayTotal = todayPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0) 
-    - todayRefunds.reduce((sum, p) => sum + Math.abs(Number(p.amount || 0)), 0)
-
-  function parsePaymentDate(dateStr) {
+   function parsePaymentDate(dateStr) {
     if (!dateStr) return null
     const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
     const parts = dateStr.replace(',', '').split(' ')
@@ -403,12 +402,36 @@ export default function PaymentsPage() {
     return new Date(year, month, day)
   }
 
+  const nowPH = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
+
+  const todayPayments = payments.filter(p => {
+    if (!p.date || p.payment_type === 'refund') return false
+    const pDate = parsePaymentDate(p.date)
+    if (!pDate) return false
+    return pDate.getFullYear() === nowPH.getFullYear() &&
+      pDate.getMonth() === nowPH.getMonth() &&
+      pDate.getDate() === nowPH.getDate()
+  })
+
+  const todayRefunds = payments.filter(p => {
+    if (!p.date || p.payment_type !== 'refund') return false
+    const pDate = parsePaymentDate(p.date)
+    if (!pDate) return false
+    return pDate.getFullYear() === nowPH.getFullYear() &&
+      pDate.getMonth() === nowPH.getMonth() &&
+      pDate.getDate() === nowPH.getDate()
+  })
+
+  const todayTotal = todayPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
+    - todayRefunds.reduce((sum, p) => sum + Math.abs(Number(p.amount || 0)), 0)
+
   const weekPayments = payments.filter(p => {
     if (!selectedWeek) return false
     if (!p.date) return false
     const parts = selectedWeek.key.replace('week_', '').split('_')
     const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
-    const sunday = new Date(monday)
+    monday.setDate(monday.getDate() - 1)
+    const sunday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
     sunday.setDate(sunday.getDate() + 6)
     const pDate = parsePaymentDate(p.date)
     if (!pDate) return false
@@ -422,7 +445,7 @@ export default function PaymentsPage() {
   const creditClients = clients.filter(c => c.credit_balance > 0)
   const totalCredits = creditClients.reduce((sum, c) => sum + Number(c.credit_balance || 0), 0)
   const unpaidSessions = weekSessions.filter(s => s.payment === 'Unpaid' && s.status !== 'Cancelled' && s.status !== 'Pencil')
-  const outstandingClients = clients.filter(c => c.outstanding_balance > 0)
+  const outstandingClients = clients.filter(c => Number(c.outstanding_balance) >= 1)
 
   const mopTotals = MOP_OPTIONS.reduce((acc, mop) => {
     acc[mop] = weekPayments.filter(p => p.mop === mop && p.payment_type !== 'refund').reduce((sum, p) => sum + Number(p.amount || 0), 0)
