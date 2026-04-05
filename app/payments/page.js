@@ -393,11 +393,14 @@ export default function PaymentsPage() {
 
   const weekPayments = payments.filter(p => {
     if (!selectedWeek) return false
+    if (!p.date) return false
     const parts = selectedWeek.key.replace('week_', '').split('_')
     const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
     const sunday = new Date(monday)
     sunday.setDate(sunday.getDate() + 6)
+    // Parse 'Apr 5, 2026' format
     const pDate = new Date(p.date)
+    if (isNaN(pDate.getTime())) return false
     return pDate >= monday && pDate <= sunday
   })
 
@@ -408,7 +411,7 @@ export default function PaymentsPage() {
   const creditClients = clients.filter(c => c.credit_balance > 0)
   const totalCredits = creditClients.reduce((sum, c) => sum + Number(c.credit_balance || 0), 0)
   const unpaidSessions = weekSessions.filter(s => s.payment === 'Unpaid' && s.status !== 'Cancelled' && s.status !== 'Pencil')
-  const outstandingClients = clients.filter(c => Number(c.outstanding_balance) >= 1)
+  const outstandingClients = clients.filter(c => c.outstanding_balance > 0)
 
   const mopTotals = MOP_OPTIONS.reduce((acc, mop) => {
     acc[mop] = weekPayments.filter(p => p.mop === mop && p.payment_type !== 'refund').reduce((sum, p) => sum + Number(p.amount || 0), 0)
@@ -421,7 +424,8 @@ export default function PaymentsPage() {
     const matchType = filterType === 'All' ||
       (filterType === 'Advance' && p.payment_type === 'advance') ||
       (filterType === 'Refund' && p.payment_type === 'refund') ||
-      (filterType === 'Session' && p.payment_type === 'session')
+      (filterType === 'Session' && p.payment_type === 'session') ||
+      (filterType === 'Document' && p.payment_type === 'document')
     return matchSearch && matchMop && matchType
   }).sort((a, b) => Number(b.id) - Number(a.id))
 
@@ -576,7 +580,7 @@ export default function PaymentsPage() {
               <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
                 <input placeholder="Search client..." value={search} onChange={e => setSearch(e.target.value)}
                   style={{ padding: '7px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px', width: '180px' }} />
-                {['All', 'Session', 'Advance', 'Refund'].map(f => (
+                {['All', 'Session', 'Document','Advance', 'Refund'].map(f => (
                   <button key={f} onClick={() => setFilterType(f)} style={{
                     padding: '7px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '12px',
                     background: filterType === f ? '#0f4c81' : '#f0f0f0',
