@@ -39,13 +39,15 @@ export default function HomePage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         height: '70px'
       }}>
-        <img src="/logobig.png" alt="Potentials Therapy Center" style={{ background:'transparent', height: '44px', objectFit: 'contain' }} />
+        <img src="/logo.png" alt="Potentials Therapy Center" style={{ background:'transparent', height: '44px', objectFit: 'contain' }} />
         <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
           {[
             { label: 'Home', href: '#home' },
             { label: 'Services', href: '#services' },
             { label: 'Find Us', href: '#location' },
             { label: 'Privacy', href: '/privacy' },
+            { label: 'Book an Appointment', href: 'http://m.me/potentialstherapycenter' },
+            { label: 'Join us', href: 'https://www.facebook.com/potentialstherapycenter/posts/pfbid02jYUPkwgLuufCSg8j3jvz5rZrGqmP7Qvk9x5qWQbV187zTLSNbLdA51yJ5yd7gB2Ll'}
           ].map(l => (
             <a key={l.label} href={l.href} style={{
               fontSize: '14px',
@@ -74,7 +76,7 @@ export default function HomePage() {
         <div style={{ position: 'absolute', bottom: '-150px', left: '-150px', width: '600px', height: '600px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
 
         <img src="/logobig.png" alt="Potentials Therapy Center" 
-            style={{ width: '250px', objectFit: 'contain', marginBottom: '1.5rem', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.2))'
+            style={{ width: '250px', objectFit: 'contain', marginBottom: '1.5rem', filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)), drop-shadow(0 0 20px rgba(255,255,255,0.35))'
         }} />
 
         <h1 style={{
