@@ -44,7 +44,7 @@ export default function Dashboard() {
           const sRes = await fetch(`/api/sessions?week=${currentKey}`)
           const sJson = await sRes.json()
           if (sJson.success) {
-            const todayDay = today.toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'long' })
+            const todayDay = gmt8Time.toLocaleDateString('en-US', { weekday: 'long' })
             setTodaySessions(sJson.data.filter((s: any) => s.day === todayDay))
           }
         }
@@ -66,9 +66,9 @@ export default function Dashboard() {
   }, [])
 
   const today = gmt8Time
-  const todayDay = today.toLocaleDateString('en-US', { weekday: 'long' })
-  const todayDate = today.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
-  const todayStr = today.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  const todayDay = today.toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'long' })
+  const todayDate = today.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
+  const todayStr = today.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
   const presentToday = todaySessions.filter(s => s.status === 'Present').length
   const absentToday = todaySessions.filter(s => s.status === 'Absent').length
