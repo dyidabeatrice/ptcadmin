@@ -15,6 +15,9 @@ const SESSION_TYPES = {
 const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
 const ROW_HEIGHT = 24
 
+const [dragSession, setDragSession] = useState(null)
+const [dragOver, setDragOver] = useState(null)
+
 function parseTime(str) {
   if (!str) return 0
   const [time, period] = str.split(' ')
@@ -685,9 +688,52 @@ export default function SchedulePage() {
                           position: 'absolute', top: `${i * ROW_HEIGHT}px`,
                           width: '100%', height: `${ROW_HEIGHT}px`,
                           borderBottom: `1px solid ${i % 4 === 0 ? '#e8e8e8' : '#f5f5f5'}`,
-                          background: isAbsent ? '#f5f5f5' : freeSlotMode && free ? 'rgba(225,245,238,0.6)' : freeSlotMode && !free ? '#f8f8f8' : i % 4 === 0 ? '#fafafa' : 'white',
+                          background: dragOver?.therapist === therapist && dragOver?.slotMins === slotMins ? 'rgba(15,76,129,0.1)' : isAbsent ? '#f5f5f5' : freeSlotMode && free ? 'rgba(225,245,238,0.6)' : freeSlotMode && !free ? '#f8f8f8' : i % 4 === 0 ? '#fafafa' : 'white',
                           boxSizing: 'border-box'
-                        }} />
+                         }} 
+                        onClick={() => {
+                          if (dragSession) return
+                          if (!free || isAbsent) return
+                          setAddForm({ client_name: '', therapist, day: selectedDay, time_start: formatTime(slotMins), time_end: formatTime(slotMins + 60) })
+                          setAddModal(true)
+                        }}
+                        onDragOver={e => { e.preventDefault(); setDragOver({ therapist, slotMins }) }}
+                        onDrop={async e => {
+                          e.preventDefault()
+                          if (!dragSession) return
+                          const newTimeStart = formatTime(slotMins)
+                          const duration = parseTime(dragSession.time_end) - parseTime(dragSession.time_start)
+                          const newTimeEnd = formatTime(slotMins + duration)
+                          if (newTimeStart === dragSession.time_start && therapist === dragSession.therapist) return
+                          if (!confirm(`Move ${dragSession.client_name} to ${therapist} at ${newTimeStart}?`)) return
+                          const parts = selectedWeek.key.replace('week_', '').split('_')
+                          const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
+                          const weekDates = {}
+                          DAYS.forEach((day, idx) => {
+                            const d = new Date(monday)
+                            d.setDate(d.getDate() + idx)
+                            weekDates[day] = d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+                          })
+                          await fetch('/api/sessions', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              action: 'reschedule',
+                              week_key: selectedWeek.key,
+                              rowIndex: dragSession.index,
+                              therapist,
+                              date: weekDates[selectedDay] || '',
+                              day: selectedDay,
+                              time_start: newTimeStart,
+                              time_end: newTimeEnd
+                            })
+                          })
+                          setDragSession(null)
+                          setDragOver(null)
+                          fetchSessions(selectedWeek.key)
+                        }}
+                        />
+
                       )
                     })}
 
@@ -744,15 +790,20 @@ export default function SchedulePage() {
                         const stackedHeight = Math.max((height / stackCount) - 2, 14)
 
                         return (
-                          <div key={si} style={{
-                            position: 'absolute',
-                            top: `${stackCount > 1 ? stackedTop : topOffset + 1}px`,
-                            left: '2%', width: '96%',
-                            height: `${stackCount > 1 ? stackedHeight : height}px`,
-                            background: sc.bg, border: `1px solid ${sc.border}`,
-                            borderRadius: '4px', padding: '3px 5px',
-                            overflow: 'auto', boxSizing: 'border-box', zIndex: 1
-                          }}>
+                          <div key={si}
+                            draggable
+                            onDragStart={() => setDragSession(s)}
+                            onDragEnd={() => { setDragSession(null); setDragOver(null) }}
+                            style={{
+                              position: 'absolute',
+                              top: `${stackCount > 1 ? stackedTop : topOffset + 1}px`,
+                              left: '2%', width: '96%',
+                              height: `${stackCount > 1 ? stackedHeight : height}px`,
+                              background: sc.bg, border: `1px solid ${sc.border}`,
+                              borderRadius: '4px', padding: '3px 5px',
+                              overflow: 'auto', boxSizing: 'border-box', zIndex: 1,
+                              cursor: 'grab'
+                            }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                               <div style={{ fontSize: '10px', fontWeight: '500', color: sc.color, lineHeight: '1.3' }}>{s.client_name}</div>
                               <div style={{ display: 'flex', gap: '1px', flexShrink: 0 }}>
