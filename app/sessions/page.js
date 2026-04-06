@@ -635,7 +635,7 @@ export default function SchedulePage() {
           <div style={{ display: 'flex', minWidth: 'fit-content' }}>
 
             {/* Time column */}
-            <div style={{ flexShrink: 0, width: '70px' }}>
+              <div style={{ flexShrink: 0, width: '70px', position: 'sticky', left: 0, zIndex: 10, background: 'white' }}>
               <div style={{ height: '60px', background: '#0f4c81', borderBottom: '2px solid #fcc200' }} />
               {timeSlots.map((slot, i) => (
                 <div key={slot} style={{
@@ -647,7 +647,7 @@ export default function SchedulePage() {
                   background: i % 4 === 0 ? '#fafafa' : 'white',
                   whiteSpace: 'nowrap', boxSizing: 'border-box'
                 }}>
-                  {i === 0 || i % 4 === 0 ? slot : ''}
+                  <span style={{ fontSize: i % 4 === 0 ? '10px' : '9px', opacity: i % 4 === 0 ? 1 : 0.5 }}>{slot}</span>
                 </div>
               ))}
             </div>
