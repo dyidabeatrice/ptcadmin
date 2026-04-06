@@ -15,9 +15,6 @@ const SESSION_TYPES = {
 const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
 const ROW_HEIGHT = 24
 
-const [dragSession, setDragSession] = useState(null)
-const [dragOver, setDragOver] = useState(null)
-
 function parseTime(str) {
   if (!str) return 0
   const [time, period] = str.split(' ')
@@ -84,6 +81,8 @@ export default function SchedulePage() {
   const [addForm, setAddForm] = useState({ client_name: '', therapist: '', day: '', time_start: '', time_end: '' })
   const [saving, setSaving] = useState(false)
   const [absentConfirm, setAbsentConfirm] = useState(null)
+  const [dragSession, setDragSession] = useState(null)
+  const [dragOver, setDragOver] = useState(null)
 
   useEffect(() => { initializePage() }, [])
 
