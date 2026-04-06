@@ -123,7 +123,7 @@ export async function POST(request) {
       const currentMonday = getMondayOf(today)
       const created = []
 
-      for (let w = 0; w < 4; w++) {
+      for (let w = 0; w < 2; w++) {
         const monday = new Date(currentMonday)
         monday.setDate(monday.getDate() + w * 7)
         const weekKey = getWeekKey(monday)
