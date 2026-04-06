@@ -122,6 +122,28 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Intro & Pictures */}
+      <section id="intro" style={{ padding: '6rem 2rem', background: '#e9ebee' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <div style={{ fontSize: '12px', letterSpacing: '0.15em', color: '#fcc200', fontWeight: '700', marginBottom: '12px', textTransform: 'uppercase' }}>Who are We</div>
+            <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: 0, fontWeight: '700' }}>Get to Know Us</h2>
+            <p style={{ color: '#666', marginTop: '12px', fontSize: '16px', maxWidth: '500px', margin: '12px auto 0' }}>
+              Potentials Therapy Center is a special needs therapy center built to become partners with families that are committed to unlocking their child's best through individualized programs created, executed, and managed by our excellent roster of clinicians and teachers.
+            </p>
+          </div>
+          {/* Photo Strip */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px'}}>
+            {['/clinic1.jpg', '/clinic2.jpg', '/clinic3.jpg'].map((src, i) => (
+            <div key={i} style={{ overflow: 'hidden', borderRadius: '14px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', height: '220px'}}>
+            <img src={src} alt="Facility Photos" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease'}}
+                onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.07)')}
+                onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+            />
+            </div>
+          ))}
+          </div>       
+      </section>
+
       {/* Services */}
       <section id="services" style={{ padding: '6rem 2rem', background: '#f8f9fb' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
@@ -147,7 +169,7 @@ export default function HomePage() {
         </div>
       </section>
 
-            {/* How to Avail Services */}
+     {/* How to Avail Services */}
       <section id="how-to-avail" style={{ padding: '6rem 2rem', background: '#e9ebee' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
