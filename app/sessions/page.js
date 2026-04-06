@@ -13,7 +13,7 @@ const SESSION_TYPES = {
 }
 
 const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
-const ROW_HEIGHT = 24
+const ROW_HEIGHT = 32
 
 function parseTime(str) {
   if (!str) return 0
