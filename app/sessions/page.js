@@ -666,7 +666,8 @@ export default function SchedulePage() {
                   <div style={{
                     height: '60px', background: isAbsent ? '#777' : '#0f4c81', color: 'white',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    borderBottom: '2px solid #fcc200', padding: '4px', gap: '3px'
+                    borderBottom: '2px solid #fcc200', padding: '4px', gap: '3px',
+                    position: 'sticky', top: 0, zIndex: 5
                   }}>
                     <div style={{ fontSize: '11px', fontWeight: '500', textAlign: 'center' }}>{therapist}</div>
                     <div style={{ fontSize: '10px', opacity: 0.7 }}>{specialty}{therapistEntry?.is_intern ? ' · Intern' : ''}</div>
