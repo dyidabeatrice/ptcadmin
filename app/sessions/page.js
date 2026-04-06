@@ -631,11 +631,11 @@ export default function SchedulePage() {
         </div>
 
       ) : (
-        <div style={{ overflowX: 'auto', position: 'relative' }}>
+        <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 200px)', position: 'relative' }}>
           <div style={{ display: 'flex', minWidth: 'fit-content' }}>
             {/* Time column */}
               <div style={{ flexShrink: 0, width: '70px', position: 'sticky', left: 0, zIndex: 10, background: 'white' }}>
-              <div style={{ height: '60px', background: '#0f4c81', borderBottom: '2px solid #fcc200' }} />
+              <div style={{ height: '60px', background: '#0f4c81', borderBottom: '2px solid #fcc200', position: 'sticky', top: 0, zIndex: 11 }} />
               {timeSlots.map((slot, i) => (
                                 <div key={slot} style={{
                   height: `${ROW_HEIGHT}px`,
