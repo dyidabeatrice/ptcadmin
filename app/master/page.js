@@ -223,12 +223,14 @@ export default function MasterPage() {
                   height: `${ROW_HEIGHT}px`,
                   display: 'flex', alignItems: 'center',
                   paddingLeft: '8px',
-                  fontSize: '10px', color: '#999', fontWeight: '500',
+                  fontSize: i % 4 === 0 ? '10px' : '9px',
+                  color: i % 4 === 0 ? '#999' : '#bbb',
+                  fontWeight: i % 4 === 0 ? '500' : '400',
                   borderBottom: `1px solid ${i % 4 === 0 ? '#e0e0e0' : '#f5f5f5'}`,
                   background: i % 4 === 0 ? '#fafafa' : 'white',
-                  whiteSpace: 'nowrap'
+                  whiteSpace: 'nowrap', boxSizing: 'border-box'
                 }}>
-                  {i === 0 || i % 4 === 0 ? slot : ''}
+                  {slot}
                 </div>
               ))}
             </div>
