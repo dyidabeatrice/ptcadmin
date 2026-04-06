@@ -2,6 +2,15 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
+function parseTime(str: string) {
+  if (!str) return 0
+  const [time, period] = str.split(' ')
+  let [h, m] = time.split(':').map(Number)
+  if (period === 'PM' && h !== 12) h += 12
+  if (period === 'AM' && h === 12) h = 0
+  return h * 60 + m
+}
+
 export default function Dashboard() {
   const [clients, setClients] = useState<any[]>([])
   const [payments, setPayments] = useState<any[]>([])
@@ -75,7 +84,14 @@ export default function Dashboard() {
   const todayPayments = payments.filter(p => p.date === todayDate && p.payment_type !== 'refund')
   const todayTotal = todayPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
   const pendingMessages = messages.filter((m: any) => !m.sent)
-  const therapistsToday = [...new Set(todaySessions.map(s => s.therapist))].sort()
+  const therapistsToday = [...new Set(todaySessions
+    .sort((a, b) => {
+      const timeCompare = parseTime(a.time_start) - parseTime(b.time_start)
+      if (timeCompare !== 0) return timeCompare
+      return a.therapist.localeCompare(b.therapist)
+    })
+    .map(s => s.therapist)
+  )]
   const absentTherapists = [...new Set(todaySessions.filter(s => s.status === 'Absent').map(s => s.therapist))]
   const clientsWithOutstanding = clients.filter(c => c.outstanding_balance > 0)
 
@@ -174,18 +190,13 @@ export default function Dashboard() {
                   <p style={{ color: '#999', fontSize: '13px', margin: 0 }}>No sessions generated yet for today.</p>
                 ) : (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                    {(therapistsToday as string[]).map(t => {
-                      const isAbsent = (absentTherapists as string[]).includes(t)
-                      return (
-                        <span key={t} style={{
-                          fontSize: '12px', padding: '4px 10px', borderRadius: '20px',
-                          background: isAbsent ? '#FCEBEB' : '#E6F1FB',
-                          color: isAbsent ? '#791F1F' : '#0C447C',
-                          border: `1px solid ${isAbsent ? '#F09595' : '#B5D4F4'}`,
-                          textDecoration: isAbsent ? 'line-through' : 'none'
-                        }}>{t}{isAbsent ? ' · absent' : ''}</span>
-                      )
-                    })}
+                    {(therapistsToday as string[]).map(t => (
+                      <span key={t} style={{
+                        fontSize: '12px', padding: '4px 10px', borderRadius: '20px',
+                        background: '#E6F1FB', color: '#0C447C',
+                        border: '1px solid #B5D4F4'
+                      }}>{t}</span>
+                    ))}
                   </div>
                 )}
               </div>
