@@ -131,17 +131,96 @@ export default function HomePage() {
               Potentials Therapy Center is a special needs therapy center built to become partners with families that are committed to unlocking their child's best through individualized programs created, executed, and managed by our excellent roster of clinicians and teachers.
             </p>
           </div>
-          {/* Photo Strip */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px'}}>
-            {['/clinic1.jpg', '/clinic2.jpg', '/clinic3.jpg'].map((src, i) => (
-            <div key={i} style={{ overflow: 'hidden', borderRadius: '14px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', height: '220px'}}>
-            <img src={src} alt="Facility Photos" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease'}}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.07)')}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-            />
-            </div>
-          ))}
-          </div>       
+      {/* Facility Photo Strip */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '20px'
+            }}>
+            {[
+            '/clinic1.jpg',
+            '/clinic2.jpg',
+            '/clinic3.jpg'
+            ].map((src, i) => (
+            <div
+                key={i}
+                style={{
+                height: '160px',
+                overflow: 'hidden',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                transition: 'height 0.45s ease, transform 0.3s ease',
+                cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                e.currentTarget.style.height = '340px';
+                e.currentTarget.style.transform = 'scale(1.01)';
+                }}
+                onMouseLeave={(e) => {
+                e.currentTarget.style.height = '160px';
+                e.currentTarget.style.transform = 'scale(1)';
+                }}
+                >
+                <img
+                src={src}
+                alt="Facility"
+                style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transition: 'transform 0.6s ease',
+                    transform: 'scale(1.2)',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+                onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1.2)')}
+                />
+          </div>
+        ))}
+        </div>   
+         {/* Therapists Photo Strip */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+            gap: '20px'
+            }}>
+            {[
+            '/therapists1.jpg',
+            '/therapists2.jpg',
+            '/therapists3.jpg'
+            ].map((src, i) => (
+            <div
+                key={i}
+                style={{
+                height: '160px',
+                overflow: 'hidden',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                transition: 'height 0.45s ease, transform 0.3s ease',
+                cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                e.currentTarget.style.height = '340px';
+                e.currentTarget.style.transform = 'scale(1.01)';
+                }}
+                onMouseLeave={(e) => {
+                e.currentTarget.style.height = '160px';
+                e.currentTarget.style.transform = 'scale(1)';
+                }}
+                >
+                <img
+                src={src}
+                alt="Facility"
+                style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transition: 'transform 0.6s ease',
+                    transform: 'scale(1.2)',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
+                onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1.2)')}
+                />
+          </div>
+        ))}
+        </div>    
       </section>
 
       {/* Services */}
