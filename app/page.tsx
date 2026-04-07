@@ -137,7 +137,7 @@ export default function HomePage() {
                 <div
                 key={i}
                 style={{
-                    width: '220px',               // square preview
+                    width: '300px',               // square preview
                     height: '220px',
                     overflow: 'hidden',
                     transition: 'width 0.5s ease, transform 0.3s ease',
@@ -174,7 +174,7 @@ export default function HomePage() {
                 <div
                 key={i}
                 style={{
-                    width: '220px',               // square preview
+                    width: '300px',               // square preview
                     height: '220px',
                     overflow: 'hidden',
                     transition: 'width 0.5s ease, transform 0.3s ease',
