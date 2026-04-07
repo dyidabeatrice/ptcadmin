@@ -132,95 +132,79 @@ export default function HomePage() {
             </p>
           </div>
       {/* Facility Photo Strip */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '20px'
-            }}>
-            {[
-            '/clinic1.jpg',
-            '/clinic2.jpg',
-            '/clinic3.jpg'
-            ].map((src, i) => (
-            <div
+            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', alignItems: 'center', marginBottom: '3.5rem'}}>
+            {['/clinic1.jpg', '/clinic2.jpg', '/clinic3.jpg'].map((src, i) => (
+                <div
                 key={i}
                 style={{
-                height: '160px',
-                overflow: 'hidden',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                transition: 'height 0.45s ease, transform 0.3s ease',
-                cursor: 'pointer',
+                    width: '220px',               // square preview
+                    height: '220px',
+                    overflow: 'hidden',
+                    transition: 'width 0.5s ease, transform 0.3s ease',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
+                    cursor: 'pointer'
                 }}
                 onMouseEnter={(e) => {
-                e.currentTarget.style.height = '340px';
-                e.currentTarget.style.transform = 'scale(1.01)';
+                    e.currentTarget.style.width = '440px';   // expand horizontally (accordion)
+                    e.currentTarget.style.transform = 'scale(1.02)';
                 }}
                 onMouseLeave={(e) => {
-                e.currentTarget.style.height = '160px';
-                e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.width = '220px';   // return to square
+                    e.currentTarget.style.transform = 'scale(1)';
                 }}
                 >
                 <img
-                src={src}
-                alt="Facility"
-                style={{
+                    src={src}
+                    alt="Clinic Facility"
+                    style={{
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
-                    transition: 'transform 0.6s ease',
-                    transform: 'scale(1.2)',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1.2)')}
+                    transition: 'transform 0.5s ease',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.1)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
                 />
-          </div>
-        ))}
-        </div>   
+                </div>
+            ))}
+            </div> 
          {/* Therapists Photo Strip */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '20px'
-            }}>
-            {[
-            '/therapists1.jpg',
-            '/therapists2.jpg',
-            '/therapists3.jpg'
-            ].map((src, i) => (
-            <div
+            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', alignItems: 'center', marginBottom: '3.5rem'}}>
+            {['/therapists1.jpg', '/therapists2.jpg', '/therapists3.jpg'].map((src, i) => (
+                <div
                 key={i}
                 style={{
-                height: '160px',
-                overflow: 'hidden',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                transition: 'height 0.45s ease, transform 0.3s ease',
-                cursor: 'pointer',
+                    width: '220px',               // square preview
+                    height: '220px',
+                    overflow: 'hidden',
+                    transition: 'width 0.5s ease, transform 0.3s ease',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
+                    cursor: 'pointer'
                 }}
                 onMouseEnter={(e) => {
-                e.currentTarget.style.height = '340px';
-                e.currentTarget.style.transform = 'scale(1.01)';
+                    e.currentTarget.style.width = '440px';   // expand horizontally (accordion)
+                    e.currentTarget.style.transform = 'scale(1.02)';
                 }}
                 onMouseLeave={(e) => {
-                e.currentTarget.style.height = '160px';
-                e.currentTarget.style.transform = 'scale(1)';
+                    e.currentTarget.style.width = '220px';   // return to square
+                    e.currentTarget.style.transform = 'scale(1)';
                 }}
                 >
                 <img
-                src={src}
-                alt="Facility"
-                style={{
+                    src={src}
+                    alt="Clinic Facility"
+                    style={{
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
-                    transition: 'transform 0.6s ease',
-                    transform: 'scale(1.2)',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1.2)')}
+                    transition: 'transform 0.5s ease',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.1)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
                 />
-          </div>
-        ))}
-        </div>    
+                </div>
+            ))}
+            </div>   
       </section>
 
       {/* Services */}
