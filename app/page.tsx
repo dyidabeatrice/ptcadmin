@@ -132,7 +132,7 @@ export default function HomePage() {
             </p>
           </div>
       {/* Facility Photo Strip */}
-            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', alignItems: 'center', marginBottom: '3.5rem'}}>
+            <div style={{ display: 'flex', gap: '5px', justifyContent: 'center', alignItems: 'center', marginBottom: '1.5rem'}}>
             {['/clinic1.jpg', '/clinic2.jpg', '/clinic3.jpg'].map((src, i) => (
                 <div
                 key={i}
@@ -149,7 +149,7 @@ export default function HomePage() {
                     e.currentTarget.style.transform = 'scale(1.02)';
                 }}
                 onMouseLeave={(e) => {
-                    e.currentTarget.style.width = '220px';   // return to square
+                    e.currentTarget.style.width = '300px';   // return to square
                     e.currentTarget.style.transform = 'scale(1)';
                 }}
                 >
@@ -169,7 +169,7 @@ export default function HomePage() {
             ))}
             </div> 
          {/* Therapists Photo Strip */}
-            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', alignItems: 'center', marginBottom: '3.5rem'}}>
+            <div style={{ display: 'flex', gap: '5px', justifyContent: 'center', alignItems: 'center', marginBottom: '1.5rem'}}>
             {['/therapists1.jpg', '/therapists2.jpg', '/therapists3.jpg'].map((src, i) => (
                 <div
                 key={i}
@@ -186,7 +186,7 @@ export default function HomePage() {
                     e.currentTarget.style.transform = 'scale(1.02)';
                 }}
                 onMouseLeave={(e) => {
-                    e.currentTarget.style.width = '220px';   // return to square
+                    e.currentTarget.style.width = '300px';   // return to square
                     e.currentTarget.style.transform = 'scale(1)';
                 }}
                 >
