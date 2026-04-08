@@ -149,7 +149,7 @@ export default function SchedulePage() {
 
     const absentFromBlocked = new Set(
       (bJson.data || [])
-        .filter(b => b.type === 'absent')
+        .filter(b => b.type === 'absent' && b.day === selectedDay && b.label?.includes(selectedWeek?.key || ''))
         .map(b => b.therapist)
     )
     setAbsentTherapists(absentFromBlocked)
@@ -193,9 +193,17 @@ export default function SchedulePage() {
 
     const bRes = await fetch('/api/blocked')
     const bJson = await bRes.json()
-    if (bJson.success) setBlockedSlots(bJson.data)
-    
-    setAbsentTherapists(new Set())
+    if (bJson.success) {
+      setBlockedSlots(bJson.data)
+      const absentFromBlocked = new Set(
+        (bJson.data || [])
+          .filter(b => b.type === 'absent' && b.day === selectedDay && b.label?.includes(week.key))
+          .map(b => b.therapist)
+      )
+      setAbsentTherapists(absentFromBlocked)  
+    } else {
+      setAbsentTherapists(new Set())
+    }
     setHolidayDays(new Set())
     setSearch('')
     setFreeSlotMode(false)
@@ -387,7 +395,14 @@ export default function SchedulePage() {
           const isToday = day === today
           const isHoliday = holidayDays.has(day)
           return (
-            <button key={day} onClick={() => { setSelectedDay(day); setFreeSlotMode(false) }} style={{
+            <button key={day} onClick={() => { setSelectedDay(day); setFreeSlotMode(false)
+              const absentFromBlocked = new Set(
+                (blockedSlots || [])
+                  .filter(b => b.type === 'absent' && b.day === day && b.label?.includes(selectedWeek?.key || ''))
+                  .map(b => b.therapist)
+              )
+              setAbsentTherapists(absentFromBlocked)
+             }} style={{
               padding: '7px 14px', borderRadius: '20px',
               border: isToday ? '2px solid #fcc200' : 'none',
               cursor: 'pointer', fontSize: '13px', fontWeight: '500',
