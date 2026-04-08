@@ -122,9 +122,12 @@ export async function GET(request) {
       !(p.payment_type === 'attendance' && paidSessionIds.has(p.session_id))
     )
 
-    // Group payments by therapist
     const byTherapist = {}
     deduped.forEach(p => {
+      if (!p.therapist) return
+      if (!byTherapist[p.therapist]) byTherapist[p.therapist] = []
+      byTherapist[p.therapist].push(p)
+    })
 
     // Separate regular and intern therapists
     const regularTherapists = {}
