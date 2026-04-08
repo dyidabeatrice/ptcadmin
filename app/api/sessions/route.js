@@ -84,12 +84,37 @@ export async function PATCH(request) {
         requestBody: { values: [[newStatus]] }
       })
 
-      // Log unpaid present sessions to payments sheet for payroll tracking
+      const nowOwes = !isPaid && (newStatus === 'Present' || newStatus === 'Cancelled')
+      const wasOwing = !isPaid && (oldStatus === 'Present' || oldStatus === 'Cancelled')
+
+      if (nowOwes && !wasOwing && session?.client_name) {
+        const rate = session.amount || 0
+        if (rate > 0) {
+          await fetch(`${process.env.NEXT_PUBLIC_URL}/api/credits`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'add_outstanding', client_name: session.client_name, amount: rate })
+          })
+        }
+      }
+
+      if (wasOwing && !nowOwes && session?.client_name) {
+        const rate = session.amount || 0
+        if (rate > 0) {
+          await fetch(`${process.env.NEXT_PUBLIC_URL}/api/credits`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'clear_outstanding', client_name: session.client_name, amount: rate })
+          })
+        }
+      }
+
+      const payDate = new Date().toLocaleDateString('en-PH', {
+        timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric'
+      })
+
+      // Log unpaid present sessions
       if (newStatus === 'Present' && oldStatus !== 'Present' && !isPaid) {
-        const payDate = new Date().toLocaleDateString('en-PH', {
-          timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric'
-        })
-        const sheets = getGoogleSheets()
         await sheets.spreadsheets.values.append({
           spreadsheetId: SPREADSHEET_ID,
           range: 'payments',
@@ -101,7 +126,7 @@ export async function PATCH(request) {
             session?.id || '',
             session?.amount || 0,
             'UNPAID',
-            session?.session_type || 'Regular',
+            session?.session_type || '',
             session?.date || payDate,
             'attendance',
             ''
@@ -109,26 +134,25 @@ export async function PATCH(request) {
         })
       }
 
-      if (nowOwes && !wasOwing && session?.client_name) {
-        const rate = session.amount || 0
-        if (rate > 0) {
-          await fetch(`${process.env.NEXT_PUBLIC_URL || 'https://potentialstherapycenter.com/'}/api/credits`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'add_outstanding', client_name: session.client_name, amount: rate })
-          })
-        }
-      }
-
-      if (wasOwing && !nowOwes && session?.client_name) {
-        const rate = session.amount || 0
-        if (rate > 0) {
-          await fetch(`${process.env.NEXT_PUBLIC_URL || 'https://potentialstherapycenter.com/'}/api/credits`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'clear_outstanding', client_name: session.client_name, amount: rate })
-          })
-        }
+      // Log cancelled unpaid sessions
+      if (newStatus === 'Cancelled' && oldStatus !== 'Cancelled' && !isPaid) {
+        await sheets.spreadsheets.values.append({
+          spreadsheetId: SPREADSHEET_ID,
+          range: 'payments',
+          valueInputOption: 'RAW',
+          requestBody: { values: [[
+            `CANCEL-${session?.id || Date.now()}`,
+            session?.client_name || '',
+            session?.therapist || '',
+            session?.id || '',
+            session?.amount || 0,
+            'UNPAID',
+            session?.session_type || '',
+            session?.date || payDate,
+            'cancellation',
+            ''
+          ]]}
+        })
       }
 
       return Response.json({ success: true })
