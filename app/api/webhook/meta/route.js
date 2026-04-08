@@ -22,25 +22,20 @@ async function sendMessage(recipientId, message, quickReplies = null) {
 async function findSessionByPsid(psid) {
   const clientData = await getSheetData('clients')
   const [, ...clientRows] = clientData
-  const client = clientRows.find(r => r && r[3] === psid)
+  const client = clientRows.find(r => r && r[11] === psid)
   if (!client) return null
 
   const sheets = getGoogleSheets()
-  const spreadsheet = await sheets.spreadsheets.get({
-    spreadsheetId: SPREADSHEET_ID
-  })
+  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID })
 
   const weekSheets = spreadsheet.data.sheets
     .map(s => s.properties.title)
     .filter(t => t.startsWith('week_'))
-    .sort()
-    .reverse()
-    .slice(0, 4)
+    .sort().reverse().slice(0, 4)
 
-  const today = new Date()
-  const tomorrow = new Date(today)
-  tomorrow.setDate(today.getDate() + 1)
-  const tomorrowDay = tomorrow.toLocaleDateString('en-US', { weekday: 'long' })
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const tomorrowDay = tomorrow.toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'long' })
 
   for (const weekKey of weekSheets) {
     const data = await getSheetData(weekKey)
@@ -51,6 +46,32 @@ async function findSessionByPsid(psid) {
     if (session) return { session, weekKey, rowIndex: rows.indexOf(session), clientName: client[1] }
   }
   return null
+}
+
+async function autoSavePsid(psid, senderName) {
+  try {
+    const clientData = await getSheetData('clients')
+    const [, ...clientRows] = clientData
+    const sheets = getGoogleSheets()
+
+    const matchIndex = clientRows.findIndex(r => {
+      if (!r || !r[3]) return false
+      const fbName = r[3].toLowerCase().trim()
+      const msgName = senderName.toLowerCase().trim()
+      return fbName === msgName || fbName.includes(msgName) || msgName.includes(fbName)
+    })
+
+    if (matchIndex !== -1 && !clientRows[matchIndex][11]) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `clients!L${matchIndex + 2}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[psid]] }
+      })
+    }
+  } catch (e) {
+    console.error('Auto-PSID error:', e)
+  }
 }
 
 async function updateSessionStatus(weekKey, rowIndex, status) {
@@ -64,7 +85,6 @@ async function updateSessionStatus(weekKey, rowIndex, status) {
   })
 }
 
-// GET - webhook verification
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const mode = searchParams.get('hub.mode')
@@ -77,17 +97,30 @@ export async function GET(request) {
   return new Response('Forbidden', { status: 403 })
 }
 
-// POST - receive messages
 export async function POST(request) {
   try {
     const body = await request.json()
-
     if (body.object !== 'page') return Response.json({ status: 'ok' })
 
     for (const entry of body.entry || []) {
       for (const event of entry.messaging || []) {
         const psid = event.sender?.id
         if (!psid) continue
+
+        // Get sender name for auto-PSID matching
+        let senderName = null
+        try {
+          const nameRes = await fetch(`https://graph.facebook.com/v19.0/${psid}?fields=name&access_token=${PAGE_ACCESS_TOKEN}`)
+          const nameJson = await nameRes.json()
+          senderName = nameJson.name || null
+        } catch (e) {
+          senderName = null
+        }
+
+        // Auto-save PSID if we have a name
+        if (senderName) {
+          await autoSavePsid(psid, senderName)
+        }
 
         // Handle quick reply button taps
         if (event.message?.quick_reply) {
@@ -124,26 +157,3 @@ export async function POST(request) {
     return Response.json({ status: 'ok' })
   }
 }
-
-    // Auto-save PSID by matching fb_account name
-    if (senderId && senderName) {
-      const clientData = await getSheetData('clients')
-      const [, ...clientRows] = clientData
-      const sheets = getGoogleSheets()
-      
-      const matchIndex = clientRows.findIndex(r => {
-        if (!r || !r[3]) return false
-        const fbName = r[3].toLowerCase().trim()
-        const msgName = senderName.toLowerCase().trim()
-        return fbName === msgName || fbName.includes(msgName) || msgName.includes(fbName)
-      })
-
-      if (matchIndex !== -1 && !clientRows[matchIndex][11]) {
-        await sheets.spreadsheets.values.update({
-          spreadsheetId: SPREADSHEET_ID,
-          range: `clients!L${matchIndex + 2}`,
-          valueInputOption: 'RAW',
-          requestBody: { values: [[senderId]] }
-        })
-      }
-    }
