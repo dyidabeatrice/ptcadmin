@@ -12,7 +12,7 @@ const RATES = {
   'ST SESSION':     { full: 1300, levels: { 'JUNIOR 1': 830, 'JUNIOR 2': 850, 'JUNIOR 3': 900, 'SENIOR 1': 850, 'SENIOR 2': 900 } },
   'ST-IE':          { full: 2800, levels: { 'JUNIOR 1': 800, 'JUNIOR 2': 800, 'JUNIOR 3': 800, 'SENIOR 1': 850, 'SENIOR 2': 850 } },
   'ST-FE':          { full: 1500, levels: { 'JUNIOR 1': 830, 'JUNIOR 2': 850, 'JUNIOR 3': 900, 'SENIOR 1': 850, 'SENIOR 2': 900 } },
-  'SPECIALIZED OT TX': { full: 1700, levels: { 'JUNIOR 1': 1300, 'JUNIOR 2': 1300, 'JUNIOR 3': 1300, 'SENIOR 1': 1300, 'SENIOR 2': 1300 } },
+  'SPECIALIZED ST TX': { full: 1700, levels: { 'JUNIOR 1': 1300, 'JUNIOR 2': 1300, 'JUNIOR 3': 1300, 'SENIOR 1': 1300, 'SENIOR 2': 1300 } },
   'IE REPORT':      { full: 0,    levels: { 'JUNIOR 1': 800, 'JUNIOR 2': 800, 'JUNIOR 3': 800, 'SENIOR 1': 850, 'SENIOR 2': 850 } },
   'PT SESSION':     { full: 900,  levels: { 'JUNIOR 1': 525, 'JUNIOR 2': 525, 'JUNIOR 3': 525, 'SENIOR 1': 525, 'SENIOR 2': 525 } },
   'PT-IE':          { full: 2800, levels: { 'JUNIOR 1': 800, 'JUNIOR 2': 800, 'JUNIOR 3': 800, 'SENIOR 1': 850, 'SENIOR 2': 850 } },
@@ -169,7 +169,7 @@ export async function GET(request) {
             p.reference,
             { f: `IF(C${row}="IE REPORT",0,IFERROR(VLOOKUP(C${row},RATES!$A:$B,2,FALSE),E${row}))` },
             { f: `IFERROR(VLOOKUP(C${row},RATES!$A:$G,MATCH($B$2,RATES!$C$1:$G$1,0)+2,FALSE),0)*IF(I${row}=-5%,0.95,1)` },
-            { f: `IF(C${row}="IE REPORT",0,F${row}-G${row})` },
+            { f: `IF(C${row}="OT-IE" or C${row}="ST-IE" or C${row}="PT-IE" or C${row}="SPED IE",F${row}-(G${row}*2),IF(C${row}="IE REPORT",0,F${row}-G${row}))` },
             p.comments
           ]
         }),
