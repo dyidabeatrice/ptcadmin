@@ -296,6 +296,8 @@ export default function PaymentsPage() {
   const [activeTab, setActiveTab] = useState('transactions')
   const [advanceModal, setAdvanceModal] = useState(false)
   const [advanceForm, setAdvanceForm] = useState({ client_name: '', amount: '', mop: 'Cash', reference: '' })
+  const [ieReportModal, setIeReportModal] = useState(false)
+  const [ieReportForm, setIeReportForm] = useState({ client_name: '', therapist: '' })  
   const [refundModal, setRefundModal] = useState(null)
   const [refundAmount, setRefundAmount] = useState('')
   const [saving, setSaving] = useState(false)
@@ -530,6 +532,11 @@ export default function PaymentsPage() {
             padding: '9px 16px', borderRadius: '8px', border: '1px solid #1D9E75',
             cursor: 'pointer', fontSize: '13px', background: '#EAF3DE', color: '#27500A', fontWeight: '500'
           }}>+ Advance / Partial Payment</button>
+          <button onClick={() => setIeReportModal(true)} style={{
+            background: 'white', border: '1px solid #0f4c81', color: '#0f4c81',
+            padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '500'
+          }}>+ Submitted IE Report by Therapist</button>
+
         </div>
       </div>
 
@@ -611,6 +618,64 @@ export default function PaymentsPage() {
           </div>
         </div>
       )}
+
+      {/* IE Report modal */}
+      {ieReportModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
+        <h3 style={{ margin: '0 0 1rem', color: '#0f4c81' }}>Record IE Report</h3>
+        <p style={{ fontSize: '13px', color: '#666', marginBottom: '1rem' }}>Records therapist's IE report submission. No payment from parent — therapist receives remaining IE fee.</p>
+        <div style={{ marginBottom: '12px' }}>
+        <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Client</label>
+        <input value={ieReportForm.client_name} onChange={e => setIeReportForm({ ...ieReportForm, client_name: e.target.value })}
+        list="ie-client-list" placeholder="Type or select client..."
+        style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+        <datalist id="ie-client-list">
+        {clients.map(c => <option key={c.id} value={c.name} />)}
+        </datalist>
+        </div>
+        <div style={{ marginBottom: '1.5rem' }}>
+        <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Therapist</label>
+        <input value={ieReportForm.therapist} onChange={e => setIeReportForm({ ...ieReportForm, therapist: e.target.value })}
+        list="ie-therapist-list" placeholder="Type or select therapist..."
+        style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+        <datalist id="ie-therapist-list">
+        {[...new Set(clients.flatMap(c => (c.schedule || '').split(';').map(s => s.split('|')[0]).filter(Boolean)))].sort().map(t => <option key={t} value={t} />)}
+        </datalist>
+        </div>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+        <button onClick={() => { setIeReportModal(false); setIeReportForm({ client_name: '', therapist: '' }) }}
+        style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+        <button onClick={async () => {
+        if (!ieReportForm.client_name || !ieReportForm.therapist) return alert('Please fill in all fields')
+        const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
+        await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+        action: 'log',
+        client_name: ieReportForm.client_name,
+        therapist: ieReportForm.therapist,
+        session_id: `IE-REPORT-${Date.now()}`,
+        amount: 0,
+        mop: 'N/A',
+        session_type: 'IE REPORT',
+        date: today,
+        payment_type: 'ie_report',
+        reference: ''
+        })
+        })
+        setIeReportModal(false)
+        setIeReportForm({ client_name: '', therapist: '' })
+        fetchAll()
+        }} disabled={!ieReportForm.client_name || !ieReportForm.therapist}
+        style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
+        Record IE Report
+        </button>
+        </div>
+        </div>
+        </div>
+        )}
 
       {/* Refund modal */}
       {refundModal && (
