@@ -169,7 +169,7 @@ export async function GET(request) {
             p.reference,
             { f: `IF(C${row}="IE REPORT",0,IFERROR(VLOOKUP(C${row},RATES!$A:$B,2,FALSE),E${row}))` },
             { f: `IFERROR(VLOOKUP(C${row},RATES!$A:$G,MATCH($B$2,RATES!$C$1:$G$1,0)+2,FALSE),0)*IF(I${row}=-5%,0.95,1)` },
-            { f: `IF(C${row}="OT-IE" or C${row}="ST-IE" or C${row}="PT-IE" or C${row}="SPED IE",F${row}-(G${row}*2),IF(C${row}="IE REPORT",0,F${row}-G${row}))` },
+            { f: `IF(OR(F10="OT-IE", F10="ST-IE", F10="PT-IE", F10="SPED IE"),F${row}-(G${row}*2),IF(C${row}="IE REPORT",0,F${row}-G${row}))` },
             p.comments
           ]
         }),
