@@ -72,7 +72,8 @@ function OutstandingTab({ clients, onSettle }) {
             mop: payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop,
             session_type: payModal.session_type,
             date: today,
-            payment_type: 'document'
+            payment_type: 'document',
+            reference: payForm.reference || ''
           })
         })
       } else {
