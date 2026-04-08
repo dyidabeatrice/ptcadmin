@@ -193,7 +193,7 @@ function OutstandingTab({ clients, onSettle }) {
             {!payForm.use_credit && (
               <div style={{ marginBottom: '1.25rem' }}>
                 <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Mode of payment</label>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+<div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {MOP_OPTIONS.map(mop => (
                     <button key={mop} onClick={() => setPayForm({ ...payForm, mop, reference: '' })} style={{
                       padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',

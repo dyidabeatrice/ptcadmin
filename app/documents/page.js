@@ -33,7 +33,7 @@ export default function DocumentsPage() {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [payModal, setPayModal] = useState(null)
-  const [payForm, setPayForm] = useState({ amount: 0, mop: 'Cash', use_credit: false, split: false, split_credit: 0, split_cash: 0 })
+  const [payForm, setPayForm] = useState({ amount: 0, mop: 'Cash', use_credit: false, split: false, split_credit: 0, split_cash: 0, reference: '' })
   const [clientCredit, setClientCredit] = useState(0)
   const [filterStatus, setFilterStatus] = useState('All')
 
@@ -154,6 +154,7 @@ export default function DocumentsPage() {
     }
 
     setPayModal(null)
+    setPayForm({ amount: 0, mop: 'Cash', use_credit: false, split: false, split_credit: 0, split_cash: 0, reference: '' })
     fetchAll()
   }
 
