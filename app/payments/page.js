@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 
 const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
+const VERIFIERS = ['DUANE', 'KAMYLLE']
 
 function OutstandingTab({ clients, onSettle }) {
   const [unpaidSessions, setUnpaidSessions] = useState([])
@@ -691,7 +692,7 @@ export default function PaymentsPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ background: '#f8f9fa' }}>
-                      {['Client', 'Therapist', 'Session type', 'Amount', 'MOP', 'Date', 'Type'].map(h => (
+                      {['Client', 'Therapist', 'Session type', 'Amount', 'MOP', 'Date', 'Type', 'Verified by'].map(h => (
                         <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0', whiteSpace: 'nowrap' }}>{h}</th>
                       ))}
                     </tr>
@@ -717,7 +718,23 @@ export default function PaymentsPage() {
                           <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px',
                             background: p.payment_type === 'refund' ? '#FCEBEB' : p.payment_type === 'advance' ? '#EAF3DE' : '#f0f0f0',
                             color: p.payment_type === 'refund' ? '#791F1F' : p.payment_type === 'advance' ? '#27500A' : '#666'
-                          }}>{p.payment_type === 'advance' ? 'Advance' : p.payment_type === 'refund' ? 'Refund' : 'Session'}</span>
+                          }}>{p.payment_type === 'advance' ? 'Advance' : p.payment_type === 'refund' ? 'Refund' : p.payment_type === 'document' ? 'Document' : 'Session'}</span>
+                        </td>
+                        <td style={{ padding: '10px 16px' }}>
+                          <select
+                            value={p.verified_by || ''}
+                            onChange={async e => {
+                              await fetch('/api/payments', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ action: 'verify', id: p.id, verified_by: e.target.value })
+                              })
+                              fetchAll()
+                            }}
+                            style={{ fontSize: '11px', padding: '3px 6px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: p.verified_by ? '#EAF3DE' : 'white', color: p.verified_by ? '#27500A' : '#999' }}>
+                            <option value="">— unverified</option>
+                            {VERIFIERS.map(v => <option key={v} value={v}>{v}</option>)}
+                          </select>
                         </td>
                       </tr>
                     ))}

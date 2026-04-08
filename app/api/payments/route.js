@@ -54,7 +54,9 @@ export async function GET(request) {
       id: row[0], client_name: row[1], therapist: row[2],
       session_id: row[3], amount: row[4], mop: row[5],
       session_type: row[6], date: row[7],
-      payment_type: row[8] || 'session'
+      payment_type: row[8] || 'session',
+      time: row[9] || '',
+      verified_by: row[10] || ''
     }))
     return Response.json({ success: true, data: payments })
   } catch (error) {
@@ -78,6 +80,31 @@ export async function POST(request) {
           body.session_type, body.date,
           body.payment_type || 'document'
         ]]}
+      })
+      return Response.json({ success: true })
+    }
+
+    return Response.json({ success: false, error: 'Unknown action' })
+  } catch (error) {
+    return Response.json({ success: false, error: error.message })
+  }
+}
+
+export async function PATCH(request) {
+  try {
+    const body = await request.json()
+    const sheets = getGoogleSheets()
+
+    if (body.action === 'verify') {
+      const data = await getSheetData('payments')
+      const [, ...rows] = data
+      const rowIndex = rows.findIndex(r => r && r[0] === body.id)
+      if (rowIndex === -1) return Response.json({ success: false, error: 'Payment not found' })
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `payments!K${rowIndex + 2}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[body.verified_by]] }
       })
       return Response.json({ success: true })
     }
