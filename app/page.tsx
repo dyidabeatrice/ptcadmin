@@ -46,7 +46,7 @@ export default function HomePage() {
             { label: 'Services', href: '#services' },
             { label: 'Find Us', href: '#location' },
             { label: 'Privacy', href: '/privacy' },
-            { label: 'Book an Appointment', href: 'http://m.me/potentialstherapycenter' },
+            { label: 'Book an Appointment', href: 'https://www.facebook.com/potentialstherapycenter' },
             { label: 'Join us', href: 'https://www.facebook.com/potentialstherapycenter/posts/pfbid02jYUPkwgLuufCSg8j3jvz5rZrGqmP7Qvk9x5qWQbV187zTLSNbLdA51yJ5yd7gB2Ll'}
           ].map(l => (
             <a key={l.label} href={l.href}
@@ -102,7 +102,7 @@ export default function HomePage() {
         </p>
 
         <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <a target="_blank" rel="noopener noreferrer" href="http://m.me/potentialstherapycenter" style={{
+          <a target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/potentialstherapycenter" style={{
             padding: '14px 32px', borderRadius: '8px',
             background: '#fcc200', color: '#0f4c81',
             textDecoration: 'none', fontSize: '15px', fontWeight: '700'
