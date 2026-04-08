@@ -32,7 +32,7 @@ function OutstandingTab({ clients, onSettle }) {
 
   async function settlePayment() {
     setSaving(true)
-    const isPartial = !payForm.use_credit && !payForm.split && payForm.amount < payModal.amount
+    const isPartial = !payForm.use_credit && !payForm.split && payModal.amount > 0 && Number(payForm.amount) < Number(payModal.amount)
 
     if (isPartial) {
       const today = new Date().toLocaleDateString('en-PH', {
@@ -44,7 +44,7 @@ function OutstandingTab({ clients, onSettle }) {
         body: JSON.stringify({
           action: 'add_credit',
           client_name: payModal.client_name,
-          amount: payForm.amount,
+          amount: Number(payForm.amount) || Number(payModal.amount),
           mop: payForm.mop,
           date: today,
           note: `Partial payment for ${payModal.date}`
@@ -89,7 +89,7 @@ function OutstandingTab({ clients, onSettle }) {
             date: payModal.date,
             session_type: payModal.session_type || 'Regular',
             mop: payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop,
-            amount: payModal.amount,
+            amount: Number(payForm.amount) || Number(payModal.amount),
             use_credit: payForm.use_credit,
             split: payForm.split,
             split_credit: payForm.split_credit,
