@@ -23,7 +23,8 @@ function OutstandingTab({ clients, onSettle }) {
 
   async function openSettle(session) {
     setPayModal(session)
-    setPayForm({ mop: 'Cash', amount: session.amount || 0, use_credit: false, split: false, split_credit: 0, split_cash: session.amount || 0 })
+    const initialAmount = Number(session.amount) || 0
+    setPayForm({ mop: 'Cash', amount: initialAmount, use_credit: false, split: false, split_credit: 0, split_cash: initialAmount })
     const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
     const json = await res.json()
     if (json.success) setClientCredit(json.credit_balance || 0)
@@ -133,7 +134,10 @@ function OutstandingTab({ clients, onSettle }) {
             <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Amount (₱)</label>
               <input type="number" value={payForm.amount}
-                onChange={e => setPayForm({ ...payForm, amount: Number(e.target.value), split_cash: Number(e.target.value) })}
+                onChange={e => { const val = Number(e.target.value); setPayForm({ ...payForm, amount: val, split_cash: val }) }}
+                onFocus={e => { if (payForm.amount === 0) setPayForm({ ...payForm, amount: '', split_cash: '' }) }}
+                onBlur={e => { if (payForm.amount === '') setPayForm({ ...payForm, amount: 0, split_cash: 0 }) }}
+                placeholder="Enter amount to settle"
                 style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '16px', fontWeight: '500', boxSizing: 'border-box' }} />
               {payForm.amount > 0 && isPartial && (
                 <div style={{ marginTop: '6px', padding: '8px 10px', borderRadius: '6px', background: '#FAEEDA', border: '1px solid #EF9F27', fontSize: '12px', color: '#633806' }}>
