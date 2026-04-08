@@ -212,10 +212,10 @@ export async function PATCH(request) {
       const isIE =['OT-IE', 'ST-IE', 'PT-IE', 'SPED IE'].includes(body.session_type)
       const isPresent = session?.status === 'Present'
         if (isIE && isPresent) {
-            const clientData = awat getSheetData('clients')
+            const clientData = await getSheetData('clients')
             const [, ...clientRows] = clientData
             const client = clientRows.find(r => r && r[1] === body.client_name)
-            const psid = clientRow?.[11] || ''
+            const psid = client?.[11] || ''
             const policiesMessage = "Hello po! Thank you for completing ${body.client_name}'s evaluation at Potentials Therapy Center. Please expect our secretary to send you our clinic policies shortly. 😊"
             await sheets.spreadsheets.values.append({
                 spreadsheetId: SPREADSHEET_ID,
@@ -225,7 +225,7 @@ export async function PATCH(request) {
                     'POL-${Date.now()}',
                     body.client_name,
                     psid,
-                    'policies'
+                    'policies',
                     policiesMessage,
                     'draft',
                     new Date().toLocaleDateString('en-PH', {timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}),
