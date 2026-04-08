@@ -466,6 +466,31 @@ export default function DocumentsPage() {
                       {r.amount > 0 ? `₱${Number(r.amount).toLocaleString()}` : 'No fee'}
                     </td>
                     <td style={{ padding: '10px 16px' }}>
+                      {r.amount > 0 && r.status === 'Outstanding' && r.client_name && (
+                        <button onClick={async () => {
+                          const clientRes = await fetch(`/api/clients`)
+                          const clientJson = await clientRes.json()
+                          const client = clientJson.success ? clientJson.data.find(c => c.name === r.client_name) : null
+                          const psid = client?.psid || ''
+                          const deadline = r.deadline ? ` on or before ${r.deadline}` : ''
+                          const message = `Hi! This is a gentle reminder to settle your balance for your ${r.doc_type} request for ${r.client_name}${deadline}. Thank you.`
+                          await fetch('/api/messages', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              action: 'create_draft',
+                              client_name: r.client_name,
+                              psid,
+                              type: 'document',
+                              message
+                            })
+                          })
+                          alert('Draft created! Go to Messages page to review and send.')
+                        }} style={{
+                          padding: '4px 10px', borderRadius: '6px', border: '1px solid #B5D4F4',
+                          background: '#E6F1FB', color: '#0C447C', cursor: 'pointer', fontSize: '11px', fontWeight: '500'
+                        }}>Remind</button>
+                      )}
                       <button onClick={async () => {
                         if (r.status === 'Outstanding') {
                         if (r.amount > 0) {

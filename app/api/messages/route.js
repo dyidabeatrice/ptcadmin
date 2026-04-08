@@ -1,102 +1,44 @@
-import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
+import { getSheetData, getGoogleSheets, SPREADSHEET_ID, getSheetId } from '../../lib/sheets'
 
-const DEFAULT_TEMPLATES = {
-  'Session reminder': `Good day! This is a friendly reminder that [CLIENT] has a therapy session tomorrow, [DATE] at [TIME] with [THERAPIST]. Please make sure to arrive on time. Thank you!`,
-  'Unpaid reminder': `Good day! We would like to remind you that [CLIENT]'s session on [DATE] at [TIME] with [THERAPIST] has an outstanding balance. Kindly settle the payment on or before the next session. Thank you!`,
-  'Therapist absence': `Good day! We regret to inform you that [CLIENT]'s session on [DATE] at [TIME] will not push through due to T. [THERAPIST]'s absence. We will get in touch regarding rescheduling. We apologize for the inconvenience.`,
+const PAGE_ACCESS_TOKEN = process.env.META_PAGE_ACCESS_TOKEN
+
+async function sendMessengerMessage(psid, message) {
+  const res = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      recipient: { id: psid },
+      message: { text: message }
+    })
+  })
+  return await res.json()
 }
 
-async function getTemplates() {
+export async function GET(request) {
   try {
-    const data = await getSheetData('settings')
+    const { searchParams } = new URL(request.url)
+    const tab = searchParams.get('tab') || 'drafts'
+
+    const data = await getSheetData('messages')
     const [, ...rows] = data
-    const settings = {}
-    rows.filter(r => r && r[0]).forEach(row => { settings[row[0]] = row[1] })
-    return {
-      'Session reminder': settings['template_session_reminder'] || DEFAULT_TEMPLATES['Session reminder'],
-      'Unpaid reminder': settings['template_unpaid_reminder'] || DEFAULT_TEMPLATES['Unpaid reminder'],
-      'Therapist absence': settings['template_absence_notice'] || DEFAULT_TEMPLATES['Therapist absence'],
-    }
-  } catch {
-    return DEFAULT_TEMPLATES
-  }
-}
+    if (!rows || rows.length === 0) return Response.json({ success: true, data: [] })
 
-function fillTemplate(template, data) {
-  return template
-    .replace(/\[CLIENT\]/g, data.client_name || '')
-    .replace(/\[DATE\]/g, data.date || '')
-    .replace(/\[TIME\]/g, data.time_start || '')
-    .replace(/\[THERAPIST\]/g, data.therapist || '')
-}
-
-export async function GET() {
-  try {
-    const templates = await getTemplates()
-    const [sessionData, clientData, messageData] = await Promise.all([
-      getSheetData('sessions'),
-      getSheetData('clients'),
-      getSheetData('messages')
-    ])
-
-    const [, ...sessionRows] = sessionData
-    const [, ...clientRows] = clientData
-    const [, ...messageRows] = messageData
-
-    const sessions = sessionRows.filter(r => r && r[0]).map((row, i) => ({
+    const messages = rows.filter(r => r && r[0]).map((row, i) => ({
       index: i,
-      id: row[0], client_name: row[1], therapist: row[2],
-      date: row[3], day: row[4], time_start: row[5], time_end: row[6],
-      session_type: row[7] || 'Regular', status: row[8] || 'Scheduled',
-      payment: row[9] || 'Unpaid'
+      id: row[0],
+      client_name: row[1],
+      psid: row[2],
+      type: row[3],
+      message: row[4],
+      status: row[5] || 'draft',
+      created_at: row[6] || '',
+      sent_at: row[7] || ''
     }))
 
-    const clientMap = {}
-    clientRows.filter(r => r && r[0]).forEach(row => {
-      clientMap[row[1]] = { fb_account: row[3] }
-    })
-
-    const sentIds = new Set(messageRows.filter(r => r && r[0]).map(r => r[3]))
-
-    const today = new Date()
-    const tomorrow = new Date(today)
-    tomorrow.setDate(today.getDate() + 1)
-    const tomorrowDay = tomorrow.toLocaleDateString('en-US', { weekday: 'long' })
-
-    const generated = []
-
-    sessions.forEach(s => {
-      const client = clientMap[s.client_name] || {}
-      const fb = client.fb_account || ''
-
-      if (s.day === tomorrowDay && s.status === 'Scheduled') {
-        const key = `reminder-${s.id}`
-        generated.push({
-          key, type: 'Session reminder',
-          client_name: s.client_name, therapist: s.therapist,
-          date: s.date, time_start: s.time_start,
-          fb_account: fb,
-          message: fillTemplate(templates['Session reminder'], s),
-          sent: sentIds.has(key),
-          session_id: s.id
-        })
-      }
-
-      if (s.payment === 'Unpaid' && s.status !== 'Cancelled') {
-        const key = `unpaid-${s.id}`
-        generated.push({
-          key, type: 'Unpaid reminder',
-          client_name: s.client_name, therapist: s.therapist,
-          date: s.date, time_start: s.time_start,
-          fb_account: fb,
-          message: fillTemplate(templates['Unpaid reminder'], s),
-          sent: sentIds.has(key),
-          session_id: s.id
-        })
-      }
-    })
-
-    return Response.json({ success: true, data: generated, templates })
+    if (tab === 'archive') {
+      return Response.json({ success: true, data: messages.filter(m => m.status === 'sent') })
+    }
+    return Response.json({ success: true, data: messages.filter(m => m.status === 'draft') })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
   }
@@ -106,82 +48,109 @@ export async function POST(request) {
   try {
     const body = await request.json()
     const sheets = getGoogleSheets()
-    const today = new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
 
-    if (body.action === 'save_templates') {
-      const settingsData = await getSheetData('settings')
-      const [, ...rows] = settingsData
-
-      const keyMap = {
-        'Session reminder': 'template_session_reminder',
-        'Unpaid reminder': 'template_unpaid_reminder',
-        'Therapist absence': 'template_absence_notice',
-      }
-
-      for (const [type, value] of Object.entries(body.templates)) {
-        const key = keyMap[type]
-        if (!key) continue
-        const rowIndex = rows.findIndex(r => r && r[0] === key)
-        if (rowIndex !== -1) {
-          await sheets.spreadsheets.values.update({
-            spreadsheetId: SPREADSHEET_ID,
-            range: `settings!B${rowIndex + 2}`,
-            valueInputOption: 'RAW',
-            requestBody: { values: [[value]] }
-          })
-        }
-      }
-      return Response.json({ success: true })
-    }
-
-    if (body.action === 'absence') {
-      const templates = await getTemplates()
-      const sessionData = await getSheetData('sessions')
-      const [, ...sessionRows] = sessionData
-      const clientData = await getSheetData('clients')
-      const [, ...clientRows] = clientData
-
-      const clientMap = {}
-      clientRows.filter(r => r && r[0]).forEach(row => {
-        clientMap[row[1]] = { fb_account: row[3] }
+    if (body.action === 'create_draft') {
+      const id = Date.now().toString()
+      const createdAt = new Date().toLocaleDateString('en-PH', {
+        timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
       })
-
-      const affected = sessionRows
-        .filter(r => r && r[0] && r[2] === body.therapist && r[4] === body.day && r[8] !== 'Cancelled')
-        .map((row, i) => ({
-          index: i, id: row[0], client_name: row[1], therapist: row[2],
-          date: row[3], day: row[4], time_start: row[5],
-          fb_account: clientMap[row[1]]?.fb_account || ''
-        }))
-
-      const messages = affected.map(s => ({
-        key: `absence-${s.id}`,
-        type: 'Therapist absence',
-        client_name: s.client_name,
-        therapist: s.therapist,
-        date: s.date,
-        time_start: s.time_start,
-        fb_account: s.fb_account,
-        message: fillTemplate(templates['Therapist absence'], s),
-        sent: false,
-        session_id: s.id
-      }))
-
-      return Response.json({ success: true, data: messages })
-    }
-
-    if (body.action === 'log') {
       await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
-        range: 'messages', valueInputOption: 'RAW',
+        range: 'messages',
+        valueInputOption: 'RAW',
         requestBody: { values: [[
-          Date.now().toString(),
-          body.client_name, body.fb_account,
-          body.key, body.type,
-          body.message, today
+          id, body.client_name, body.psid || '',
+          body.type, body.message,
+          'draft', createdAt, ''
         ]]}
       })
+      return Response.json({ success: true, id })
+    }
+
+    if (body.action === 'send') {
+      const data = await getSheetData('messages')
+      const [, ...rows] = data
+      const rowIndex = rows.findIndex(r => r && r[0] === body.id)
+      if (rowIndex === -1) return Response.json({ success: false, error: 'Message not found' })
+
+      const psid = rows[rowIndex][2]
+      if (!psid) return Response.json({ success: false, error: 'No PSID for this client' })
+
+      const result = await sendMessengerMessage(psid, body.message)
+      if (result.error) return Response.json({ success: false, error: result.error.message })
+
+      const sentAt = new Date().toLocaleDateString('en-PH', {
+        timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      })
+
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `messages!E${rowIndex + 2}:H${rowIndex + 2}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[body.message, 'sent', rows[rowIndex][6], sentAt]] }
+      })
+
       return Response.json({ success: true })
+    }
+
+    if (body.action === 'update_draft') {
+      const data = await getSheetData('messages')
+      const [, ...rows] = data
+      const rowIndex = rows.findIndex(r => r && r[0] === body.id)
+      if (rowIndex === -1) return Response.json({ success: false, error: 'Message not found' })
+
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `messages!E${rowIndex + 2}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[body.message]] }
+      })
+      return Response.json({ success: true })
+    }
+
+    if (body.action === 'delete') {
+      const data = await getSheetData('messages')
+      const [, ...rows] = data
+      const rowIndex = rows.findIndex(r => r && r[0] === body.id)
+      if (rowIndex === -1) return Response.json({ success: false, error: 'Message not found' })
+      const sheetId = await getSheetId('messages')
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        requestBody: { requests: [{ deleteDimension: {
+          range: { sheetId, dimension: 'ROWS', startIndex: rowIndex + 1, endIndex: rowIndex + 2 }
+        }}]}
+      })
+      return Response.json({ success: true })
+    }
+
+    if (body.action === 'clear_old') {
+      const data = await getSheetData('messages')
+      const [, ...rows] = data
+      const threeMonthsAgo = new Date()
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+      const sheetId = await getSheetId('messages')
+
+      const toDelete = rows
+        .map((r, i) => ({ r, i }))
+        .filter(({ r }) => {
+          if (!r || r[5] !== 'sent' || !r[7]) return false
+          const sentDate = new Date(r[7])
+          return sentDate < threeMonthsAgo
+        })
+        .map(({ i }) => i)
+        .reverse()
+
+      for (const i of toDelete) {
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId: SPREADSHEET_ID,
+          requestBody: { requests: [{ deleteDimension: {
+            range: { sheetId, dimension: 'ROWS', startIndex: i + 1, endIndex: i + 2 }
+          }}]}
+        })
+      }
+      return Response.json({ success: true, deleted: toDelete.length })
     }
 
     return Response.json({ success: false, error: 'Unknown action' })

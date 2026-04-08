@@ -120,6 +120,8 @@ export default function SchedulePage() {
   const [clientCredit, setClientCredit] = useState(0)
   const [rescheduleModal, setRescheduleModal] = useState(null)
   const [rescheduleForm, setRescheduleForm] = useState({ day: '', therapist: '', time_start: '', time_end: '' })
+  const [remindModal, setRemindModal] = useState(null)
+  const [remindSending, setRemindSending] = useState(false)
   const [addModal, setAddModal] = useState(false)
   const [addForm, setAddForm] = useState({ client_name: '', therapist: '', day: '', time_start: '', time_end: '' })
   const [saving, setSaving] = useState(false)
@@ -622,6 +624,61 @@ export default function SchedulePage() {
         </div>
       )}
 
+      {remindModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Send reminder</h3>
+            <div style={{ fontSize: '13px', color: '#666', marginBottom: '1.5rem' }}>{remindModal.client_name} · {remindModal.date} · {remindModal.time_start}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.5rem' }}>
+              {[
+                { type: 'ie_reminder', label: '📅 IE Appointment Reminder', show: true },
+                { type: 'outstanding', label: '💳 Outstanding Balance Reminder', show: true },
+                { type: 'makeup', label: '🔄 Make-up Schedule Request', show: true },
+              ].map(opt => (
+                <button key={opt.type} onClick={async () => {
+                  setRemindSending(true)
+                  const client = clients.find(c => c.name === remindModal.client_name)
+                  const psid = client?.psid || ''
+                  const outstanding = Number(client?.outstanding_balance || 0)
+
+                  let message = ''
+                  if (opt.type === 'ie_reminder') {
+                    message = `Hello po! This is a friendly reminder that ${remindModal.client_name} has an EVALUATION SESSION on ${remindModal.date} at ${remindModal.time_start}. See you po! 😊`
+                  } else if (opt.type === 'outstanding') {
+                    message = `Hello po! This is a gentle reminder to settle your outstanding balance of PHP ${outstanding.toLocaleString()} for ${remindModal.client_name}. Please remit the total balance to ensure there is no interruption to your scheduled sessions.\n\nYou can complete your payment via the following methods:\n\nFor cashless payments, here is our account:\n\nACCOUNT NAME: Potentials Therapy Center\nBDO: 0122-2002-8786\nUNION BANK: 0023-1000-9113\n\nPlease be advised that if the balance is not settled, we will be unable to proceed with further sessions until your account is brought current. We value our professional relationship and trust that this will be resolved swiftly.\n\nThank you for your prompt attention to this matter.`
+                  } else if (opt.type === 'makeup') {
+                    message = `Hello po! Pwede po ba si ${remindModal.client_name} for make up on **DATE & TIME** with T. **THERAPIST**. Please confirm as soon as possible.`
+                  }
+
+                  await fetch('/api/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      action: 'create_draft',
+                      client_name: remindModal.client_name,
+                      psid,
+                      type: opt.type,
+                      message
+                    })
+                  })
+                  setRemindModal(null)
+                  setRemindSending(false)
+                  alert(`Draft created! Go to Messages page to review and send.`)
+                }} disabled={remindSending} style={{
+                  padding: '12px 16px', borderRadius: '8px', border: '1px solid #e0e0e0',
+                  background: '#f8f9fa', color: '#333', cursor: 'pointer', fontSize: '13px',
+                  textAlign: 'left', fontWeight: '500'
+                }}>{opt.label}</button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => setRemindModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       {addModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
@@ -944,6 +1001,8 @@ export default function SchedulePage() {
                               )}
                               <button onClick={() => { setRescheduleModal(s); setRescheduleForm({ day: '', therapist: '', time_start: '', time_end: '' }) }}
                                 style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: '1px solid #ddd', background: 'white', color: '#666', cursor: 'pointer' }}>Move</button>
+                              <button onClick={() => setRemindModal(s)}
+                                style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: '1px solid #B5D4F4', background: '#E6F1FB', color: '#0C447C', cursor: 'pointer' }}>Remind</button>
                               <button onClick={() => deleteSession(s)}
                                 style={{ fontSize: '8px', padding: '1px 3px', borderRadius: '3px', border: '1px solid #fcc', background: '#fff5f5', color: '#c00', cursor: 'pointer' }}>✕</button>
                             </div>

@@ -208,6 +208,32 @@ export async function PATCH(request) {
         ]]}
       })
 
+      // Auto-generate policies draft when IE session is paid and present
+      const isIE =['OT-IE', 'ST-IE', 'PT-IE', 'SPED IE'].includes(body.session_type)
+      const isPresent = session?.status === 'Present'
+        if (isIE && isPresent) {
+            const clientData = awat getSheetData('clients')
+            const [, ...clientRows] = clientData
+            const client = clientRows.find(r => r && r[1] === body.client_name)
+            const psid = clientRow?.[11] || ''
+            const policiesMessage = "Hello po! Thank you for completing ${body.client_name}'s evaluation at Potentials Therapy Center. Please expect our secretary to send you our clinic policies shortly. 😊"
+            await sheets.spreadsheets.values.append({
+                spreadsheetId: SPREADSHEET_ID,
+                range: 'messages',
+                valueInputOption: 'RAW',
+                requestBody: { values: [[
+                    'POL-${Date.now()}',
+                    body.client_name,
+                    psid,
+                    'policies'
+                    policiesMessage,
+                    'draft',
+                    new Date().toLocaleDateString('en-PH', {timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}),
+                    ''
+                ]]}
+            })
+        }
+      
       // Credits calls after — wrapped so they don't block the response
       try {
         if (body.use_credit || body.split) {
