@@ -688,7 +688,7 @@ export default function SchedulePage() {
                         <div key={slot} style={{
                           position: 'absolute', top: `${i * ROW_HEIGHT}px`,
                           width: '100%', height: `${ROW_HEIGHT}px`,
-                          borderBottom: `1px solid ${i % 4 === 0 ? '#e8e8e8' : '#f5f5f5'}`,
+                          borderBottom: `${i % 4 === 3 ? '2px solid #ccc' : `1px solid ${i % 4 === 0 ? '#e8e8e8' : '#f5f5f5'}`}`,
                           background: dragOver?.therapist === therapist && dragOver?.slotMins === slotMins ? 'rgba(15,76,129,0.1)' : isAbsent ? '#f5f5f5' : freeSlotMode && free ? 'rgba(225,245,238,0.6)' : freeSlotMode && !free ? '#f8f8f8' : i % 4 === 0 ? '#fafafa' : 'white',
                           boxSizing: 'border-box'
                          }} 
@@ -781,7 +781,6 @@ export default function SchedulePage() {
                         const sc = getSessionColor(s)
                         const clientInfo = clients.find(c => c.name === s.client_name)
                         const hasOutstanding = clientInfo?.outstanding_balance > 0
-                        const isCredited = s.notes === 'credited'
                         const needsWarning = hasOutstanding || (s.payment === 'Unpaid' && (s.status === 'Present' || s.status === 'Cancelled'))
 
                         const sameStart = therapistSessions.filter(x => x.time_start === s.time_start)
@@ -795,6 +794,39 @@ export default function SchedulePage() {
                             draggable
                             onDragStart={() => setDragSession(s)}
                             onDragEnd={() => { setDragSession(null); setDragOver(null) }}
+                            onDragOver={e => { e.preventDefault(); setDragOver({ therapist, slotMins: parseTime(s.time_start) }) }}
+                            onDrop={async e => {
+                              e.preventDefault()
+                              if (!dragSession || dragSession.index === s.index) return
+                              const newTimeStart = s.time_start
+                              const duration = parseTime(dragSession.time_end) - parseTime(dragSession.time_start)
+                              const newTimeEnd = formatTime(parseTime(newTimeStart) + duration)
+                              const parts = selectedWeek.key.replace('week_', '').split('_')
+                              const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
+                              const weekDates = {}
+                              DAYS.forEach((day, idx) => {
+                                const d = new Date(monday)
+                                d.setDate(d.getDate() + idx)
+                                weekDates[day] = d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+                              })
+                              await fetch('/api/sessions', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  action: 'reschedule',
+                                  week_key: selectedWeek.key,
+                                  rowIndex: dragSession.index,
+                                  therapist,
+                                  date: weekDates[selectedDay] || '',
+                                  day: selectedDay,
+                                  time_start: newTimeStart,
+                                  time_end: newTimeEnd
+                                })
+                              })
+                              setDragSession(null)
+                              setDragOver(null)
+                              fetchSessions(selectedWeek.key)
+                            }}
                             style={{
                               position: 'absolute',
                               top: `${stackCount > 1 ? stackedTop : topOffset + 1}px`,
@@ -806,13 +838,13 @@ export default function SchedulePage() {
                               cursor: 'grab'
                             }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                              <div style={{ fontSize: '10px', fontWeight: '500', color: sc.color, lineHeight: '1.3' }}>{s.client_name}</div>
+                              <div style={{ fontSize: '10px', fontWeight: '600', color: sc.color, lineHeight: '1.3' }}>{s.client_name}</div>
                               <div style={{ display: 'flex', gap: '1px', flexShrink: 0 }}>
-                                {needsWarning && <span style={{ fontSize: '8px' }}>⚠️</span>}
+                                {needsWarning && <span style={{ fontSize: '12px' }}>⚠️</span>}
                               </div>
                             </div>
                             {height > 30 && (
-                              <div style={{ fontSize: '9px', color: sc.color, opacity: 0.75, marginBottom: '3px' }}>
+                              <div style={{ fontSize: '9px', fontWeight: '700', color: sc.color, marginBottom: '3px' }}>
                                 {s.time_start}–{s.time_end}
                               </div>
                             )}
