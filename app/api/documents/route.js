@@ -9,6 +9,22 @@ const transporter = nodemailer.createTransport({
   }
 })
 
+async function updateClientOutstanding(clientName, delta) {
+  const sheets = getGoogleSheets()
+  const data = await getSheetData('clients')
+  const [, ...rows] = data
+  const index = rows.findIndex(r => r && r[1] === clientName)
+  if (index === -1) return
+  const current = parseFloat(rows[index][10] || 0)
+  const newVal = Math.max(0, current + delta)
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `clients!K${index + 2}`,
+    valueInputOption: 'RAW',
+    requestBody: { values: [[newVal]] }
+  })
+}
+
 async function sendTherapistEmail(therapistEmail, therapistName, clientName, docType, deadline, notes) {
   if (!therapistEmail) return
   await transporter.sendMail({
