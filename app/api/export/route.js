@@ -147,31 +147,39 @@ export async function GET(request) {
     })
 
     const monthName = new Date(year, monthNum - 1).toLocaleString('en-PH', { month: 'long' })
-    const headers = ['DATE', 'CLIENT NAME', 'MOP', 'REFERENCE NO.', 'TOTAL', 'THERAPIST', 'CENTER', 'COMMENTS']
+    const headers = ['DATE', 'CLIENT NAME', 'SESSION TYPE', 'MOP', 'REFERENCE NO.', 'TOTAL', 'THERAPIST', 'CENTER', 'COMMENTS']
 
     // Regular therapist sheets
     Object.entries(regularTherapists).sort(([a], [b]) => a.localeCompare(b)).forEach(([name, { payments, info }]) => {
       const sheetData = [
         [`${name} — ${monthName} ${year}`],
-        [`Level: ${info.level}`],
+        ['Level:', info.level],
         [],
         headers,
-        ...payments.map(p => {
-          const total = getTotal(p.session_type, p.amount)
-          const therapistCut = getTherapistCut(p.session_type, info.level, p.comments)
-          const center = getCenter(p.session_type, total, therapistCut, p.comments)
-          return [p.date, p.client_name, p.mop, p.reference, total, therapistCut, center, p.comments]
+        ...payments.map((p, idx) => {
+          const row = idx + 5
+          return [
+            p.date,
+            p.client_name,
+            p.session_type,
+            p.mop,
+            p.reference,
+            { f: `IF(C${row}="IE REPORT",0,IFERROR(VLOOKUP(C${row},RATES!$A:$B,2,FALSE),E${row}))` },
+            { f: `IFERROR(VLOOKUP(C${row},RATES!$A:$G,MATCH($B$2,RATES!$C$1:$G$1,0)+2,FALSE),0)*IF(I${row}="-5%",0.95,1)` },
+            { f: `IF(C${row}="IE REPORT",0,F${row}-G${row})` },
+            p.comments
+          ]
         }),
         [],
-        ['TOTALS', '', '', '',
-          { f: `SUM(E5:E${payments.length + 4})` },
+        ['TOTALS', '', '', '', '',
           { f: `SUM(F5:F${payments.length + 4})` },
           { f: `SUM(G5:G${payments.length + 4})` },
+          { f: `SUM(H5:H${payments.length + 4})` },
           ''
         ]
       ]
       const ws = XLSX.utils.aoa_to_sheet(sheetData)
-      ws['!cols'] = [{ wch: 14 }, { wch: 24 }, { wch: 12 }, { wch: 16 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 20 }]
+      ws['!cols'] = [{ wch: 14 }, { wch: 24 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 20 }]
       XLSX.utils.book_append_sheet(wb, ws, name.substring(0, 31))
     })
 
@@ -184,18 +192,19 @@ export async function GET(request) {
         headers,
         ...payments.map(p => {
           const total = p.amount || 0
-          return [p.date, p.client_name, p.mop, p.reference, total, 0, total, p.comments]
+          return [p.date, p.client_name, p.session_type, p.mop, p.reference, total, 0, total, p.comments]
+
         }),
         [],
-        ['TOTALS', '', '', '',
-          { f: `SUM(E4:E${payments.length + 3})` },
+        ['TOTALS', '', '', '', '',
+          { f: `SUM(F4:F${payments.length + 3})` },
           0,
-          { f: `SUM(G4:G${payments.length + 3})` },
+          { f: `SUM(H4:H${payments.length + 3})` },
           ''
         ]
       ]
       const ws = XLSX.utils.aoa_to_sheet(sheetData)
-      ws['!cols'] = [{ wch: 14 }, { wch: 24 }, { wch: 12 }, { wch: 16 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 20 }]
+      ws['!cols'] = [{ wch: 14 }, { wch: 24 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 20 }]
       XLSX.utils.book_append_sheet(wb, ws, `${specialty} INTERNS`)
     })
 
