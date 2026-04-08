@@ -40,10 +40,17 @@ function parseSchedule(str) {
 }
 
 function mergeSchedules(scheduleA, scheduleB) {
-  const slotsA = parseSchedule(scheduleA)
-  const slotsB = parseSchedule(scheduleB)
-  const all = [...slotsA, ...slotsB].filter(s => s.therapist && s.day && s.time_start && s.time_end)
-  const unique = all.filter((slot, index, self) =>
+  const parse = (str) => {
+    if (!str) return []
+    return str.split(';').map(s => {
+      const [therapist, day, time_start, time_end] = s.split('|')
+      return { therapist, day, time_start, time_end }
+    }).filter(s => s.therapist && s.day && s.time_start && s.time_end)
+  }
+  const slotsA = parse(scheduleA)
+  const slotsB = parse(scheduleB)
+  const all = [...slotsA, ...slotsB]
+  return all.filter((slot, index, self) =>
     index === self.findIndex(s =>
       s.therapist === slot.therapist &&
       s.day === slot.day &&
@@ -51,7 +58,6 @@ function mergeSchedules(scheduleA, scheduleB) {
       s.time_end === slot.time_end
     )
   )
-  return unique
 }
 
 function similarity(a, b) {
@@ -200,10 +206,32 @@ function ClientForm({ data, setData, onSave, onClose, title, saving, therapistDa
       <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '540px', maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ margin: '0 0 1.5rem', color: '#0f4c81' }}>{title}</h3>
 
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Full name</label>
-          <input value={data.name} onChange={e => setData({ ...data, name: e.target.value })}
-            style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: duplicateWarning?.exact ? '2px solid #E24B4A' : '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+                <div style={{ marginBottom: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+            <div>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Last name <span style={{ color: '#E24B4A' }}>*</span></label>
+              <input value={data.last_name || ''} onChange={e => {
+                const last = e.target.value
+                const first = data.first_name || ''
+                const combined = last && first ? `${last}, ${first}` : last || first
+                setData({ ...data, last_name: last, name: combined })
+              }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>First name <span style={{ color: '#E24B4A' }}>*</span></label>
+              <input value={data.first_name || ''} onChange={e => {
+                const first = e.target.value
+                const last = data.last_name || ''
+                const combined = last && first ? `${last}, ${first}` : last || first
+                setData({ ...data, first_name: first, name: combined })
+              }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: duplicateWarning?.exact ? '2px solid #E24B4A' : '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+            </div>
+          </div>
+          <div style={{ fontSize: '11px', color: '#999', marginBottom: '6px' }}>
+            Will be saved as: <strong>{data.name || 'Last name, First name'}</strong>
+          </div>
           {duplicateWarning?.exact && (
             <div style={{ marginTop: '6px', padding: '10px 12px', borderRadius: '8px', background: '#FCEBEB', border: '1px solid #F09595' }}>
               <div style={{ fontSize: '12px', fontWeight: '500', color: '#791F1F', marginBottom: '4px' }}>⚠️ Client already exists: {duplicateWarning.exact.name}</div>
