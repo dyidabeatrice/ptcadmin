@@ -251,7 +251,7 @@ export default function DocumentsPage() {
                 <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Mode of payment</label>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {['Cash', 'BDO', 'Union Bank'].map(mop => (
-                    <button key={mop} onClick={() => setPayForm({ ...payForm, mop })} style={{
+                    <button key={mop} onClick={() => setPayForm({ ...payForm, mop, reference: '' })} style={{
                       padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
                       border: payForm.mop === mop ? '2px solid #0f4c81' : '1px solid #ddd',
                       background: payForm.mop === mop ? '#E6F1FB' : 'white',
@@ -260,11 +260,19 @@ export default function DocumentsPage() {
                     }}>{mop}</button>
                   ))}
                 </div>
+                {(payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && (
+                  <div style={{ marginTop: '8px' }}>
+                    <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Reference number <span style={{ color: '#E24B4A' }}>*</span></label>
+                    <input value={payForm.reference || ''} onChange={e => setPayForm({ ...payForm, reference: e.target.value })}
+                      placeholder="Enter reference number..."
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: !payForm.reference ? '2px solid #EF9F27' : '1px solid #97C459', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                )}
               </div>
             )}
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setPayModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
-              <button onClick={settlePayment} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference)} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes)) ? 0.5 : 1 }}>
+              <button onClick={settlePayment} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference)} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
                 Confirm ₱{Number(payForm.amount || 0).toLocaleString()}
               </button>
             </div>
