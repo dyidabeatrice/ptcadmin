@@ -38,20 +38,24 @@ export async function POST(request) {
     const weekKey = body.week_key
 
     if (body.action === 'add') {
+      const id = Date.now().toString() + Math.random().toString(36).slice(2)
       await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
-        range: weekKey, valueInputOption: 'RAW',
+        range: weekKey,
+        valueInputOption: 'RAW',
         requestBody: { values: [[
-          paymentId,
+          id,
           body.client_name,
           body.therapist,
-          body.session_id || `${weekKey}-${body.rowIndex}`,
-          body.amount,
-          mop,
-          body.session_type || 'Regular',
-          payDate,
-          'session',
-          body.reference || ''
+          body.date || '',
+          body.day || '',
+          body.time_start || '',
+          body.time_end || '',
+          body.session_type || '',
+          'Pencil',
+          'Unpaid',
+          '',
+          ''
         ]]}
       })
       return Response.json({ success: true })
