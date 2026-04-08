@@ -538,11 +538,22 @@ export default function PaymentsPage() {
         <span style={{ fontSize: '13px', color: '#666', fontWeight: '500' }}>Export payments:</span>
         <input type="month" value={exportMonth} onChange={e => setExportMonth(e.target.value)}
           style={{ padding: '7px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px' }} />
-        <button onClick={exportToExcel} style={{
+        <button onClick={async () => {
+          const res = await fetch(`/api/export?month=${exportMonth}`)
+          if (!res.ok) { alert('Export failed'); return }
+          const blob = await res.blob()
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          const [year, month] = exportMonth.split('-')
+          const monthName = new Date(Number(year), Number(month) - 1).toLocaleString('en-PH', { month: 'long' })
+          a.href = url
+          a.download = `PTC_Payments_${monthName}_${year}.xlsx`
+          a.click()
+          URL.revokeObjectURL(url)
+        }} style={{
           padding: '8px 16px', borderRadius: '8px', border: '1px solid #0f4c81',
           cursor: 'pointer', fontSize: '13px', background: '#E6F1FB', color: '#0f4c81', fontWeight: '500'
-        }}>⬇ Export CSV</button>
-        <span style={{ fontSize: '12px', color: '#aaa' }}>Downloads as CSV — open with Excel or Google Sheets</span>
+        }}>⬇ Export Excel</button>
       </div>
 
       {/* Advance payment modal */}

@@ -84,8 +84,30 @@ export async function PATCH(request) {
         requestBody: { values: [[newStatus]] }
       })
 
-      const nowOwes = !isPaid && (newStatus === 'Present' || newStatus === 'Cancelled')
-      const wasOwing = !isPaid && (oldStatus === 'Present' || oldStatus === 'Cancelled')
+      // Log unpaid present sessions to payments sheet for payroll tracking
+      if (newStatus === 'Present' && oldStatus !== 'Present' && !isPaid) {
+        const payDate = new Date().toLocaleDateString('en-PH', {
+          timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric'
+        })
+        const sheets = getGoogleSheets()
+        await sheets.spreadsheets.values.append({
+          spreadsheetId: SPREADSHEET_ID,
+          range: 'payments',
+          valueInputOption: 'RAW',
+          requestBody: { values: [[
+            `ATTEND-${session?.id || Date.now()}`,
+            session?.client_name || '',
+            session?.therapist || '',
+            session?.id || '',
+            session?.amount || 0,
+            'UNPAID',
+            session?.session_type || 'Regular',
+            session?.date || payDate,
+            'attendance',
+            ''
+          ]]}
+        })
+      }
 
       if (nowOwes && !wasOwing && session?.client_name) {
         const rate = session.amount || 0
