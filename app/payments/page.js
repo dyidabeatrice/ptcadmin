@@ -50,27 +50,53 @@ function OutstandingTab({ clients, onSettle }) {
         })
       })
     } else {
-      await fetch('/api/sessions', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'pay',
-          week_key: payModal.week_key,
-          rowIndex: payModal.index,
-          session_id: payModal.id,
-          client_name: payModal.client_name,
-          therapist: payModal.therapist,
-          date: payModal.date,
-          session_type: payModal.session_type || 'Regular',
-          mop: payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop,
-          amount: payModal.amount,
-          use_credit: payForm.use_credit,
-          split: payForm.split,
-          split_credit: payForm.split_credit,
-          split_cash: payForm.split_cash,
-          credit_balance: clientCredit
+      if (payModal.is_document) {
+        // Document payment
+        const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
+        await fetch('/api/documents', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'pay', index: payModal.index, client_name: payModal.client_name, amount: payModal.amount, mop: payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop })
         })
-      })
+        await fetch('/api/payments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'log',
+            client_name: payModal.client_name,
+            therapist: payModal.therapist,
+            session_id: `DOC-${payModal.id}`,
+            amount: payModal.amount,
+            mop: payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop,
+            session_type: payModal.session_type,
+            date: today,
+            payment_type: 'document'
+          })
+        })
+      } else {
+        // Session payment
+        await fetch('/api/sessions', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'pay',
+            week_key: payModal.week_key,
+            rowIndex: payModal.index,
+            session_id: payModal.id,
+            client_name: payModal.client_name,
+            therapist: payModal.therapist,
+            date: payModal.date,
+            session_type: payModal.session_type || 'Regular',
+            mop: payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop,
+            amount: payModal.amount,
+            use_credit: payForm.use_credit,
+            split: payForm.split,
+            split_credit: payForm.split_credit,
+            split_cash: payForm.split_cash,
+            credit_balance: clientCredit
+          })
+        })
+      }
     }
 
     setPayModal(null)
