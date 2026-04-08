@@ -36,7 +36,7 @@ async function sendSessionReminders() {
   const [, ...clientRows] = clientData
   const clientMap = {}
   clientRows.filter(r => r && r[0]).forEach(row => {
-    clientMap[row[1]] = { psid: row[3] }
+    clientMap[row[1]] = { psid: row[11] }
   })
 
   const therapistData = await getSheetData('therapists')
@@ -93,7 +93,7 @@ async function sendDocumentReminders() {
   const [, ...clientRows] = clientData
   const clientMap = {}
   clientRows.filter(r => r && r[0]).forEach(row => {
-    clientMap[row[1]] = { psid: row[3] }
+    clientMap[row[1]] = { psid: row[11] }
   })
 
   const reportData = await getSheetData('reports')

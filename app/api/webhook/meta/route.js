@@ -124,3 +124,26 @@ export async function POST(request) {
     return Response.json({ status: 'ok' })
   }
 }
+
+    // Auto-save PSID by matching fb_account name
+    if (senderId && senderName) {
+      const clientData = await getSheetData('clients')
+      const [, ...clientRows] = clientData
+      const sheets = getGoogleSheets()
+      
+      const matchIndex = clientRows.findIndex(r => {
+        if (!r || !r[3]) return false
+        const fbName = r[3].toLowerCase().trim()
+        const msgName = senderName.toLowerCase().trim()
+        return fbName === msgName || fbName.includes(msgName) || msgName.includes(fbName)
+      })
+
+      if (matchIndex !== -1 && !clientRows[matchIndex][11]) {
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `clients!L${matchIndex + 2}`,
+          valueInputOption: 'RAW',
+          requestBody: { values: [[senderId]] }
+        })
+      }
+    }

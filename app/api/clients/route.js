@@ -70,7 +70,8 @@ export async function GET() {
       address: row[5] || '', notes: row[6] || '',
       schedule: row[7] || '', status: row[8] || 'active',
       credit_balance: parseFloat(row[9] || 0),
-      outstanding_balance: parseFloat(row[10] || 0)
+      outstanding_balance: parseFloat(row[10] || 0),
+      psid: row[11] || ''
     }))
     return Response.json({ success: true, data: clients })
   } catch (error) {

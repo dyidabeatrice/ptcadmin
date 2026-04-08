@@ -254,6 +254,12 @@ function ClientForm({ data, setData, onSave, onClose, title, saving, therapistDa
             <input type="date" value={data.birthdate} onChange={e => setData({ ...data, birthdate: e.target.value })}
               style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
           </div>
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Facebook account name</label>
+            <input value={data.fb_account || ''} onChange={e => setData({ ...data, fb_account: e.target.value })}
+              placeholder="Exact name as it appears on Messenger..."
+              style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+          </div>
           <div>
             <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Phone</label>
             <input value={data.phone} onChange={e => setData({ ...data, phone: e.target.value })}
