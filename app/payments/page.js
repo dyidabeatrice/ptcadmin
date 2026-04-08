@@ -224,7 +224,7 @@ function OutstandingTab({ clients, onSettle }) {
               <button onClick={() => setPayModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
               <button onClick={confirmPayment} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes)} style={{
  padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes)) ? 0.5 : 1 }}>
-                {saving ? 'Saving...' : isPartial ? `Record ₱${Number(payForm.amount || 0).toLocaleString()} as partial` : `Settle ₱${Number(payModal.amount || 0).toLocaleString()}`}
+                {saving ? 'Saving...' : `Confirm ₱${Number(payForm.amount || 0).toLocaleString()}`}
               </button>
             </div>
           </div>
@@ -293,7 +293,7 @@ export default function PaymentsPage() {
   const [filterType, setFilterType] = useState('All')
   const [activeTab, setActiveTab] = useState('transactions')
   const [advanceModal, setAdvanceModal] = useState(false)
-  const [advanceForm, setAdvanceForm] = useState({ client_name: '', amount: '', mop: 'Cash' })
+  const [advanceForm, setAdvanceForm] = useState({ client_name: '', amount: '', mop: 'Cash', reference: '' })
   const [refundModal, setRefundModal] = useState(null)
   const [refundAmount, setRefundAmount] = useState('')
   const [saving, setSaving] = useState(false)
@@ -374,7 +374,7 @@ export default function PaymentsPage() {
       })
     })
     setAdvanceModal(false)
-    setAdvanceForm({ client_name: '', amount: '', mop: 'Cash' })
+    setAdvanceForm({ client_name: '', amount: '', mop: 'Cash', reference: '' })
     fetchAll()
     setSaving(false)
   }
@@ -587,9 +587,11 @@ export default function PaymentsPage() {
                 )}
             </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setAdvanceModal(false)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
-<button onClick={confirmPayment} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes)} style={{
- padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes)) ? 0.5 : 1 }}>                {saving ? 'Saving...' : `Record ₱${Number(advanceForm.amount || 0).toLocaleString()}`}
+              <button onClick={recordAdvance} disabled={saving || !advanceForm.amount || ((advanceForm.mop === 'BDO' || advanceForm.mop === 'Union Bank') && !advanceForm.reference)} style={{
+                padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500',
+                opacity: (saving || !advanceForm.amount || ((advanceForm.mop === 'BDO' || advanceForm.mop === 'Union Bank') && !advanceForm.reference)) ? 0.5 : 1
+              }}>
+                {saving ? 'Saving...' : `Record ₱${Number(advanceForm.amount || 0).toLocaleString()}`}
               </button>
             </div>
           </div>
