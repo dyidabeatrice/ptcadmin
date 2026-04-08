@@ -42,10 +42,16 @@ export async function POST(request) {
         spreadsheetId: SPREADSHEET_ID,
         range: weekKey, valueInputOption: 'RAW',
         requestBody: { values: [[
-          Date.now().toString() + Math.random().toString(36).slice(2),
-          body.client_name, body.therapist, body.date,
-          body.day, body.time_start, body.time_end,
-          '', 'Pencil', 'Unpaid', '', '', ''
+          paymentId,
+          body.client_name,
+          body.therapist,
+          body.session_id || `${weekKey}-${body.rowIndex}`,
+          body.amount,
+          mop,
+          body.session_type || 'Regular',
+          payDate,
+          'session',
+          body.reference || ''
         ]]}
       })
       return Response.json({ success: true })
@@ -84,7 +90,7 @@ export async function PATCH(request) {
       if (nowOwes && !wasOwing && session?.client_name) {
         const rate = session.amount || 0
         if (rate > 0) {
-          await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/credits`, {
+          await fetch(`${process.env.NEXT_PUBLIC_URL || 'https://potentialstherapycenter.com/'}/api/credits`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'add_outstanding', client_name: session.client_name, amount: rate })
@@ -95,7 +101,7 @@ export async function PATCH(request) {
       if (wasOwing && !nowOwes && session?.client_name) {
         const rate = session.amount || 0
         if (rate > 0) {
-          await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/credits`, {
+          await fetch(`${process.env.NEXT_PUBLIC_URL || 'https://potentialstherapycenter.com/'}/api/credits`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'clear_outstanding', client_name: session.client_name, amount: rate })
@@ -146,17 +152,13 @@ export async function PATCH(request) {
         range: 'payments',
         valueInputOption: 'RAW',
         requestBody: { values: [[
-          paymentId,
-          body.client_name,
-          body.therapist,
+          Date.now().toString() + Math.random().toString(36).slice(2),
+          body.client_name, body.therapist,
           body.session_id || `${weekKey}-${body.rowIndex}`,
-          body.amount,
-          mop,
+          body.amount, mop,
           body.session_type || 'Regular',
           payDate,
-          'session',
-          '',
-          body.reference || ''
+          'session'
         ]]}
       })
 
@@ -210,7 +212,7 @@ export async function PATCH(request) {
       if (unpaidSession && (unpaidSession.status === 'Present' || unpaidSession.status === 'Cancelled')) {
         const rate = unpaidSession.amount || 0
         if (rate > 0) {
-          await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/credits`, {
+          await fetch(`${process.env.NEXT_PUBLIC_URL || 'https://potentialstherapycenter.com/'}/api/credits`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'add_outstanding', client_name: body.client_name, amount: rate })
@@ -228,7 +230,7 @@ export async function PATCH(request) {
         valueInputOption: 'RAW',
         requestBody: { values: [['Absent']] }
       })
-      await fetch(`${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/api/credits`, {
+      await fetch(`${process.env.NEXT_PUBLIC_URL || 'https://potentialstherapycenter.com/'}/api/credits`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'absent_credit', client_name: body.client_name, amount: body.amount })
