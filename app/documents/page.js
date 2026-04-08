@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 const DOC_TYPES = [
   { value: 'Initial Evaluation', label: 'Initial Evaluation', info: 'Reprint only — no fee', amount: 0, custom: false },
   { value: 'PR', label: 'Progress Report (Regular)', info: 'Minimum 2 weeks processing — ₱750', amount: 750, custom: false },
-  { value: 'PR-RUSHED', label: 'Progress Report (Rushed)', info: '1–2 weeks processing — ₱1,000', amount: 1000, custom: false },
+  { value: 'PR-RUSHED', label: 'Progress Report (Rushed)', info: '<2 weeks processing — ₱1,000', amount: 1000, custom: false },
+  { value: 'PR-INTERN', label: 'Progress Report (Intern)', info: 'Minimum 2 weeks processing — ₱300', amount: 300, custom: false },
   { value: 'Endorsement Notes', label: 'Endorsement Notes', info: 'Custom amount', amount: 0, custom: true },
   { value: 'Home Program', label: 'Home Program', info: 'Custom amount', amount: 0, custom: true },
 ]
