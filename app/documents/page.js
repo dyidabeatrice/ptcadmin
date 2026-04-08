@@ -315,10 +315,7 @@ export default function DocumentsPage() {
                   <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Parent email (optional)</label>
                   <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
                     placeholder="parent@email.com"
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: !form.deadline ? '2px solid #EF9F27' : '1px solid #97C459', fontSize: '14px', boxSizing: 'border-box' }} />
-                  {!form.deadline && (
-                    <div style={{ marginTop: '6px', fontSize: '12px', color: '#633806' }}>⚠️ Please set a deadline date</div>
-                  )}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
                 </div>
 
                 <div style={{ marginBottom: '12px' }}>
@@ -350,7 +347,10 @@ export default function DocumentsPage() {
                     Date needed
                   </label>
                   <input type="date" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: !form.deadline ? '2px solid #EF9F27' : '1px solid #97C459', fontSize: '14px', boxSizing: 'border-box' }} />
+                  {!form.deadline && (
+                    <div style={{ marginTop: '6px', fontSize: '12px', color: '#633806' }}>⚠️ Please set a deadline date</div>
+                  )}
                 </div>
 
                 <div style={{ marginBottom: '1.5rem' }}>
