@@ -150,7 +150,7 @@ export async function GET(request) {
     })
 
     const monthName = new Date(year, monthNum - 1).toLocaleString('en-PH', { month: 'long' })
-    const headers = ['DATE', 'CLIENT NAME', 'SESSION TYPE', 'MOP', 'REFERENCE NO.', 'TOTAL', 'THERAPIST', 'CENTER', 'COMMENTS']
+    const headers = ['DATE', 'CLIENT NAME', 'TYPE OF SERVICE', 'MOP', 'REFERENCE NO.', 'TOTAL', 'THERAPIST', 'CENTER', 'COMMENTS']
 
     // Regular therapist sheets
     Object.entries(regularTherapists).sort(([a], [b]) => a.localeCompare(b)).forEach(([name, { payments, info }]) => {
