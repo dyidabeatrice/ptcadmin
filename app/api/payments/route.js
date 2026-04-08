@@ -55,8 +55,7 @@ export async function GET(request) {
       session_id: row[3], amount: row[4], mop: row[5],
       session_type: row[6], date: row[7],
       payment_type: row[8] || 'session',
-      time: row[9] || '',
-      verified_by: row[10] || ''
+      verified_by: row[9] || ''
     }))
     return Response.json({ success: true, data: payments })
   } catch (error) {
