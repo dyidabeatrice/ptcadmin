@@ -10,6 +10,7 @@ const SESSION_TYPES = {
   ST_INTERN: [{ value: 'ST Intern Session', label: 'ST Intern Session', amount: 600 }, { value: 'Intern Evaluation', label: 'Intern Evaluation', amount: 800 }, { value: 'Specialized', label: 'Specialized', amount: 0 }, { value: 'Cancellation Fee', label: 'Cancellation Fee', amount: 0 }],
   PT:        [{ value: 'PT Session', label: 'PT Session', amount: 900 }, { value: 'Initial Evaluation', label: 'Initial Evaluation', amount: 2800 }, { value: 'IEP', label: 'IEP', amount: 1800 }, { value: 'Specialized', label: 'Specialized', amount: 0 }, { value: 'Cancellation Fee', label: 'Cancellation Fee', amount: 0 }],
   SPED:      [{ value: 'SPED Tutorial', label: 'SPED Tutorial', amount: 900 }, { value: 'IEP', label: 'IEP', amount: 1800 }, { value: 'Specialized', label: 'Specialized', amount: 0 }, { value: 'Cancellation Fee', label: 'Cancellation Fee', amount: 0 }],
+  CUSTOM:    [{ value: 'Custom Amount', label: 'Custom Amount', amount: 0 }]
 }
 
 const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
@@ -309,7 +310,7 @@ export default function SchedulePage() {
 
   const therapistKey = payModal ? getTherapistKey(payModal.therapist, therapistData) : 'OT'
   const sessionTypes = SESSION_TYPES[therapistKey] || SESSION_TYPES.OT
-  const isCustomAmount = ['Specialized', 'Cancellation Fee'].includes(payForm.session_type)
+  const isCustomAmount = ['Specialized', 'Cancellation Fee', 'Custom Amount'].includes(payForm.session_type)
   const today = new Date().toLocaleDateString('en-US', { weekday: 'long' })
   const searchedSessions = search ? sessions.filter(s => s.client_name?.toLowerCase().includes(search.toLowerCase())) : null
 
@@ -413,6 +414,14 @@ export default function SchedulePage() {
                 readOnly={!isCustomAmount}
                 style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: isCustomAmount ? '2px solid #fcc200' : '1px solid #ddd', fontSize: '16px', fontWeight: '500', boxSizing: 'border-box', background: isCustomAmount ? 'white' : '#f8f9fa' }} />
             </div>
+            {payForm.session_type === 'Custom Amount' && (
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Notes <span style={{ color: '#E24B4A' }}>*</span></label>
+                <input value={payForm.custom_notes || ''} onChange={e => setPayForm({ ...payForm, custom_notes: e.target.value })}
+                  placeholder="Specify session type or reason..."
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: !payForm.custom_notes ? '2px solid #EF9F27' : '1px solid #97C459', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+            )}
             {clientCredit > 0 && (
               <div style={{ marginBottom: '12px', padding: '10px 12px', background: '#EAF3DE', borderRadius: '8px', border: '1px solid #97C459' }}>
                 <div style={{ fontSize: '12px', fontWeight: '500', color: '#27500A', marginBottom: '8px' }}>Client has ₱{clientCredit.toLocaleString()} credit</div>
@@ -456,7 +465,7 @@ export default function SchedulePage() {
                 <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Mode of payment</label>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {MOP_OPTIONS.map(mop => (
-                    <button key={mop} onClick={() => setPayForm({ ...payForm, mop })} style={{
+                    <button key={mop} onClick={() => setPayForm({ ...payForm, mop, reference: '' })} style={{
                       padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
                       border: payForm.mop === mop ? '2px solid #0f4c81' : '1px solid #ddd',
                       background: payForm.mop === mop ? '#E6F1FB' : 'white',
@@ -465,6 +474,14 @@ export default function SchedulePage() {
                     }}>{mop}</button>
                   ))}
                 </div>
+                {(payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && (
+                  <div style={{ marginTop: '8px' }}>
+                    <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Reference number <span style={{ color: '#E24B4A' }}>*</span></label>
+                    <input value={payForm.reference || ''} onChange={e => setPayForm({ ...payForm, reference: e.target.value })}
+                      placeholder="Enter reference number..."
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: !payForm.reference ? '2px solid #EF9F27' : '1px solid #97C459', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                )}
               </div>
             )}
             <div style={{ background: '#EAF3DE', borderRadius: '8px', padding: '10px 14px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
@@ -473,7 +490,8 @@ export default function SchedulePage() {
             </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setPayModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
-              <button onClick={confirmPayment} disabled={saving || !payForm.amount} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: !payForm.amount ? 0.5 : 1 }}>
+              <button onClick={confirmPayment} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes)} style={{
+ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes)) ? 0.5 : 1 }}>
                 {saving ? 'Saving...' : `Confirm ₱${Number(payForm.amount || 0).toLocaleString()}`}
               </button>
             </div>
@@ -608,7 +626,7 @@ export default function SchedulePage() {
                   <div>
                     <div style={{ fontWeight: '500', color: sc.color }}>
                     {s.client_name}
-                    {(() => { const ci = clients.find(c => c.name === s.client_name); return (ci?.outstanding_balance > 0 || (s.payment === 'Unpaid' && (s.status === 'Present' || s.status === 'Cancelled'))) ? <span style={{ marginLeft: '4px', fontSize: '10px' }}>⚠️</span> : null })()}
+                    {(() => { const ci = clients.find(c => c.name === s.client_name); return (ci?.outstanding_balance > 0 || (s.payment === 'Unpaid' && (s.status === 'Present' || s.status === 'Cancelled'))) ? <span style={{ marginLeft: '4px', fontSize: '15px' }}>⚠️</span> : null })()}
                   </div>
                   <div style={{ fontSize: '12px', color: sc.color, opacity: 0.8 }}>{s.therapist} · {s.day} {s.time_start}–{s.time_end}</div>
                   </div>
@@ -840,7 +858,7 @@ export default function SchedulePage() {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                               <div style={{ fontSize: '10px', fontWeight: '600', color: sc.color, lineHeight: '1.3' }}>{s.client_name}</div>
                               <div style={{ display: 'flex', gap: '1px', flexShrink: 0 }}>
-                                {needsWarning && <span style={{ fontSize: '12px' }}>⚠️</span>}
+                                {needsWarning && <span style={{ fontSize: '15px' }}>⚠️</span>}
                               </div>
                             </div>
                             {height > 30 && (

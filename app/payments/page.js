@@ -195,7 +195,7 @@ function OutstandingTab({ clients, onSettle }) {
                 <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Mode of payment</label>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {MOP_OPTIONS.map(mop => (
-                    <button key={mop} onClick={() => setPayForm({ ...payForm, mop })} style={{
+                    <button key={mop} onClick={() => setPayForm({ ...payForm, mop, reference: '' })} style={{
                       padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
                       border: payForm.mop === mop ? '2px solid #0f4c81' : '1px solid #ddd',
                       background: payForm.mop === mop ? '#E6F1FB' : 'white',
@@ -204,6 +204,14 @@ function OutstandingTab({ clients, onSettle }) {
                     }}>{mop}</button>
                   ))}
                 </div>
+                {(payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && (
+                  <div style={{ marginTop: '8px' }}>
+                    <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Reference number <span style={{ color: '#E24B4A' }}>*</span></label>
+                    <input value={payForm.reference || ''} onChange={e => setPayForm({ ...payForm, reference: e.target.value })}
+                      placeholder="Enter reference number..."
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: !payForm.reference ? '2px solid #EF9F27' : '1px solid #97C459', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                )}
               </div>
             )}
 
@@ -214,7 +222,8 @@ function OutstandingTab({ clients, onSettle }) {
 
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setPayModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
-              <button onClick={settlePayment} disabled={saving || !payForm.amount} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: isPartial ? '#EF9F27' : '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
+              <button onClick={confirmPayment} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes)} style={{
+ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes)) ? 0.5 : 1 }}>
                 {saving ? 'Saving...' : isPartial ? `Record ₱${Number(payForm.amount || 0).toLocaleString()} as partial` : `Settle ₱${Number(payModal.amount || 0).toLocaleString()}`}
               </button>
             </div>
@@ -568,11 +577,19 @@ export default function PaymentsPage() {
                   }}>{mop}</button>
                 ))}
               </div>
+                {(advanceForm.mop === 'BDO' || advanceForm.mop === 'Union Bank') && (
+                  <div style={{ marginTop: '8px' }}>
+                    <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Reference number <span style={{ color: '#E24B4A' }}>*</span></label>
+                    <input value={advanceForm.reference || ''} onChange={e => setAdvanceForm({ ...advanceForm, reference: e.target.value })}
+                      placeholder="Enter reference number..."
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: !advanceForm.reference ? '2px solid #EF9F27' : '1px solid #97C459', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                )}
             </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setAdvanceModal(false)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
-              <button onClick={recordAdvance} disabled={saving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
-                {saving ? 'Saving...' : `Record ₱${Number(advanceForm.amount || 0).toLocaleString()}`}
+<button onClick={confirmPayment} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes)} style={{
+ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes)) ? 0.5 : 1 }}>                {saving ? 'Saving...' : `Record ₱${Number(advanceForm.amount || 0).toLocaleString()}`}
               </button>
             </div>
           </div>
