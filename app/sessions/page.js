@@ -653,23 +653,16 @@ export default function SchedulePage() {
               ))}
             </div>
 
-            {/* Therapist columns */}
+                        {/* Therapist columns */}
             {therapists.map((therapist, therapistIndex) => {
-              const therapistEntry2 = therapistData.find(t => t.name === therapist && t.day === selectedDay)
-              const currentStartTime = therapistEntry2?.time_start
+              const isAbsent = absentTherapists.has(therapist)
+              const therapistEntry = therapistData.find(t => t.name === therapist && t.day === selectedDay)
+              const specialty = therapistEntry?.specialty || 'OT'
+              const therapistSessions = getSessionsForTherapist(therapist)
               const prevTherapist = therapists[therapistIndex - 1]
               const prevEntry = prevTherapist ? therapistData.find(t => t.name === prevTherapist && t.day === selectedDay) : null
-              const prevStartTime = prevEntry?.time_start
-              const isNewGroup = therapistIndex > 0 && currentStartTime !== prevStartTime
+              const isNewGroup = therapistIndex > 0 && therapistEntry?.time_start !== prevEntry?.time_start
 
-            {therapists.map((therapist, therapistIndex) => {
-              const therapistEntry2 = therapistData.find(t => t.name === therapist && t.day === selectedDay)
-              const currentStartTime = therapistEntry2?.time_start
-              const prevTherapist = therapists[therapistIndex - 1]
-              const prevEntry = prevTherapist ? therapistData.find(t => t.name === prevTherapist && t.day === selectedDay) : null
-              const prevStartTime = prevEntry?.time_start
-              const isNewGroup = therapistIndex > 0 && currentStartTime !== prevStartTime
-              
               return (
                 <div key={therapist} style={{ flexShrink: 0, width: '150px', borderLeft: isNewGroup ? '3px solid #0f4c81' : '1px solid #e0e0e0' }}>
                   {/* Header */}
@@ -743,7 +736,6 @@ export default function SchedulePage() {
                           fetchSessions(selectedWeek.key)
                         }}
                         />
-
                       )
                     })}
 
@@ -756,7 +748,6 @@ export default function SchedulePage() {
                         const topOffset = ((bStartMins - gridStartMins) / 15) * ROW_HEIGHT
                         const height = ((bEndMins - bStartMins) / 15) * ROW_HEIGHT - 2
                         const isAdmin = b.type === 'admin'
-
                         return (
                           <div key={bi} style={{
                             position: 'absolute',
@@ -847,9 +838,9 @@ export default function SchedulePage() {
                               cursor: 'grab'
                             }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                              <div style={{ fontSize: '10px', fontWeight: '400', color: sc.color, lineHeight: '1.3' }}>{s.client_name}</div>
+                              <div style={{ fontSize: '10px', fontWeight: '600', color: sc.color, lineHeight: '1.3' }}>{s.client_name}</div>
                               <div style={{ display: 'flex', gap: '1px', flexShrink: 0 }}>
-                                {needsWarning && <span style={{ fontSize: '15px' }}>⚠️</span>}
+                                {needsWarning && <span style={{ fontSize: '12px' }}>⚠️</span>}
                               </div>
                             </div>
                             {height > 30 && (
