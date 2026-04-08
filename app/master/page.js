@@ -166,8 +166,8 @@ export default function MasterPage() {
     return dayMaster.filter(s => s.therapist === therapistName)
   }
 
-  function getBlockedSlots(therapistName) {
-    return dayBlocked.filter(b => b.therapist === therapistName)
+   function getBlockedSlots(therapistName) {
+    return dayBlocked.filter(b => b.therapist === therapistName && b.type !== 'absent')
   }
 
   function isTimeOccupied(therapistName, timeMins) {
