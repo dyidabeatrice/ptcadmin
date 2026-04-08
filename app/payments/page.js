@@ -95,7 +95,8 @@ function OutstandingTab({ clients, onSettle }) {
             split: payForm.split,
             split_credit: payForm.split_credit,
             split_cash: payForm.split_cash,
-            credit_balance: clientCredit
+            credit_balance: clientCredit,
+            reference: payForm.reference || ''
           })
         })
       }
@@ -370,7 +371,8 @@ export default function PaymentsPage() {
         client_name: advanceForm.client_name,
         amount: Number(advanceForm.amount),
         mop: advanceForm.mop,
-        date: today
+        date: today,
+        reference: advanceForm.reference || ''
       })
     })
     setAdvanceModal(false)

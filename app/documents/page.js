@@ -141,7 +141,8 @@ export default function DocumentsPage() {
         mop,
         session_type: payModal.doc_type,
         date: today,
-        payment_type: 'document'
+        payment_type: 'document',
+        reference: payForm.reference || ''
       })
     })
 

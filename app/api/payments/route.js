@@ -55,7 +55,8 @@ export async function GET(request) {
       session_id: row[3], amount: row[4], mop: row[5],
       session_type: row[6], date: row[7],
       payment_type: row[8] || 'session',
-      verified_by: row[9] || ''
+      reference: row[9] || '',
+      verified_by: row[10] || ''
     }))
     return Response.json({ success: true, data: payments })
   } catch (error) {
@@ -77,7 +78,8 @@ export async function POST(request) {
           body.client_name, body.therapist || '',
           body.session_id, body.amount, body.mop,
           body.session_type, body.date,
-          body.payment_type || 'document'
+          body.payment_type || 'document',
+          body.reference || ''
         ]]}
       })
       return Response.json({ success: true })

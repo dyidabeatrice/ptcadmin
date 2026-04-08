@@ -146,13 +146,17 @@ export async function PATCH(request) {
         range: 'payments',
         valueInputOption: 'RAW',
         requestBody: { values: [[
-          Date.now().toString() + Math.random().toString(36).slice(2),
-          body.client_name, body.therapist,
+          paymentId,
+          body.client_name,
+          body.therapist,
           body.session_id || `${weekKey}-${body.rowIndex}`,
-          body.amount, mop,
+          body.amount,
+          mop,
           body.session_type || 'Regular',
           payDate,
-          'session'
+          'session',
+          '',
+          body.reference || ''
         ]]}
       })
 
