@@ -125,7 +125,7 @@ export default function DocumentsPage() {
     await fetch('/api/documents', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'pay', index: payModal.index, client_name: payModal.client_name, amount: payForm.amount, mop })
+      body: JSON.stringify({ action: 'pay', index: payModal.index, client_name: payModal.client_name, amount: payForm.amount || payModal.amount, mop })
     })
 
     await fetch('/api/payments', {
@@ -136,7 +136,7 @@ export default function DocumentsPage() {
         client_name: payModal.client_name,
         therapist: payModal.therapist,
         session_id: `DOC-${payModal.id}`,
-        amount: payForm.amount,
+        amount: payForm.amount || payModal.amount,
         mop,
         session_type: payModal.doc_type,
         date: today,
@@ -145,7 +145,7 @@ export default function DocumentsPage() {
     })
 
     if (payForm.use_credit || payForm.split) {
-      const creditAmount = payForm.split ? payForm.split_credit : payForm.amount
+      const creditAmount = payForm.split ? payForm.split_credit : payForm.amount || payModal.amount
       await fetch('/api/credits', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
