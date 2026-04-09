@@ -84,7 +84,7 @@ export default function HomePage() {
           }}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            padding: '6px', display: 'none', flexDirection: 'column',
+            padding: '6px', flexDirection: 'column',
             gap: '5px', alignItems: 'center', justifyContent: 'center'
           }}
         >
