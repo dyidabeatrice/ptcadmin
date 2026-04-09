@@ -21,15 +21,22 @@ export default function TherapistDashboard() {
     loadData(name)
   }, [])
 
-  async function loadData(name) {
+async function loadData(name) {
     setLoading(true)
-    const [sRes, rRes] = await Promise.all([
-      fetch('/api/sessions'),
-      fetch('/api/reports')
-    ])
-    const [sJson, rJson] = await Promise.all([sRes.json(), rRes.json()])
-    if (sJson.success) setSessions(sJson.data.filter(s => s.therapist === name))
-    if (rJson.success) setReports(rJson.data.filter(r => r.therapist === name))
+    try {
+      const [sRes, rRes] = await Promise.all([
+        fetch('/api/sessions'),
+        fetch('/api/reports')
+      ])
+      const [sJson, rJson] = await Promise.all([sRes.json(), rRes.json()])
+      console.log('sessions:', sJson.success, sJson.data?.length)
+      console.log('reports:', rJson.success, rJson.data?.length)
+      console.log('therapist name:', name)
+      if (sJson.success) setSessions(sJson.data.filter(s => s.therapist === name))
+      if (rJson.success) setReports(rJson.data.filter(r => r.therapist === name))
+    } catch (e) {
+      console.error('loadData error:', e)
+    }
     setLoading(false)
   }
 
