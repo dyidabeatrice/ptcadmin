@@ -19,21 +19,31 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const tab = searchParams.get('tab') || 'drafts'
 
-    const data = await getSheetData('messages')
-    const [, ...rows] = data
+    const [msgData, clientData] = await Promise.all([
+      getSheetData('messages'),
+      getSheetData('clients')
+    ])
+
+    const [, ...rows] = msgData
+    const [, ...clientRows] = clientData
+
     if (!rows || rows.length === 0) return Response.json({ success: true, data: [] })
 
-    const messages = rows.filter(r => r && r[0]).map((row, i) => ({
-      index: i,
-      id: row[0],
-      client_name: row[1],
-      psid: row[2],
-      type: row[3],
-      message: row[4],
-      status: row[5] || 'draft',
-      created_at: row[6] || '',
-      sent_at: row[7] || ''
-    }))
+    const messages = rows.filter(r => r && r[0]).map((row, i) => {
+      const client = clientRows.find(c => c && c[1] === row[1])
+      return {
+        index: i,
+        id: row[0],
+        client_name: row[1],
+        psid: row[2],
+        phone: client?.[4] || '',
+        type: row[3],
+        message: row[4],
+        status: row[5] || 'draft',
+        created_at: row[6] || '',
+        sent_at: row[7] || ''
+      }
+    })
 
     if (tab === 'archive') {
       return Response.json({ success: true, data: messages.filter(m => m.status === 'sent') })
@@ -75,10 +85,11 @@ export async function POST(request) {
       if (rowIndex === -1) return Response.json({ success: false, error: 'Message not found' })
 
       const psid = rows[rowIndex][2]
-      if (!psid) return Response.json({ success: false, error: 'No PSID for this client' })
-
-      const result = await sendMessengerMessage(psid, body.message)
-      if (result.error) return Response.json({ success: false, error: result.error.message })
+      
+      if (psid) {
+        const result = await sendMessengerMessage(psid, body.message)
+        if (result.error) return Response.json({ success: false, error: result.error.message })
+      }
 
       const sentAt = new Date().toLocaleDateString('en-PH', {
         timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric',

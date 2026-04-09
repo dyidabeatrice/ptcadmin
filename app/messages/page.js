@@ -133,9 +133,6 @@ export default function MessagesPage() {
                     <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: tc.bg, color: tc.color, border: `1px solid ${tc.border}` }}>
                       {MESSAGE_TYPES[msg.type] || msg.type}
                     </span>
-                    {!msg.psid && tab === 'drafts' && (
-                      <span style={{ fontSize: '11px', color: '#E24B4A' }}>⚠️ No Messenger linked</span>
-                    )}
                   </div>
                   <span style={{ fontSize: '11px', color: '#999' }}>
                     {tab === 'drafts' ? msg.created_at : `Sent: ${msg.sent_at}`}
@@ -161,12 +158,29 @@ export default function MessagesPage() {
                       <>
                         <button onClick={() => deleteMessage(msg)} style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #fcc', background: '#fff5f5', color: '#c00', cursor: 'pointer', fontSize: '12px' }}>Delete</button>
                         <button onClick={() => { setEditingId(msg.id); setEditText(msg.message) }} style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white', fontSize: '12px' }}>Edit</button>
-                        <button onClick={() => sendMessage(msg)} disabled={isSending || !msg.psid} style={{
-                          padding: '6px 16px', borderRadius: '6px', border: 'none',
-                          background: !msg.psid ? '#ddd' : '#1D9E75', color: 'white',
-                          cursor: !msg.psid ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: '500',
-                          opacity: isSending ? 0.7 : 1
-                        }}>{isSending ? 'Sending...' : 'Send via Messenger'}</button>
+{msg.psid ? (
+                          <button onClick={() => sendMessage(msg)} disabled={isSending} style={{
+                            padding: '6px 16px', borderRadius: '6px', border: 'none',
+                            background: '#1D9E75', color: 'white',
+                            cursor: 'pointer', fontSize: '12px', fontWeight: '500',
+                            opacity: isSending ? 0.7 : 1
+                          }}>{isSending ? 'Sending...' : 'Send via Messenger'}</button>
+                        ) : msg.phone ? (
+                          <a href={`viber://chat?number=${msg.phone.replace(/\s+/g, '').replace(/^0/, '+63')}`}
+                            onClick={() => sendMessage(msg)}
+                            style={{
+                              padding: '6px 16px', borderRadius: '6px', border: 'none',
+                              background: '#7360F2', color: 'white',
+                              cursor: 'pointer', fontSize: '12px', fontWeight: '500',
+                              textDecoration: 'none', display: 'inline-block'
+                            }}>Open in Viber</a>
+                        ) : (
+                          <button disabled style={{
+                            padding: '6px 16px', borderRadius: '6px', border: 'none',
+                            background: '#ddd', color: 'white',
+                            cursor: 'not-allowed', fontSize: '12px'
+                          }}>No contact linked</button>
+                        )}
                       </>
                     )}
                   </div>

@@ -88,7 +88,7 @@ export default function TherapistLogin() {
         </div>
 
         <p style={{ textAlign: 'center', fontSize: '12px', color: '#bbb', marginTop: '1.5rem' }}>
-          Staff? <a href="/login" style={{ color: '#0f4c81', textDecoration: 'none' }}>Go to admin login</a>
+          <a href="/" style={{ color: '#0f4c81', textDecoration: 'none' }}>← Back to website</a>
         </p>
       </div>
     </div>
