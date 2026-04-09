@@ -135,7 +135,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 cursor: 'pointer', fontSize: '13px', fontFamily: 'inherit', width: '100%'
               }}>Log out</button>
             </div>
-          </nav>
+          </div>
         )}
         {children}
       </body>
