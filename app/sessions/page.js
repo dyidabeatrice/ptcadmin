@@ -346,6 +346,32 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
     if (!confirm(`Mark ${day} as a holiday? All sessions will be cancelled.`)) return
     setHolidayDays(prev => new Set([...prev, day]))
     await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'holiday', week_key: selectedWeek.key, day }) })
+    const affectedSessions = sessions.filter(s => s.day === day && s.status !== 'Cancelled')
+    const uniqueClients = [...new Set(affectedSessions.map(s => s.client_name))]
+    
+    if (uniqueClients.length > 0) {
+      const defaultMessage = `Hello po! We would like to inform you that our clinic will be closed on ${day}, ${selectedWeek?.label || ''}. All sessions scheduled for this day will be cancelled. We apologize for any inconvenience and will reach out to reschedule your appointment. Thank you for your understanding! 😊`
+      
+      const editedMessage = window.prompt(`Holiday message for ${uniqueClients.length} client(s) — edit if needed:`, defaultMessage)
+      
+      if (editedMessage) {
+        for (const clientName of uniqueClients) {
+          const client = clients.find(c => c.name === clientName)
+          await fetch('/api/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'create_draft',
+              client_name: clientName,
+              psid: client?.psid || '',
+              type: 'holiday',
+              message: editedMessage
+            })
+          })
+        }
+        alert(`${uniqueClients.length} message draft(s) created! Go to Messages page to review and send.`)
+      }
+    }
     fetchSessions(selectedWeek.key)
   }
 
