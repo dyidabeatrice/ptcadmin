@@ -350,7 +350,7 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
     const uniqueClients = [...new Set(affectedSessions.map(s => s.client_name))]
     
     if (uniqueClients.length > 0) {
-      const defaultMessage = `Hello po! We would like to inform you that our clinic will be closed on ${day}, ${selectedWeek?.label || ''}. All sessions scheduled for this day will be cancelled. We apologize for any inconvenience and will reach out to reschedule your appointment. Thank you for your understanding! 😊`
+      const defaultMessage = `Hello po! We would like to inform you that our clinic will be closed on ${day}, [DATE]. We apologize for any inconvenience and will reach out to reschedule your appointment. Thank you for your understanding! 😊`
       
       const editedMessage = window.prompt(`Holiday message for ${uniqueClients.length} client(s) — edit if needed:`, defaultMessage)
       
@@ -394,7 +394,7 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
       const uniqueClients = [...new Set(affectedSessions.map(s => s.client_name))]
 
       if (uniqueClients.length > 0) {
-        const defaultMessage = `Hello po! We would like to inform you that ${therapist} will be unavailable on ${selectedDay}, ${selectedWeek?.label || ''}. We apologize for the inconvenience and will reach out to reschedule your session. Thank you for your understanding! 😊`
+        const defaultMessage = `Hello po! We would like to inform you that T. ${therapist} will be unavailable on ${selectedDay}, [DATE]. We apologize for the inconvenience and will reach out to reschedule your session. Thank you for your understanding! 😊`
 
         const editedMessage = window.prompt(`Absence message for ${uniqueClients.length} client(s) of ${therapist} — edit if needed:`, defaultMessage)
 
