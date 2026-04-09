@@ -8,36 +8,63 @@ export default function TherapistDashboard() {
   const [therapistName, setTherapistName] = useState('')
   const [sessions, setSessions] = useState([])
   const [reports, setReports] = useState([])
+  const [weeks, setWeeks] = useState([])
+  const [selectedWeek, setSelectedWeek] = useState(null)
+  const [selectedDay, setSelectedDay] = useState(() => {
+    const day = new Date().toLocaleDateString('en-US', { weekday: 'long' })
+    return DAYS.includes(day) ? day : 'Monday'
+  })
   const [loading, setLoading] = useState(true)
-  const [selectedDay, setSelectedDay] = useState('')
   const router = useRouter()
 
   useEffect(() => {
     const name = sessionStorage.getItem('therapist_name')
     if (!name) { router.push('/therapist/login'); return }
     setTherapistName(name)
-    const today = new Date().toLocaleDateString('en-US', { weekday: 'long' })
-    setSelectedDay(today)
-    loadData(name)
+    initializePage(name)
   }, [])
 
-async function loadData(name) {
+  async function initializePage(name) {
     setLoading(true)
     try {
-      const [sRes, rRes] = await Promise.all([
-        fetch('/api/sessions'),
-        fetch('/api/reports')
+      const [weeksRes, rRes] = await Promise.all([
+        fetch('/api/weeks'),
+        fetch('/api/documents')
       ])
-      const [sJson, rJson] = await Promise.all([sRes.json(), rRes.json()])
-      console.log('sessions:', sJson.success, sJson.data?.length)
-      console.log('reports:', rJson.success, rJson.data?.length)
-      console.log('therapist name:', name)
-      if (sJson.success) setSessions(sJson.data.filter(s => s.therapist === name))
+      const [weeksJson, rJson] = await Promise.all([weeksRes.json(), rRes.json()])
+
       if (rJson.success) setReports(rJson.data.filter(r => r.therapist === name))
+
+      if (weeksJson.success && weeksJson.data.length > 0) {
+        setWeeks(weeksJson.data)
+        const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
+        const day = today.getDay()
+        const monday = new Date(today)
+        monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1))
+        const y = monday.getFullYear()
+        const m = String(monday.getMonth() + 1).padStart(2, '0')
+        const d = String(monday.getDate()).padStart(2, '0')
+        const currentKey = `week_${y}_${m}_${d}`
+        const current = weeksJson.data.find(w => w.key === currentKey) || weeksJson.data[weeksJson.data.length - 1]
+        setSelectedWeek(current)
+        await fetchSessions(current.key, name)
+      }
     } catch (e) {
-      console.error('loadData error:', e)
+      console.error('init error:', e)
     }
     setLoading(false)
+  }
+
+  async function fetchSessions(weekKey, name) {
+    const res = await fetch(`/api/sessions?week=${weekKey}`)
+    const json = await res.json()
+    if (json.success) setSessions(json.data.filter(s => s.therapist === (name || therapistName)))
+  }
+
+  async function switchWeek(week) {
+    setSelectedWeek(week)
+    setSessions([])
+    await fetchSessions(week.key, therapistName)
   }
 
   function logout() {
@@ -45,7 +72,8 @@ async function loadData(name) {
     router.push('/therapist/login')
   }
 
-  const daySessions = sessions.filter(s => s.day === selectedDay)
+  const daySessions = sessions
+    .filter(s => s.day === selectedDay)
     .sort((a, b) => a.time_start?.localeCompare(b.time_start))
 
   const pendingReports = reports.filter(r => r.status !== 'Completed')
@@ -60,7 +88,7 @@ async function loadData(name) {
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8f9fa', fontFamily: 'sans-serif' }}>
-      
+
       <nav style={{
         background: '#0f4c81', padding: '0 1.5rem',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -122,8 +150,22 @@ async function loadData(name) {
             )}
 
             <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '8px' }}>
                 <h2 style={{ margin: 0, color: '#0f4c81', fontSize: '16px' }}>My schedule</h2>
+                {weeks.length > 0 && (
+                  <select
+                    value={selectedWeek?.key || ''}
+                    onChange={e => {
+                      const w = weeks.find(x => x.key === e.target.value)
+                      if (w) switchWeek(w)
+                    }}
+                    style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', cursor: 'pointer' }}
+                  >
+                    {weeks.map(w => (
+                      <option key={w.key} value={w.key}>{w.label}</option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
