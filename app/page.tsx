@@ -28,6 +28,14 @@ export default function HomePage() {
 
   return (
     <div style={{ fontFamily: 'sans-serif', background: '#fff', color: '#1a1a2e', minHeight: '100vh' }}>
+        <style>{`
+        .desktop-links { display: flex !important; }
+        .hamburger-btn { display: none !important; }
+        @media (max-width: 768px) {
+          .desktop-links { display: none !important; }
+          .hamburger-btn { display: flex !important; }
+        }
+      `}</style>
 
       {/* Navbar */}
       <nav style={{
