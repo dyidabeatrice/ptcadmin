@@ -387,7 +387,7 @@ export default function SchedulePage() {
             style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px', cursor: 'pointer' }}>
             {weeks.map(w => <option key={w.key} value={w.key}>{w.label}</option>)}
           </select>
-          <button onClick={() => setAddModal(true)} style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #0f4c81', cursor: 'pointer', fontSize: '13px', background: 'white', color: '#0f4c81', fontWeight: '500' }}>+ One-off session</button>
+          <button onClick={() => setAddModal(true)} style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500' }}>+ Add one-off session</button>
         </div>
       </div>
 
