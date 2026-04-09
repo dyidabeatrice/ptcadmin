@@ -704,7 +704,7 @@ export default function SchedulePage() {
                 disabled={!addForm.day}
                 style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', opacity: !addForm.day ? 0.5 : 1 }}>
                 <option value="">Select therapist...</option>
-                {[...new Set(therapistData.filter(t => t.day === addForm.day).map(t => t.name))].sort().map(t => <option key={t} value={t}>{t}</option>)}
+                {[...new Set(therapistData.map(t => t.name))].sort().map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1.5rem' }}>
