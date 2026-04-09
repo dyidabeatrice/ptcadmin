@@ -55,7 +55,8 @@ export default function HomePage() {
             { label: 'Find Us', href: '#location' },
             { label: 'Privacy', href: '/privacy' },
             { label: 'Book an Appointment', href: 'https://www.facebook.com/potentialstherapycenter' },
-            { label: 'Join us', href: 'https://www.facebook.com/potentialstherapycenter/posts/pfbid02jYUPkwgLuufCSg8j3jvz5rZrGqmP7Qvk9x5qWQbV187zTLSNbLdA51yJ5yd7gB2Ll'}
+            { label: 'Join us', href: 'https://www.facebook.com/potentialstherapycenter/posts/pfbid02jYUPkwgLuufCSg8j3jvz5rZrGqmP7Qvk9x5qWQbV187zTLSNbLdA51yJ5yd7gB2Ll'},
+            { label: 'Therapist Login', href: '/therapist/login' }
           ].map(l => (
             <a key={l.label} href={l.href}
                 target={l.href.startsWith('http') ? '_blank' : undefined}
@@ -105,7 +106,8 @@ export default function HomePage() {
           { label: 'Find Us', href: '#location' },
           { label: 'Privacy', href: '/privacy' },
           { label: 'Book an Appointment', href: 'https://www.facebook.com/potentialstherapycenter' },
-          { label: 'Join us', href: 'https://www.facebook.com/potentialstherapycenter/posts/pfbid02jYUPkwgLuufCSg8j3jvz5rZrGqmP7Qvk9x5qWQbV187zTLSNbLdA51yJ5yd7gB2Ll'}
+          { label: 'Join us', href: 'https://www.facebook.com/potentialstherapycenter/posts/pfbid02jYUPkwgLuufCSg8j3jvz5rZrGqmP7Qvk9x5qWQbV187zTLSNbLdA51yJ5yd7gB2Ll'},
+          { label: 'Therapist Login', href: '/therapist/login' },
         ].map(l => (
           <a key={l.label} href={l.href}
             target={l.href.startsWith('http') ? '_blank' : undefined}
@@ -120,7 +122,7 @@ export default function HomePage() {
               textDecoration: 'none', fontWeight: '500',
               borderBottom: '1px solid #f0f0f0'
             }}>{l.label}</a>
-        ))}
+        ))}       
         <div style={{ padding: '12px 24px' }}>
           <Link href="/login" style={{
             display: 'block', padding: '10px 20px', borderRadius: '6px',
@@ -393,6 +395,7 @@ export default function HomePage() {
           <a href="/privacy" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Privacy Policy</a>
           <a target="_blank" rel="noopener noreferrer"href="mailto:potentialstherapycenter@gmail.com" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Contact</a>
           <Link href="/login" style={{ color: '#fcc200', textDecoration: 'none', fontWeight: '500' }}>Staff Login</Link>
+          <Link href="/therapist/login" style={{ color: '#fcc200', textDecoration: 'none', fontWeight: '500' }}>Therapist Login</Link>
         </div>
       </footer>
     </div>
