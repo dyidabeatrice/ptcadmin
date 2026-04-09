@@ -390,6 +390,32 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'therapist_absent', week_key: selectedWeek.key, therapist, day: selectedDay })
       })
+      const affectedSessions = sessions.filter(s => s.therapist === therapist && s.day === selectedDay && s.status !== 'Cancelled')
+      const uniqueClients = [...new Set(affectedSessions.map(s => s.client_name))]
+
+      if (uniqueClients.length > 0) {
+        const defaultMessage = `Hello po! We would like to inform you that ${therapist} will be unavailable on ${selectedDay}, ${selectedWeek?.label || ''}. We apologize for the inconvenience and will reach out to reschedule your session. Thank you for your understanding! 😊`
+
+        const editedMessage = window.prompt(`Absence message for ${uniqueClients.length} client(s) of ${therapist} — edit if needed:`, defaultMessage)
+
+        if (editedMessage) {
+          for (const clientName of uniqueClients) {
+            const client = clients.find(c => c.name === clientName)
+            await fetch('/api/messages', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'create_draft',
+                client_name: clientName,
+                psid: client?.psid || '',
+                type: 'therapist_absent',
+                message: editedMessage
+              })
+            })
+          }
+          alert(`${uniqueClients.length} message draft(s) created! Go to Messages page to review and send.`)
+        }
+      }
     }
   }
 
