@@ -166,7 +166,7 @@ export default function MessagesPage() {
                             opacity: isSending ? 0.7 : 1
                           }}>{isSending ? 'Sending...' : 'Send via Messenger'}</button>
                         ) : msg.phone ? (
-                          <a href={`viber://chat?number=${msg.phone.replace(/\s+/g, '').replace(/^0/, '+63')}`}
+                          <a href={`viber://chat?number=+${msg.phone.replace(/\s+/g, '').replace(/^\+/, '')}`}
                             onClick={() => sendMessage(msg)}
                             style={{
                               padding: '6px 16px', borderRadius: '6px', border: 'none',

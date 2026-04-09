@@ -36,7 +36,7 @@ export async function GET(request) {
         id: row[0],
         client_name: row[1],
         psid: row[2],
-        phone: client?.[4] || '',
+        phone: client?.[4] ? String(client[4]).replace(/^\+/, '').replace(/^0/, '63') : '',
         type: row[3],
         message: row[4],
         status: row[5] || 'draft',
