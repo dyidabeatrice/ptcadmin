@@ -214,16 +214,23 @@ export default function SchedulePage() {
   }
 
   // Grid calculations
-  const daySessions = sessions.filter(s => s.day === selectedDay)
+const daySessions = sessions.filter(s => s.day === selectedDay)
+  
   const therapistsByStartTime = ['8:00 AM', '8:15 AM', '8:30 AM', '8:45 AM'].flatMap(startTime =>
-  [...new Set(
-    therapistData
-      .filter(t => t.day === selectedDay && t.time_start === startTime)
-      .map(t => t.name)
-  )].sort()
-)
-  const therapists = therapistsByStartTime.length > 0 ? therapistsByStartTime : 
-  [...new Set(therapistData.filter(t => t.day === selectedDay).map(t => t.name))].sort()
+    [...new Set(
+      therapistData
+        .filter(t => t.day === selectedDay && t.time_start === startTime)
+        .map(t => t.name)
+    )].sort()
+  )
+
+  const oneOffTherapists = [...new Set(daySessions.map(s => s.therapist))]
+    .filter(t => !therapistsByStartTime.includes(t))
+    .sort()
+
+  const therapists = therapistsByStartTime.length > 0 
+    ? [...therapistsByStartTime, ...oneOffTherapists]
+    : [...new Set(therapistData.filter(t => t.day === selectedDay).map(t => t.name))].sort()
 
   const gridStartMins = 8 * 60
   const gridEndMins = therapists.reduce((max, t) => {
