@@ -6,7 +6,7 @@ export async function POST(request) {
     const data = await getSheetData('therapists')
     const [, ...rows] = data
     
-    const therapistRow = rows.find(r => r && r[1] === name && r[7] === String(pin))
+    const therapistRow = rows.find(r => r && r[1] === name && String(r[9]) === String(pin))
     
     if (!therapistRow) {
       return Response.json({ success: false, error: 'Incorrect name or PIN' })
