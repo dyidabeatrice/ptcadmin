@@ -65,7 +65,62 @@ export default function HomePage() {
             textDecoration: 'none', fontSize: '13px', fontWeight: '700'
           }}>Staff Login</Link>
         </div>
+        
+        {/* Hamburger Navigation */}
+        <button
+          className="hamburger-btn"
+          onClick={() => {
+            const menu = document.getElementById('public-mobile-menu')
+            if (menu) menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex'
+          }}
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: '6px', display: 'none', flexDirection: 'column',
+            gap: '5px', alignItems: 'center', justifyContent: 'center'
+          }}
+        >
+          <span style={{ display: 'block', width: '22px', height: '2px', background: scrolled ? '#0f4c81' : '#545454', borderRadius: '2px' }} />
+          <span style={{ display: 'block', width: '22px', height: '2px', background: scrolled ? '#0f4c81' : '#545454', borderRadius: '2px' }} />
+          <span style={{ display: 'block', width: '22px', height: '2px', background: scrolled ? '#0f4c81' : '#545454', borderRadius: '2px' }} />
+        </button>
       </nav>
+
+      <div id="public-mobile-menu" style={{
+        display: 'none', position: 'fixed', top: '70px', left: 0, right: 0,
+        background: 'white', zIndex: 99, padding: '8px 0',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        flexDirection: 'column'
+      }}>
+        {[
+          { label: 'Home', href: '#home' },
+          { label: 'Services', href: '#services' },
+          { label: 'Find Us', href: '#location' },
+          { label: 'Privacy', href: '/privacy' },
+          { label: 'Book an Appointment', href: 'https://www.facebook.com/potentialstherapycenter' },
+          { label: 'Join us', href: 'https://www.facebook.com/potentialstherapycenter/posts/pfbid02jYUPkwgLuufCSg8j3jvz5rZrGqmP7Qvk9x5qWQbV187zTLSNbLdA51yJ5yd7gB2Ll'}
+        ].map(l => (
+          <a key={l.label} href={l.href}
+            target={l.href.startsWith('http') ? '_blank' : undefined}
+            rel={l.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+            onClick={() => {
+              const menu = document.getElementById('public-mobile-menu')
+              if (menu) menu.style.display = 'none'
+            }}
+            style={{
+              display: 'block', padding: '13px 24px',
+              fontSize: '14px', color: '#0f4c81',
+              textDecoration: 'none', fontWeight: '500',
+              borderBottom: '1px solid #f0f0f0'
+            }}>{l.label}</a>
+        ))}
+        <div style={{ padding: '12px 24px' }}>
+          <Link href="/login" style={{
+            display: 'block', padding: '10px 20px', borderRadius: '6px',
+            background: '#fcc200', color: '#0f4c81', textAlign: 'center',
+            textDecoration: 'none', fontSize: '13px', fontWeight: '700'
+          }}>Staff Login</Link>
+        </div>
+      </div>
 
       {/* Hero */}
       <section id="home" style={{
