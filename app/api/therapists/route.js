@@ -22,7 +22,7 @@ async function getSheetId(sheets, sheetName) {
 
 export async function GET() {
   try {
-    const data = await getSheetData('therapists!A:H')
+    const data = await getSheetData('therapists!A:I')
     const [, ...rows] = data
     if (!rows || rows.length === 0) return Response.json({ success: true, data: [] })
     const therapists = rows.filter(r => r && r[0]).map((row, i) => ({
@@ -30,8 +30,8 @@ export async function GET() {
       id: row[0], name: row[1], specialty: row[2],
       is_intern: row[3] === 'TRUE', day: row[4],
       time_start: row[5], time_end: row[6],
-      email: row[7] || ''
-
+      email: row[7] || '',
+      level: row[8] || '',
     }))
       return Response.json({ success: true, data: therapists }, {
       headers: { 'Cache-Control': 'no-store' }
@@ -69,12 +69,14 @@ export async function PATCH(request) {
     const sheetRow = body.rowIndex + 2
     await sheets.spreadsheets.values.update({
       spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
-      range: `therapists!B${sheetRow}:G${sheetRow}`,
+      range: `therapists!B${sheetRow}:I${sheetRow}`,  // B to I
       valueInputOption: 'RAW',
       requestBody: { values: [[
         body.name, body.specialty,
         body.is_intern ? 'TRUE' : 'FALSE',
-        body.day, body.time_start, body.time_end
+        body.day, body.time_start, body.time_end,
+        body.email || '',   // col H — preserve email
+        body.level || '',   // col I — level
       ]]}
     })
     return Response.json({ success: true })

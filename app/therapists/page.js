@@ -10,9 +10,11 @@ const SPECIALTY_COLORS = {
   SPED: { bg: '#EEEDFE', border: '#CECBF6', color: '#3C3489' },
 }
 
+const LEVELS = ['', 'JUNIOR 1', 'JUNIOR 2', 'JUNIOR 3', 'SENIOR 1', 'SENIOR 2']
+
 const EMPTY_FORM = {
   name: '', specialty: 'OT', is_intern: false,
-  day: '', time_start: '', time_end: ''
+  days: [{ day: '', time_start: '', time_end: '' }]
 }
 
 const ALL_TIME_SLOTS = []
@@ -38,9 +40,12 @@ export default function TherapistsPage() {
   const [saving, setSaving] = useState(false)
   const [selectedTherapist, setSelectedTherapist] = useState(null)
 
-  useEffect(() => {
-    fetchAll()
-  }, [])
+  // Edit state
+  const [editingTherapist, setEditingTherapist] = useState(null) // name being edited
+  const [editForm, setEditForm] = useState(null) // { name, specialty, is_intern, level, days: [{rowIndex, day, time_start, time_end, _new?, _deleted?}] }
+  const [editSaving, setEditSaving] = useState(false)
+
+  useEffect(() => { fetchAll() }, [])
 
   async function fetchAll() {
     setLoading(true)
@@ -56,15 +61,16 @@ export default function TherapistsPage() {
     setLoading(false)
   }
 
+  // ── ADD THERAPIST ──────────────────────────────────────────────────────────
   async function handleAdd() {
     if (!form.name.trim()) return alert('Please enter a name')
-    if (!form.day) return alert('Please select a day')
-    if (!form.time_start || !form.time_end) return alert('Please select working hours')
+    const validDays = form.days.filter(d => d.day && d.time_start && d.time_end)
+    if (validDays.length === 0) return alert('Please add at least one day with working hours')
     setSaving(true)
     const res = await fetch('/api/therapists', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
+      body: JSON.stringify({ ...form, days: validDays })
     })
     const json = await res.json()
     if (json.success) { setShowForm(false); setForm(EMPTY_FORM); fetchAll() }
@@ -72,16 +78,141 @@ export default function TherapistsPage() {
     setSaving(false)
   }
 
+  // ── DELETE THERAPIST (all rows) ────────────────────────────────────────────
   async function handleDelete(therapist) {
-    if (!confirm(`Remove ${therapist.name} (${therapist.day})? Their client slots in the master schedule will remain.`)) return
-    await fetch('/api/therapists', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ index: therapist.index })
-    })
+    const allRows = therapists.filter(t => t.name === therapist.name)
+    if (!confirm(`Remove ${therapist.name}? This will delete all ${allRows.length} day row(s).`)) return
+    // Delete from bottom up to preserve row indices
+    const sorted = [...allRows].sort((a, b) => b.index - a.index)
+    for (const row of sorted) {
+      await fetch('/api/therapists', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rowIndex: row.index })
+      })
+    }
     fetchAll()
   }
 
+  // ── OPEN EDIT MODAL ────────────────────────────────────────────────────────
+  function openEdit(name) {
+    const rows = therapists.filter(t => t.name === name).sort((a, b) => DAYS.indexOf(a.day) - DAYS.indexOf(b.day))
+    const first = rows[0]
+    setEditForm({
+      name: first.name,
+      specialty: first.specialty,
+      is_intern: first.is_intern,
+      level: first.level || '',
+      days: rows.map(r => ({
+        rowIndex: r.index,
+        day: r.day,
+        time_start: r.time_start,
+        time_end: r.time_end,
+        _deleted: false,
+        _new: false,
+      }))
+    })
+    setEditingTherapist(name)
+  }
+
+  function closeEdit() {
+    setEditingTherapist(null)
+    setEditForm(null)
+  }
+
+  function updateEditDay(i, field, value) {
+    setEditForm(prev => {
+      const days = [...prev.days]
+      days[i] = { ...days[i], [field]: value }
+      return { ...prev, days }
+    })
+  }
+
+  function addEditDay() {
+    setEditForm(prev => ({
+      ...prev,
+      days: [...prev.days, { rowIndex: null, day: '', time_start: '', time_end: '', _new: true, _deleted: false }]
+    }))
+  }
+
+  function markDeleteDay(i) {
+    setEditForm(prev => {
+      const days = [...prev.days]
+      if (days[i]._new) {
+        // Just remove it from the list entirely if it was never saved
+        days.splice(i, 1)
+      } else {
+        days[i] = { ...days[i], _deleted: true }
+      }
+      return { ...prev, days }
+    })
+  }
+
+  // ── SAVE EDIT ──────────────────────────────────────────────────────────────
+  async function handleEditSave() {
+    if (!editForm.name.trim()) return alert('Name is required')
+    const activeDays = editForm.days.filter(d => !d._deleted)
+    if (activeDays.length === 0) return alert('Therapist must have at least one day')
+
+    setEditSaving(true)
+    try {
+      const ops = []
+
+      // 1. Delete rows marked for deletion (descending rowIndex to preserve indices)
+      const toDelete = editForm.days.filter(d => d._deleted && !d._new).sort((a, b) => b.rowIndex - a.rowIndex)
+      for (const d of toDelete) {
+        ops.push(fetch('/api/therapists', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rowIndex: d.rowIndex })
+        }))
+      }
+      await Promise.all(ops)
+
+      // 2. PATCH existing rows (name, specialty, intern, level, day, times)
+      const toUpdate = editForm.days.filter(d => !d._deleted && !d._new)
+      for (const d of toUpdate) {
+        await fetch('/api/therapists', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            rowIndex: d.rowIndex,
+            name: editForm.name,
+            specialty: editForm.specialty,
+            is_intern: editForm.is_intern,
+            level: editForm.level,
+            day: d.day,
+            time_start: d.time_start,
+            time_end: d.time_end,
+          })
+        })
+      }
+
+      // 3. POST new day rows
+      const toAdd = editForm.days.filter(d => d._new && !d._deleted && d.day && d.time_start && d.time_end)
+      if (toAdd.length > 0) {
+        await fetch('/api/therapists', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: editForm.name,
+            specialty: editForm.specialty,
+            is_intern: editForm.is_intern,
+            level: editForm.level,
+            days: toAdd.map(d => ({ day: d.day, time_start: d.time_start, time_end: d.time_end }))
+          })
+        })
+      }
+
+      closeEdit()
+      fetchAll()
+    } catch (e) {
+      alert('Error saving: ' + e.message)
+    }
+    setEditSaving(false)
+  }
+
+  // ── HELPERS ────────────────────────────────────────────────────────────────
   const uniqueTherapists = therapists.reduce((acc, t) => {
     if (!acc.find(x => x.name === t.name)) acc.push(t)
     return acc
@@ -119,8 +250,101 @@ export default function TherapistsPage() {
   const therapistClients = selectedTherapist ? getTherapistClients(selectedTherapist) : {}
   const totalClients = selectedTherapist ? [...new Set(Object.values(therapistClients).flat().map(s => s.client_name))].length : 0
 
+  // ── EDIT MODAL ─────────────────────────────────────────────────────────────
+  const EditModal = () => {
+    if (!editForm) return null
+    const activeDays = editForm.days.filter(d => !d._deleted)
+    return (
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+        <div style={{ background: 'white', borderRadius: '14px', padding: '2rem', width: '520px', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+          <h3 style={{ margin: '0 0 1.5rem', color: '#0f4c81', fontSize: '18px' }}>Edit therapist</h3>
+
+          {/* Name */}
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Name</label>
+            <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })}
+              style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+          </div>
+
+          {/* Specialty + Intern + Level */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+            <div>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Specialty</label>
+              <select value={editForm.specialty} onChange={e => setEditForm({ ...editForm, specialty: e.target.value })}
+                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' }}>
+                {['OT','ST','PT','SPED'].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Level</label>
+              <select value={editForm.level} onChange={e => setEditForm({ ...editForm, level: e.target.value })}
+                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
+                {LEVELS.map(l => <option key={l} value={l}>{l || '— none —'}</option>)}
+              </select>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '20px' }}>
+              <input type="checkbox" id="edit_intern" checked={editForm.is_intern}
+                onChange={e => setEditForm({ ...editForm, is_intern: e.target.checked })} />
+              <label htmlFor="edit_intern" style={{ fontSize: '13px', color: '#666', cursor: 'pointer' }}>Intern</label>
+            </div>
+          </div>
+
+          {/* Days */}
+          <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <label style={{ fontSize: '12px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Working Days</label>
+              <button onClick={addEditDay} style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '6px', border: '1px solid #0f4c81', background: 'white', color: '#0f4c81', cursor: 'pointer' }}>+ Add day</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {editForm.days.map((d, i) => {
+                if (d._deleted) return null
+                return (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '8px', alignItems: 'center', background: '#f8f9fa', padding: '10px', borderRadius: '8px', border: '1px solid #eee' }}>
+                    <select value={d.day} onChange={e => updateEditDay(i, 'day', e.target.value)}
+                      style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' }}>
+                      <option value="">Day...</option>
+                      {DAYS.map(day => <option key={day} value={day}>{day}</option>)}
+                    </select>
+                    <select value={d.time_start} onChange={e => updateEditDay(i, 'time_start', e.target.value)}
+                      style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
+                      <option value="">Start...</option>
+                      {ALL_TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <select value={d.time_end} onChange={e => updateEditDay(i, 'time_end', e.target.value)}
+                      style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
+                      <option value="">End...</option>
+                      {ALL_TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <button
+                      onClick={() => markDeleteDay(i)}
+                      disabled={activeDays.length === 1}
+                      title={activeDays.length === 1 ? 'Must have at least one day' : 'Remove this day'}
+                      style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #fcc', background: activeDays.length === 1 ? '#f9f9f9' : '#fff5f5', color: activeDays.length === 1 ? '#ccc' : '#c00', cursor: activeDays.length === 1 ? 'not-allowed' : 'pointer', fontSize: '13px' }}>
+                      ✕
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+            <button onClick={closeEdit} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white', fontSize: '14px' }}>Cancel</button>
+            <button onClick={handleEditSave} disabled={editSaving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500', fontSize: '14px' }}>
+              {editSaving ? 'Saving...' : 'Save changes'}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ── RENDER ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
+
+      {editingTherapist && <EditModal />}
 
       {selectedTherapist ? (
         <div>
@@ -210,9 +434,10 @@ export default function TherapistsPage() {
             }}>+ Add therapist</button>
           </div>
 
+          {/* ADD FORM MODAL */}
           {showForm && (
-            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '440px', maxWidth: '90vw' }}>
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+              <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '480px', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
                 <h3 style={{ margin: '0 0 1.5rem', color: '#0f4c81' }}>Add therapist</h3>
                 <div style={{ marginBottom: '12px' }}>
                   <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Name</label>
@@ -233,26 +458,38 @@ export default function TherapistsPage() {
                     <label htmlFor="is_intern" style={{ fontSize: '13px', color: '#666', cursor: 'pointer' }}>Intern</label>
                   </div>
                 </div>
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Day</label>
-                  <select value={form.day} onChange={e => setForm({ ...form, day: e.target.value })}
-                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
-                    <option value="">Select day...</option>
-                    {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1.5rem' }}>
-                  {['time_start', 'time_end'].map(key => (
-                    <div key={key}>
-                      <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>{key === 'time_start' ? 'Start time' : 'End time'}</label>
-                      <select value={form[key]} onChange={e => setForm({ ...form, [key]: e.target.value })}
-                        style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' }}>
-                        <option value="">Select...</option>
+
+                {/* Days in add form */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <label style={{ fontSize: '12px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Working Days</label>
+                    <button onClick={() => setForm({ ...form, days: [...form.days, { day: '', time_start: '', time_end: '' }] })}
+                      style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '6px', border: '1px solid #0f4c81', background: 'white', color: '#0f4c81', cursor: 'pointer' }}>+ Add day</button>
+                  </div>
+                  {form.days.map((d, i) => (
+                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                      <select value={d.day} onChange={e => { const days = [...form.days]; days[i] = { ...days[i], day: e.target.value }; setForm({ ...form, days }) }}
+                        style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' }}>
+                        <option value="">Day...</option>
+                        {DAYS.map(day => <option key={day} value={day}>{day}</option>)}
+                      </select>
+                      <select value={d.time_start} onChange={e => { const days = [...form.days]; days[i] = { ...days[i], time_start: e.target.value }; setForm({ ...form, days }) }}
+                        style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
+                        <option value="">Start...</option>
                         {ALL_TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
+                      <select value={d.time_end} onChange={e => { const days = [...form.days]; days[i] = { ...days[i], time_end: e.target.value }; setForm({ ...form, days }) }}
+                        style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
+                        <option value="">End...</option>
+                        {ALL_TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                      </select>
+                      <button onClick={() => { const days = form.days.filter((_, j) => j !== i); setForm({ ...form, days: days.length ? days : [{ day: '', time_start: '', time_end: '' }] }) }}
+                        disabled={form.days.length === 1}
+                        style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #fcc', background: form.days.length === 1 ? '#f9f9f9' : '#fff5f5', color: form.days.length === 1 ? '#ccc' : '#c00', cursor: form.days.length === 1 ? 'not-allowed' : 'pointer' }}>✕</button>
                     </div>
                   ))}
                 </div>
+
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                   <button onClick={() => setShowForm(false)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
                   <button onClick={handleAdd} disabled={saving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
@@ -284,10 +521,16 @@ export default function TherapistsPage() {
                         </span>
                         <span style={{ fontSize: '12px', color: '#999' }}>{clientCount} client{clientCount !== 1 ? 's' : ''}</span>
                       </div>
-                      <button onClick={() => handleDelete(therapist)}
-                        style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '5px', border: '1px solid #fcc', background: '#fff5f5', color: '#c00', cursor: 'pointer' }}>
-                        Remove
-                      </button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={() => openEdit(therapist.name)}
+                          style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '5px', border: '1px solid #B5D4F4', background: '#E6F1FB', color: '#0C447C', cursor: 'pointer' }}>
+                          Edit
+                        </button>
+                        <button onClick={() => handleDelete(therapist)}
+                          style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '5px', border: '1px solid #fcc', background: '#fff5f5', color: '#c00', cursor: 'pointer' }}>
+                          Remove
+                        </button>
+                      </div>
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' }}>
                       {days.map((d, di) => (

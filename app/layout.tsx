@@ -4,7 +4,7 @@ import Link from 'next/link'
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isPublicPage = ['/', '/login', '/privacy'].includes(pathname) || pathname.startsWith('/therapist')
+  const isPublicPage = ['/', '/login', '/privacy'].includes(pathname) || pathname.startsWith('/therapist/')
 
   return (
     <html lang="en">
