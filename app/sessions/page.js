@@ -692,7 +692,7 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
               {[
                 { type: 'ie_reminder', label: '📅 IE Appointment Reminder', show: true },
                 { type: 'outstanding', label: '💳 Outstanding Balance Reminder', show: true },
-                { type: 'makeup', label: '🔄 Make-up Schedule Request', show: true },
+                { type: 'makeup', label: '🔄 Re-Schedule / Make-Up Request', show: true },
               ].map(opt => (
                 <button key={opt.type} onClick={async () => {
                   setRemindSending(true)
