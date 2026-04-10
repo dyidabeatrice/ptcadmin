@@ -31,7 +31,7 @@ export default function PrivacyPolicy() {
         <h2 style={{ color: '#0f4c81', fontSize: '20px', fontWeight: '500', marginBottom: '12px' }}>How We Use Your Information</h2>
         <p>Information collected is used exclusively for:</p>
         <ul style={{ paddingLeft: '1.5rem', marginTop: '10px' }}>
-          <li style={{ marginBottom: '8px' }}>Sending session reminders via Facebook Messenger 24 hours before scheduled appointments</li>
+          <li style={{ marginBottom: '8px' }}>Sending session reminders via Facebook Messenger</li>
           <li style={{ marginBottom: '8px' }}>Sending payment reminders for outstanding session fees via Facebook Messenger</li>
           <li style={{ marginBottom: '8px' }}>Managing therapy session scheduling and attendance records</li>
           <li style={{ marginBottom: '8px' }}>Processing and recording session payments</li>
@@ -46,7 +46,7 @@ export default function PrivacyPolicy() {
         <p>We use the Facebook Messenger platform to send automated session and payment reminders. By providing your Facebook account information to our clinic, you consent to receiving these messages.</p>
         <p style={{ marginTop: '10px' }}>Messages sent through our system include:</p>
         <ul style={{ paddingLeft: '1.5rem', marginTop: '10px' }}>
-          <li style={{ marginBottom: '8px' }}>24-hour session reminders with attendance confirmation prompts</li>
+          <li style={{ marginBottom: '8px' }}>Session reminders including make-up and rescheduling</li>
           <li style={{ marginBottom: '8px' }}>Payment reminders for outstanding balances</li>
           <li style={{ marginBottom: '8px' }}>Therapist absence notices</li>
         </ul>
