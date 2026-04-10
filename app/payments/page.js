@@ -449,7 +449,7 @@ export default function PaymentsPage() {
   const nowPH = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
 
   const todayPayments = payments.filter(p => {
-    if (!p.date || p.payment_type === 'refund') return false
+    if (!p.date || ['refund', 'attendance', 'cancellation'].includes(p.payment_type)) return false
     const pDate = parsePaymentDate(p.date)
     if (!pDate) return false
     return pDate.getFullYear() === nowPH.getFullYear() &&
@@ -483,7 +483,7 @@ export default function PaymentsPage() {
   })
 
   const weekTotal = weekPayments
-    .filter(p => p.payment_type !== 'refund')
+    .filter(p => p.payment_type !== 'refund' && p.payment_type !== 'outstanding')
     .reduce((sum, p) => sum + Number(p.amount || 0), 0)
 
   const creditClients = clients.filter(c => c.credit_balance > 0)
