@@ -476,6 +476,7 @@ export default function ClientsPage() {
       )}
 
       {showForm && <ClientForm data={form} setData={setForm} onSave={handleAdd} onClose={() => setShowForm(false)} title="New client" saving={saving} therapistData={therapistData} clients={clients} />}
+      {editClient && console.log('editClient:', JSON.stringify(editClient))}
       {editClient && <ClientForm data={editClient} setData={setEditClient} onSave={handleEdit} onClose={() => setEditClient(null)} title="Edit client" saving={saving} therapistData={therapistData} clients={clients} />}
 
       {deleteConfirm && (
