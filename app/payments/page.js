@@ -472,6 +472,7 @@ export default function PaymentsPage() {
   const weekPayments = payments.filter(p => {
     if (!selectedWeek) return false
     if (!p.date) return false
+    if (['attendance', 'cancellation'].includes(p.payment_type)) return false  // ← add this
     const parts = selectedWeek.key.replace('week_', '').split('_')
     const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
     monday.setDate(monday.getDate() - 1)
@@ -505,6 +506,8 @@ export default function PaymentsPage() {
       (filterType === 'Session' && p.payment_type === 'session') ||
       (filterType === 'Document' && p.payment_type === 'document')
     return matchSearch && matchMop && matchType
+    return matchSearch && matchMop && matchType && 
+    !['attendance', 'cancellation'].includes(p.payment_type)
   }).sort((a, b) => Number(b.id) - Number(a.id))
 
   const tabs = [
