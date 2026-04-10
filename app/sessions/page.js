@@ -446,6 +446,20 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
             style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px', cursor: 'pointer' }}>
             {weeks.map(w => <option key={w.key} value={w.key}>{w.label}</option>)}
           </select>
+          <button onClick={async () => {
+            const res = await fetch('/api/weeks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'generate' }) })
+            const json = await res.json()
+            if (json.success && json.created?.length > 0) {
+              setNotification(`Generated ${json.created.length} new week${json.created.length !== 1 ? 's' : ''}`)
+              setTimeout(() => setNotification(null), 4000)
+              const weeksRes = await fetch('/api/weeks')
+              const weeksJson = await weeksRes.json()
+              if (weeksJson.success) setWeeks(weeksJson.data)
+            } else {
+              setNotification('No new weeks to generate')
+              setTimeout(() => setNotification(null), 3000)
+            }
+          }} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #0f4c81', background: 'white', color: '#0f4c81', cursor: 'pointer', fontWeight: '500' }}>+ Generate week</button>
           <button onClick={() => setAddModal(true)} style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500' }}>+ Add one-off session</button>
         </div>
       </div>
