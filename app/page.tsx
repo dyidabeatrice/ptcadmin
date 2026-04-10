@@ -56,7 +56,6 @@ export default function HomePage() {
             { label: 'Find Us', href: '#location' },
             { label: 'Privacy', href: '/privacy' },
             { label: 'Book an Appointment', href: 'https://www.facebook.com/potentialstherapycenter' },
-            { label: 'Join us', href: 'https://www.facebook.com/potentialstherapycenter/posts/pfbid02jYUPkwgLuufCSg8j3jvz5rZrGqmP7Qvk9x5qWQbV187zTLSNbLdA51yJ5yd7gB2Ll'},
           ].map(l => (
             <a key={l.label} href={l.href}
                 target={l.href.startsWith('http') ? '_blank' : undefined}
