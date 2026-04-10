@@ -643,7 +643,12 @@ export default function ClientsPage() {
                   <td style={{ padding: '12px 16px' }}>
                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                       {!isInactive && !mergeMode && (
-                        <button onClick={() => setEditClient({ ...c, therapists: parseSchedule(c.schedule) })}
+                        <button onClick={() => {
+                          const nameParts = c.name?.includes(',') ? c.name.split(',') : ['', c.name || '']
+                          const last_name = nameParts[0].trim()
+                          const first_name = nameParts.slice(1).join(',').trim()
+                          setEditClient({ ...c, last_name, first_name, therapists: parseSchedule(c.schedule) })
+                        }}
                           style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '5px', border: '1px solid #ddd', cursor: 'pointer', background: 'white', color: '#444' }}>Edit</button>
                       )}
                       {!mergeMode && (
