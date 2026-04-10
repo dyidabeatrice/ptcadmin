@@ -2,10 +2,9 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
-const [showJoinUs, setShowJoinUs] = useState(false)
-
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false)
+  const [showJoinUs, setShowJoinUs] = useState(false)
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40)
