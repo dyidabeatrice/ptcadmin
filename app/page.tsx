@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
+const [showJoinUs, setShowJoinUs] = useState(false)
+
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false)
 
@@ -67,6 +69,11 @@ export default function HomePage() {
                     transition: 'opacity 0.2s'
             }}>{l.label}</a>
           ))}
+          <span onClick={() => setShowJoinUs(true)} style={{
+            fontSize: '14px',
+            color: scrolled ? '#0f4c81' : '#545454',
+            fontWeight: '500', cursor: 'pointer'
+          }}>Join us</span>
           <a href="/therapist/login" style={{
             padding: '9px 20px', borderRadius: '6px',
             background: '#0f4c81', color: 'white',
@@ -110,7 +117,6 @@ export default function HomePage() {
           { label: 'Find Us', href: '#location' },
           { label: 'Privacy', href: '/privacy' },
           { label: 'Book an Appointment', href: 'https://www.facebook.com/potentialstherapycenter' },
-          { label: 'Join us', href: 'https://www.facebook.com/potentialstherapycenter/posts/pfbid02jYUPkwgLuufCSg8j3jvz5rZrGqmP7Qvk9x5qWQbV187zTLSNbLdA51yJ5yd7gB2Ll'},
         ].map(l => (
           <a key={l.label} href={l.href}
             target={l.href.startsWith('http') ? '_blank' : undefined}
@@ -125,7 +131,17 @@ export default function HomePage() {
               textDecoration: 'none', fontWeight: '500',
               borderBottom: '1px solid #f0f0f0'
             }}>{l.label}</a>
-        ))}       
+        ))}  
+        <span onClick={() => {
+          setShowJoinUs(true)
+          const menu = document.getElementById('public-mobile-menu')
+          if (menu) menu.style.display = 'none'
+        }} style={{
+          display: 'block', padding: '13px 24px',
+          fontSize: '14px', color: '#0f4c81',
+          fontWeight: '500', borderBottom: '1px solid #f0f0f0',
+          cursor: 'pointer'
+        }}>Join us</span>     
         <div style={{ padding: '12px 24px 0' }}>
           <a href="/therapist/login" style={{
             display: 'block', padding: '10px 20px', borderRadius: '6px',
@@ -395,6 +411,27 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Join Us Pop up */}
+      {showJoinUs && (
+        <div onClick={() => setShowJoinUs(false)} style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.7)', zIndex: 200,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '1rem'
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{ position: 'relative', maxWidth: '90vw', maxHeight: '90vh' }}>
+            <img src="/joinus.jpg" alt="Join us" style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: '12px', display: 'block' }} />
+            <button onClick={() => setShowJoinUs(false)} style={{
+              position: 'absolute', top: '-12px', right: '-12px',
+              background: 'white', border: 'none', borderRadius: '50%',
+              width: '32px', height: '32px', cursor: 'pointer',
+              fontSize: '16px', fontWeight: '700', color: '#333',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+            }}>✕</button>
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer style={{ background: '#0f4c81', color: 'rgba(255,255,255,0.7)', padding: '2rem', textAlign: 'center' }}>
