@@ -257,7 +257,7 @@ export default function HomePage() {
             </div> 
          {/* Therapists Photo Strip */}
             <div style={{ display: 'flex', gap: '5px', justifyContent: 'center', alignItems: 'center', marginBottom: '1.5rem'}}>
-            {['/therapists1.jpg', '/therapists2.jpg', '/therapists3.jpg'].map((src, i) => (
+            {['/staff1.jpg', '/staff2.jpg', '/staff3.jpg'].map((src, i) => (
                 <div
                 key={i}
                 style={{
