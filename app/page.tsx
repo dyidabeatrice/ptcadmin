@@ -48,7 +48,7 @@ export default function HomePage() {
         height: '70px'
       }}>
         <img src="/logo.png" alt="Potentials Therapy Center" style={{ background:'transparent', height: '44px', objectFit: 'contain' }} />
-        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
+        <div className="desktop-links" style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
           {[
             { label: 'Home', href: '#home' },
             { label: 'Services', href: '#services' },
@@ -56,7 +56,6 @@ export default function HomePage() {
             { label: 'Privacy', href: '/privacy' },
             { label: 'Book an Appointment', href: 'https://www.facebook.com/potentialstherapycenter' },
             { label: 'Join us', href: 'https://www.facebook.com/potentialstherapycenter/posts/pfbid02jYUPkwgLuufCSg8j3jvz5rZrGqmP7Qvk9x5qWQbV187zTLSNbLdA51yJ5yd7gB2Ll'},
-            { label: 'Therapist Login', href: '/therapist/login' }
           ].map(l => (
             <a key={l.label} href={l.href}
                 target={l.href.startsWith('http') ? '_blank' : undefined}
@@ -68,6 +67,11 @@ export default function HomePage() {
                     transition: 'opacity 0.2s'
             }}>{l.label}</a>
           ))}
+          <a href="/therapist/login" style={{
+            padding: '9px 20px', borderRadius: '6px',
+            background: '#0f4c81', color: 'white',
+            textDecoration: 'none', fontSize: '13px', fontWeight: '700'
+          }}>Therapist Login</a>
           <Link href="/login" style={{
             padding: '9px 20px', borderRadius: '6px',
             background: '#fcc200', color: '#0f4c81',
@@ -107,7 +111,6 @@ export default function HomePage() {
           { label: 'Privacy', href: '/privacy' },
           { label: 'Book an Appointment', href: 'https://www.facebook.com/potentialstherapycenter' },
           { label: 'Join us', href: 'https://www.facebook.com/potentialstherapycenter/posts/pfbid02jYUPkwgLuufCSg8j3jvz5rZrGqmP7Qvk9x5qWQbV187zTLSNbLdA51yJ5yd7gB2Ll'},
-          { label: 'Therapist Login', href: '/therapist/login' },
         ].map(l => (
           <a key={l.label} href={l.href}
             target={l.href.startsWith('http') ? '_blank' : undefined}
@@ -123,6 +126,13 @@ export default function HomePage() {
               borderBottom: '1px solid #f0f0f0'
             }}>{l.label}</a>
         ))}       
+        <div style={{ padding: '12px 24px 0' }}>
+          <a href="/therapist/login" style={{
+            display: 'block', padding: '10px 20px', borderRadius: '6px',
+            background: '#0f4c81', color: 'white', textAlign: 'center',
+            textDecoration: 'none', fontSize: '13px', fontWeight: '700'
+          }}>Therapist Login</a>
+        </div>
         <div style={{ padding: '12px 24px' }}>
           <Link href="/login" style={{
             display: 'block', padding: '10px 20px', borderRadius: '6px',
