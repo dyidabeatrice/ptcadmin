@@ -279,7 +279,7 @@ export default function HomePage() {
                 >
                 <img
                     src={src}
-                    alt="Clinic Facility"
+                    alt="PTC Therapists"
                     style={{
                     width: '100%',
                     height: '100%',
