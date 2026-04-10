@@ -122,8 +122,10 @@ export async function POST(request) {
       const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
       const currentMonday = getMondayOf(today)
       const created = []
+      const dayOfWeek = today.getDay()
+      const weeksToGenerate = dayOfWeek === 6 ? 3 : 2
 
-      for (let w = 0; w < 1; w++) {
+      for (let w = 0; w < weeksToGenerate; w++) {
         const monday = new Date(currentMonday)
         monday.setDate(monday.getDate() + w * 7)
         const weekKey = getWeekKey(monday)
