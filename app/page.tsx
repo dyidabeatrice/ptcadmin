@@ -297,6 +297,13 @@ export default function HomePage() {
       </section>
 
       {/* Services */}
+      <style>{`
+        .service-card { cursor: default; }
+        .service-card .card-front { transition: opacity 0.3s ease; }
+        .service-card .card-back { opacity: 0; transition: opacity 0.3s ease; }
+        .service-card:hover .card-front { opacity: 0; }
+        .service-card:hover .card-back { opacity: 1; }
+      `}</style>
       <section id="services" style={{ padding: '6rem 2rem', background: '#f8f9fb' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
@@ -306,15 +313,49 @@ export default function HomePage() {
               Comprehensive, evidence-based therapies tailored to each child's unique needs.
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
             {services.map((s, i) => (
-              <div key={i} style={{
-                background: '#fff', borderRadius: '12px', padding: '1.5rem',
-                border: '1px solid #e8edf5',
+              <div key={i} className="service-card" style={{
+                borderRadius: '16px', overflow: 'hidden',
+                height: '180px', position: 'relative',
+                background: i % 3 === 0 ? 'linear-gradient(135deg, #0f4c81, #1a6db5)' :
+                            i % 3 === 1 ? 'linear-gradient(135deg, #e6a800, #fcc200)' :
+                                          'linear-gradient(135deg, #0a3560, #0f4c81)',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
               }}>
-                <div style={{ fontSize: '28px', marginBottom: '10px' }}>{s.icon}</div>
-                <div style={{ fontSize: '15px', fontWeight: '600', color: '#0f4c81', marginBottom: '6px' }}>{s.name}</div>
-                <div style={{ fontSize: '13px', color: '#888', lineHeight: '1.6' }}>{s.desc}</div>
+                {/* Front */}
+                <div className="card-front" style={{
+                  position: 'absolute', inset: 0,
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  padding: '1.5rem', textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '36px', marginBottom: '12px' }}>{s.icon}</div>
+                  <div style={{
+                    fontSize: '14px', fontWeight: '700',
+                    color: i % 3 === 1 ? '#0f4c81' : 'white',
+                    lineHeight: '1.4'
+                  }}>{s.name}</div>
+                </div>
+                {/* Back */}
+                <div className="card-back" style={{
+                  position: 'absolute', inset: 0,
+                  display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  padding: '1.5rem', textAlign: 'center',
+                  background: i % 3 === 1 ? 'rgba(230,168,0,0.95)' : 'rgba(15,76,129,0.95)',
+                }}>
+                  <div style={{ fontSize: '22px', marginBottom: '10px' }}>{s.icon}</div>
+                  <div style={{
+                    fontSize: '13px', fontWeight: '700',
+                    color: i % 3 === 1 ? '#0f4c81' : 'white',
+                    marginBottom: '8px'
+                  }}>{s.name}</div>
+                  <div style={{
+                    fontSize: '12px', lineHeight: '1.6',
+                    color: i % 3 === 1 ? '#0f4c81' : 'rgba(255,255,255,0.9)',
+                  }}>{s.desc}</div>
+                </div>
               </div>
             ))}
           </div>
