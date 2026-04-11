@@ -753,23 +753,6 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
                 <div style={{ fontSize: '11px', color: '#aaa', marginTop: '4px' }}>Can type a new name for walk-in / IE clients</div>
               </div>
 
-              {/* Session type */}
-              <div style={{ marginBottom: '12px' }}>
-                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Session type</label>
-                <select value={addForm.session_type} onChange={e => setAddForm({ ...addForm, session_type: e.target.value })}
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
-                  <option value="">Select type...</option>
-                  <option value="OT-IE">OT — Initial Evaluation</option>
-                  <option value="ST-IE">ST — Initial Evaluation</option>
-                  <option value="PT-IE">PT — Initial Evaluation</option>
-                  <option value="SPED IE">SPED — Initial Evaluation</option>
-                  <option value="OT SESSION">OT Session</option>
-                  <option value="ST SESSION">ST Session</option>
-                  <option value="PT SESSION">PT Session</option>
-                  <option value="SPED SESSION">SPED Session</option>
-                </select>
-              </div>
-
               {/* Day */}
               <div style={{ marginBottom: '12px' }}>
                 <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Day</label>
