@@ -1,4 +1,5 @@
 import { getSheetData } from '../../../lib/sheets'
+import jwt from 'jsonwebtoken'
 
 export async function POST(request) {
   try {
@@ -12,7 +13,13 @@ export async function POST(request) {
       return Response.json({ success: false, error: 'Incorrect name or PIN' })
     }
 
-    return Response.json({ success: true, name })
+    const JWT_SECRET = process.env.JWT_SECRET || 'ptcadmin-secret-key'
+    const token = jwt.sign(
+      { role: 'therapist', name },
+      JWT_SECRET,
+      { expiresIn: '365d' }
+    )
+    return Response.json({ success: true, name, role: 'therapist', token })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
   }
