@@ -123,7 +123,7 @@ export default function SchedulePage() {
   const [remindModal, setRemindModal] = useState(null)
   const [remindSending, setRemindSending] = useState(false)
   const [addModal, setAddModal] = useState(false)
-  const [addForm, setAddForm] = useState({ client_name: '', therapist: '', day: '', time_start: '', time_end: '', session_type: '' })
+  const [addForm, setAddForm] = useState({ client_name: '', therapist: '', day: '', time_start: '', time_end: '' })
   const [saving, setSaving] = useState(false)
   const [absentConfirm, setAbsentConfirm] = useState(null)
   const [dragSession, setDragSession] = useState(null)
@@ -336,7 +336,7 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
     })
     await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add', week_key: selectedWeek.key, ...addForm, date: weekDates[addForm.day] || '' }) })
     setAddModal(false)
-    setAddForm({ client_name: '', therapist: '', day: '', time_start: '', time_end: '', session_type: '' })
+    setAddForm({ client_name: '', therapist: '', day: '', time_start: '', time_end: '' })
     fetchSessions(selectedWeek.key)
     setSaving(false)
   }
@@ -806,7 +806,7 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
               </div>
 
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                <button onClick={() => { setAddModal(false); setAddForm({ client_name: '', therapist: '', day: '', time_start: '', time_end: '', session_type: '' }) }}
+                <button onClick={() => { setAddModal(false); setAddForm({ client_name: '', therapist: '', day: '', time_start: '', time_end: '' }) }}
                   style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
                 <button onClick={addOneOff} disabled={saving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
                   {saving ? 'Adding...' : 'Add session'}
