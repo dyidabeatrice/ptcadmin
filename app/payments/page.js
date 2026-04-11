@@ -505,7 +505,6 @@ export default function PaymentsPage() {
       (filterType === 'Refund' && p.payment_type === 'refund') ||
       (filterType === 'Session' && p.payment_type === 'session') ||
       (filterType === 'Document' && p.payment_type === 'document')
-    return matchSearch && matchMop && matchType
     return matchSearch && matchMop && matchType && 
     !['attendance', 'cancellation'].includes(p.payment_type)
   }).sort((a, b) => Number(b.id) - Number(a.id))
@@ -787,7 +786,22 @@ export default function PaymentsPage() {
                         <td style={{ padding: '10px 16px', fontWeight: '500', color: '#0f4c81' }}>{p.client_name}</td>
                         <td style={{ padding: '10px 16px', color: '#666' }}>{p.therapist || '—'}</td>
                         <td style={{ padding: '10px 16px' }}>
-                          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#E6F1FB', color: '#0C447C' }}>{p.session_type || 'Regular'}</span>
+                          <select
+                            value={p.session_type || ''}
+                            onChange={async e => {
+                              await fetch('/api/payments', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ action: 'update_session_type', id: p.id, session_type: e.target.value })
+                              })
+                              fetchAll()
+                            }}
+                            style={{ fontSize: '11px', padding: '3px 6px', borderRadius: '6px', border: '1px solid #B5D4F4', cursor: 'pointer', background: '#E6F1FB', color: '#0C447C' }}>
+                            <option value="">— select —</option>
+                            {['OT SESSION','OT-IE','OT-FE','SPECIALIZED OT TX','ST SESSION','ST-IE','ST-FE','SPECIALIZED ST TX','PT SESSION','PT-IE','PT FE','SPED SESSION','SPED IE','SPED FE','PLAYSCHOOL','PR','PR-RUSHED','IE REPORT','Cancellation Fee'].map(t => (
+                              <option key={t} value={t}>{t}</option>
+                            ))}
+                          </select>
                         </td>
                         <td style={{ padding: '10px 16px', fontWeight: '500', color: p.payment_type === 'refund' ? '#E24B4A' : '#1D9E75' }}>
                           {p.payment_type === 'refund' ? '-' : ''}₱{Math.abs(Number(p.amount || 0)).toLocaleString()}

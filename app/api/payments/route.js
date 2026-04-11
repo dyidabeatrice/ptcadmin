@@ -110,6 +110,20 @@ export async function PATCH(request) {
       return Response.json({ success: true })
     }
 
+    if (body.action === 'update_session_type') {
+      const data = await getSheetData('payments')
+      const [, ...rows] = data
+      const rowIndex = rows.findIndex(r => r && r[0] === body.id)
+      if (rowIndex === -1) return Response.json({ success: false, error: 'Payment not found' })
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `payments!G${rowIndex + 2}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[body.session_type]] }
+      })
+      return Response.json({ success: true })
+    }
+
     return Response.json({ success: false, error: 'Unknown action' })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
