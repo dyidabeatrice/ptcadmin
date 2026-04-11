@@ -154,14 +154,20 @@ export async function POST(request) {
         const newRows = master
           .filter(m => weekDates[m.day])
           .map(m => {
-          const amount = getDefaultAmount(m.therapist, therapistRows)
-          return [
-            Date.now().toString() + Math.random().toString(36).slice(2),
-            m.client_name, m.therapist, weekDates[m.day],
-            m.day, m.time_start, m.time_end,
-            'Regular', 'Pencil', 'Unpaid', '', amount, ''
-          ]
-        })
+            const amount = getDefaultAmount(m.therapist, therapistRows)
+            const tRow = therapistRows.find(r => r && r[1] === m.therapist)
+            const specialty = tRow?.[2] || 'OT'
+            const defaultSessionType = 
+              specialty === 'ST' ? 'ST SESSION' :
+              specialty === 'PT' ? 'PT SESSION' :
+              specialty === 'SPED' ? 'SPED SESSION' : 'OT SESSION'
+            return [
+              Date.now().toString() + Math.random().toString(36).slice(2),
+              m.client_name, m.therapist, weekDates[m.day],
+              m.day, m.time_start, m.time_end,
+              defaultSessionType, 'Pencil', 'Unpaid', '', amount, ''
+            ]
+          })
 
         await createWeekSheet(weekKey, getWeekLabel(monday))
 
