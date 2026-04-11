@@ -38,6 +38,19 @@ export async function POST(request) {
     const weekKey = body.week_key
 
     if (body.action === 'add') {
+      // Get therapist specialty to default session type and amount
+      const therapistData = await getSheetData('therapists')
+      const [, ...therapistRows] = therapistData
+      const tRow = therapistRows.find(r => r && r[1] === body.therapist)
+      const specialty = tRow?.[2] || 'OT'
+      const isIntern = tRow?.[3] === 'TRUE'
+      const defaultSessionType =
+        specialty === 'ST' ? 'ST SESSION' :
+        specialty === 'PT' ? 'PT SESSION' :
+        specialty === 'SPED' ? 'SPED SESSION' : 'OT SESSION'
+      const SPECIALTY_RATES = { OT: 1200, ST: 1300, PT: 900, SPED: 900 }
+      const defaultAmount = isIntern ? 600 : (SPECIALTY_RATES[specialty] || 1200)
+
       const id = Date.now().toString() + Math.random().toString(36).slice(2)
       await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
@@ -51,11 +64,11 @@ export async function POST(request) {
           body.day || '',
           body.time_start || '',
           body.time_end || '',
-          body.session_type || '',
+          defaultSessionType,
           'Pencil',
           'Unpaid',
           '',
-          ''
+          defaultAmount
         ]]}
       })
       return Response.json({ success: true })
