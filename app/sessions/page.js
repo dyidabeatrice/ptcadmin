@@ -123,7 +123,7 @@ export default function SchedulePage() {
   const [remindModal, setRemindModal] = useState(null)
   const [remindSending, setRemindSending] = useState(false)
   const [addModal, setAddModal] = useState(false)
-  const [addForm, setAddForm] = useState({ client_name: '', therapist: '', day: '', time_start: '', time_end: '' })
+  const [addForm, setAddForm] = useState({ client_name: '', therapist: '', day: '', time_start: '', time_end: '', session_type: '' })
   const [saving, setSaving] = useState(false)
   const [absentConfirm, setAbsentConfirm] = useState(null)
   const [dragSession, setDragSession] = useState(null)
@@ -336,7 +336,7 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
     })
     await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add', week_key: selectedWeek.key, ...addForm, date: weekDates[addForm.day] || '' }) })
     setAddModal(false)
-    setAddForm({ client_name: '', therapist: '', day: '', time_start: '', time_end: '' })
+    setAddForm({ client_name: '', therapist: '', day: '', time_start: '', time_end: '', session_type: '' })
     fetchSessions(selectedWeek.key)
     setSaving(false)
   }
@@ -738,55 +738,83 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
       )}
 
 
-      {addModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
-            <h3 style={{ margin: '0 0 1rem', color: '#0f4c81' }}>Add one-off session</h3>
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Client name</label>
-              <input value={addForm.client_name} onChange={e => setAddForm({ ...addForm, client_name: e.target.value })}
-                list="client-list"
-                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
-              <datalist id="client-list">{clients.map(c => <option key={c.id} value={c.name} />)}</datalist>
-            </div>
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Day</label>
-              <select value={addForm.day} onChange={e => setAddForm({ ...addForm, day: e.target.value, therapist: '' })}
-                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
-                <option value="">Select day...</option>
-                {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
-            </div>
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Therapist</label>
-              <select value={addForm.therapist} onChange={e => setAddForm({ ...addForm, therapist: e.target.value })}
-                disabled={!addForm.day}
-                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', opacity: !addForm.day ? 0.5 : 1 }}>
-                <option value="">Select therapist...</option>
-                {[...new Set(therapistData.map(t => t.name))].sort().map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1.5rem' }}>
-              {['time_start', 'time_end'].map(key => (
-                <div key={key}>
-                  <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>{key === 'time_start' ? 'Start' : 'End'}</label>
-                  <select value={addForm[key]} onChange={e => setAddForm({ ...addForm, [key]: e.target.value })}
-                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' }}>
-                    <option value="">Select...</option>
-                    {timeSlots.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button onClick={() => setAddModal(false)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
-              <button onClick={addOneOff} disabled={saving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
-                {saving ? 'Adding...' : 'Add session'}
-              </button>
+        {addModal && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
+              <h3 style={{ margin: '0 0 1rem', color: '#0f4c81' }}>Add one-off session</h3>
+
+              {/* Client name — free text + datalist */}
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Client name</label>
+                <input value={addForm.client_name} onChange={e => setAddForm({ ...addForm, client_name: e.target.value })}
+                  list="client-list" placeholder="Type name or select existing..."
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+                <datalist id="client-list">{clients.map(c => <option key={c.id} value={c.name} />)}</datalist>
+                <div style={{ fontSize: '11px', color: '#aaa', marginTop: '4px' }}>Can type a new name for walk-in / IE clients</div>
+              </div>
+
+              {/* Session type */}
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Session type</label>
+                <select value={addForm.session_type} onChange={e => setAddForm({ ...addForm, session_type: e.target.value })}
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
+                  <option value="">Select type...</option>
+                  <option value="OT-IE">OT — Initial Evaluation</option>
+                  <option value="ST-IE">ST — Initial Evaluation</option>
+                  <option value="PT-IE">PT — Initial Evaluation</option>
+                  <option value="SPED IE">SPED — Initial Evaluation</option>
+                  <option value="OT SESSION">OT Session</option>
+                  <option value="ST SESSION">ST Session</option>
+                  <option value="PT SESSION">PT Session</option>
+                  <option value="SPED SESSION">SPED Session</option>
+                </select>
+              </div>
+
+              {/* Day */}
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Day</label>
+                <select value={addForm.day} onChange={e => setAddForm({ ...addForm, day: e.target.value, therapist: '' })}
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
+                  <option value="">Select day...</option>
+                  {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+              </div>
+
+              {/* Therapist */}
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Therapist</label>
+                <select value={addForm.therapist} onChange={e => setAddForm({ ...addForm, therapist: e.target.value })}
+                  disabled={!addForm.day}
+                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', opacity: !addForm.day ? 0.5 : 1 }}>
+                  <option value="">Select therapist...</option>
+                  {[...new Set(therapistData.map(t => t.name))].sort().map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+
+              {/* Time */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1.5rem' }}>
+                {['time_start', 'time_end'].map(key => (
+                  <div key={key}>
+                    <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>{key === 'time_start' ? 'Start' : 'End'}</label>
+                    <select value={addForm[key]} onChange={e => setAddForm({ ...addForm, [key]: e.target.value })}
+                      style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' }}>
+                      <option value="">Select...</option>
+                      {timeSlots.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button onClick={() => { setAddModal(false); setAddForm({ client_name: '', therapist: '', day: '', time_start: '', time_end: '', session_type: '' }) }}
+                  style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+                <button onClick={addOneOff} disabled={saving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
+                  {saving ? 'Adding...' : 'Add session'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {search && searchedSessions ? (
         <div>
