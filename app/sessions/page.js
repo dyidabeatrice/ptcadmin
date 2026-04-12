@@ -98,8 +98,6 @@ function getSessionColor(session) {
   return { bg: '#E6F1FB', border: '#B5D4F4', color: '#0C447C' }
 }
 
-const [contextMenu, setContextMenu] = useState(null) // { session, x, y }
-
 const SESSION_TYPE_RATES = {
   'OT SESSION': 1200, 'OT-IE': 2800, 'OT-FE': 1500, 'SPECIALIZED OT TX': 1700,
   'PR': 750, 'PR-RUSHED': 1000, 'IE REPORT': 0,
@@ -138,6 +136,7 @@ export default function SchedulePage() {
   const [absentConfirm, setAbsentConfirm] = useState(null)
   const [dragSession, setDragSession] = useState(null)
   const [dragOver, setDragOver] = useState(null)
+  const [contextMenu, setContextMenu] = useState(null) // { session, x, y }
 
   function getTypesForTherapist(therapistName) {
     const t = therapistData.find(x => x.name === therapistName)
