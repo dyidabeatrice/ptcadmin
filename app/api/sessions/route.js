@@ -88,21 +88,60 @@ export async function PATCH(request) {
     const sheetRow = body.rowIndex + 2
 
     if (body.action === 'update_type') {
-        const sheetRow = body.rowIndex + 2
+      const sessions = await getWeekSheet(weekKey)
+      const session = sessions.find(s => s.index === body.rowIndex)
+      const oldAmount = session?.amount || 0
+      const newAmount = body.amount
+      const sheetRow = body.rowIndex + 2
+
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${body.week_key}!H${sheetRow}:H${sheetRow}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[body.session_type]] }
+      })
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${body.week_key}!L${sheetRow}:L${sheetRow}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[newAmount]] }
+      })
+
+      // Update attendance record in payments sheet
+      const payData = await getSheetData('payments')
+      const [, ...payRows] = payData
+      const attendIndex = payRows.findIndex(r =>
+        r && r[3] === session?.id && r[8] === 'attendance'
+      )
+      if (attendIndex !== -1) {
         await sheets.spreadsheets.values.update({
           spreadsheetId: SPREADSHEET_ID,
-          range: `${body.week_key}!H${sheetRow}:H${sheetRow}`,
+          range: `payments!E${attendIndex + 2}:G${attendIndex + 2}`,
           valueInputOption: 'RAW',
-          requestBody: { values: [[body.session_type]] }
+          requestBody: { values: [[newAmount, 'UNPAID', body.session_type]] }
         })
-        await sheets.spreadsheets.values.update({
-          spreadsheetId: SPREADSHEET_ID,
-          range: `${body.week_key}!L${sheetRow}:L${sheetRow}`,
-          valueInputOption: 'RAW',
-          requestBody: { values: [[body.amount]] }
-        })
-        return Response.json({ success: true })
       }
+
+      // Update outstanding if unpaid + present/cancelled
+      const needsOutstandingUpdate = session?.payment === 'Unpaid' &&
+        (session?.status === 'Present' || session?.status === 'Cancelled')
+
+      if (needsOutstandingUpdate && oldAmount !== newAmount && session?.client_name) {
+        const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://potentialstherapycenter.com/'
+        await fetch(`${baseUrl}/api/credits`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'clear_outstanding', client_name: session.client_name, amount: oldAmount })
+        })
+        await fetch(`${baseUrl}/api/credits`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'add_outstanding', client_name: session.client_name, amount: newAmount })
+        })
+      }
+
+      return Response.json({ success: true })
+    }
 
     if (body.action === 'status') {
       const sessions = await getWeekSheet(weekKey)
@@ -256,7 +295,7 @@ export async function PATCH(request) {
                 range: 'messages',
                 valueInputOption: 'RAW',
                 requestBody: { values: [[
-                    'POL-${Date.now()}',
+                    `POL-${Date.now()}`,
                     body.client_name,
                     psid,
                     'policies',
