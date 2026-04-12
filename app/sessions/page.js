@@ -90,11 +90,11 @@ function getDefaultSessionType(key) {
 function getSessionColor(session) {
   const paid = session.payment === 'Paid'
   const status = session.status
-  if (status === 'Absent') return { bg: '#FCEBEB', border: '#F09595', color: '#791F1F' }
+  if (status === 'Absent') return { bg: '#F4CCCC', border: '#E06666', color: '#7B0000' }
   if (status === 'Pencil') return { bg: '#FFFBE6', border: '#FFD666', color: '#7C5800' }
-  if (status === 'Cancelled' && !paid) return { bg: '#FAEEDA', border: '#EF9F27', color: '#633806' }
-  if (status === 'Present' && !paid) return { bg: '#FAEEDA', border: '#EF9F27', color: '#633806' }
-  if ((status === 'Present' && paid) || (status === 'Cancelled' && paid)) return { bg: '#EAF3DE', border: '#97C459', color: '#27500A' }
+  if (status === 'Cancelled' && !paid) return { bg: '#FCE5CD', border: '#E69138', color: '#7F3F00' }
+  if (status === 'Present' && !paid) return { bg: '#FCE5CD', border: '#E69138', color: '#7F3F00' }
+  if ((status === 'Present' && paid) || (status === 'Cancelled' && paid)) return { bg: '#D9EAD3', border: '#6AA84F', color: '#274E13' }
   return { bg: '#E6F1FB', border: '#B5D4F4', color: '#0C447C' }
 }
 
@@ -868,7 +868,7 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
               const isNewGroup = therapistIndex > 0 && therapistEntry?.time_start !== prevEntry?.time_start
 
               return (
-                <div key={therapist} style={{ flexShrink: 0, width: '150px', borderLeft: isNewGroup ? '3px solid #0f4c81' : '1px solid #e0e0e0' }}>
+                <div key={therapist} style={{ flexShrink: 0, width: '220px', borderLeft: isNewGroup ? '3px solid #0f4c81' : '1px solid #e0e0e0' }}>
                   {/* Header */}
                   <div style={{
                     height: '60px', background: isAbsent ? '#777' : '#0f4c81', color: 'white',
@@ -896,16 +896,22 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
                           position: 'absolute', top: `${i * ROW_HEIGHT}px`,
                           width: '100%', height: `${ROW_HEIGHT}px`,
                           borderBottom: `${i % 4 === 3 ? '2px solid #ccc' : `1px solid ${i % 4 === 0 ? '#e8e8e8' : '#f5f5f5'}`}`,
-                          background: dragOver?.therapist === therapist && dragOver?.slotMins === slotMins ? 'rgba(15,76,129,0.1)' : isAbsent ? '#f5f5f5' : freeSlotMode && free ? 'rgba(225,245,238,0.6)' : freeSlotMode && !free ? '#f8f8f8' : i % 4 === 0 ? '#fafafa' : 'white',
+                          background: dragOver?.therapist === therapist && dragOver?.slotMins === slotMins ? 'rgba(266, 165, 245, 0.3)' : isAbsent ? '#f5f5f5' : freeSlotMode && free ? 'rgba(225,245,238,0.6)' : freeSlotMode && !free ? '#f8f8f8' : i % 4 === 0 ? '#fafafa' : 'white',
                           boxSizing: 'border-box'
                          }} 
                         onClick={() => {
                           if (dragSession) return
-                          if (!free || isAbsent) return
+                          if (isAbsent) return
                           setAddForm({ client_name: '', therapist, day: selectedDay, time_start: formatTime(slotMins), time_end: formatTime(slotMins + 60) })
                           setAddModal(true)
                         }}
                         onDragOver={e => { e.preventDefault(); setDragOver({ therapist, slotMins }) }}
+                        onMouseEnter={e => { 
+                          if (!isAbsent) e.currentTarget.style.background = 'rgba(66, 165, 245, 0.15)' 
+                        }}
+                        onMouseLeave={e => { 
+                          e.currentTarget.style.background = dragOver?.therapist === therapist && dragOver?.slotMins === slotMins ? 'rgba(66, 165, 245, 0.3)' : isAbsent ? '#f5f5f5' : freeSlotMode && free ? 'rgba(225,245,238,0.6)' : freeSlotMode && !free ? '#f8f8f8' : i % 4 === 0 ? '#fafafa' : 'white' 
+                        }}
                         onDrop={async e => {
                           e.preventDefault()
                           if (!dragSession) return
@@ -1034,7 +1040,7 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
                             style={{
                               position: 'absolute',
                               top: `${stackCount > 1 ? stackedTop : topOffset + 1}px`,
-                              left: '2%', width: '96%',
+                              left: '2%', width: '78%',
                               height: `${stackCount > 1 ? stackedHeight : height}px`,
                               background: sc.bg, border: `1px solid ${sc.border}`,
                               borderRadius: '4px', padding: '3px 5px',
