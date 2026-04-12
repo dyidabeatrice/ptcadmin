@@ -100,6 +100,14 @@ function getSessionColor(session) {
 
 const [contextMenu, setContextMenu] = useState(null) // { session, x, y }
 
+const SESSION_TYPE_RATES = {
+  'OT SESSION': 1200, 'OT-IE': 2800, 'OT-FE': 1500, 'SPECIALIZED OT TX': 1700,
+  'PR': 750, 'PR-RUSHED': 1000, 'IE REPORT': 0,
+  'ST SESSION': 1300, 'ST-IE': 2800, 'ST-FE': 1500, 'SPECIALIZED ST TX': 1700,
+  'PT SESSION': 900, 'PT-IE': 2800, 'PT FE': 1500,
+  'SPED SESSION': 900, 'SPED IE': 1500, 'SPED FE': 1500, 'PLAYSCHOOL': 750,
+}                         
+
 export default function SchedulePage() {
   const [weeks, setWeeks] = useState([])
   const [selectedWeek, setSelectedWeek] = useState(null)
@@ -130,6 +138,24 @@ export default function SchedulePage() {
   const [absentConfirm, setAbsentConfirm] = useState(null)
   const [dragSession, setDragSession] = useState(null)
   const [dragOver, setDragOver] = useState(null)
+
+  function getTypesForTherapist(therapistName) {
+    const t = therapistData.find(x => x.name === therapistName)
+    const specialty = t?.specialty || 'OT'
+    const isIntern = t?.is_intern
+    if (isIntern) return [
+      { value: 'OT SESSION', label: 'Intern Session (600)' },
+      { value: 'OT-IE', label: 'Intern Evaluation (800)' },
+      { value: 'Cancellation Fee', label: 'Cancellation Fee' },
+    ]
+    const maps = {
+      OT: ['OT SESSION','OT-IE','OT-FE','SPECIALIZED OT TX','PR','PR-RUSHED','IE REPORT','Cancellation Fee'],
+      ST: ['ST SESSION','ST-IE','ST-FE','SPECIALIZED ST TX','PR','PR-RUSHED','IE REPORT','Cancellation Fee'],
+      PT: ['PT SESSION','PT-IE','PT FE','Cancellation Fee'],
+      SPED: ['SPED SESSION','SPED IE','SPED FE','PLAYSCHOOL','Cancellation Fee'],
+    }
+    return (maps[specialty] || maps.OT).map(v => ({ value: v, label: `${v} ${SESSION_TYPE_RATES[v] !== undefined ? `(₱${SESSION_TYPE_RATES[v].toLocaleString()})` : ''}` }))
+  }
 
   useEffect(() => { initializePage() }, [])
 
@@ -1049,32 +1075,6 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
                         const stackCount = sameStart.length
                         const stackedTop = topOffset + 1 + (stackIndex * (height / stackCount))
                         const stackedHeight = Math.max((height / stackCount) - 2, 14)
-
-                        const SESSION_TYPE_RATES = {
-                          'OT SESSION': 1200, 'OT-IE': 2800, 'OT-FE': 1500, 'SPECIALIZED OT TX': 1700,
-                          'PR': 750, 'PR-RUSHED': 1000, 'IE REPORT': 0,
-                          'ST SESSION': 1300, 'ST-IE': 2800, 'ST-FE': 1500, 'SPECIALIZED ST TX': 1700,
-                          'PT SESSION': 900, 'PT-IE': 2800, 'PT FE': 1500,
-                          'SPED SESSION': 900, 'SPED IE': 1500, 'SPED FE': 1500, 'PLAYSCHOOL': 750,
-                        }
-
-                        function getTypesForTherapist(therapistName) {
-                          const t = therapistData.find(x => x.name === therapistName)
-                          const specialty = t?.specialty || 'OT'
-                          const isIntern = t?.is_intern
-                          if (isIntern) return [
-                            { value: 'OT SESSION', label: 'Intern Session (600)' },
-                            { value: 'OT-IE', label: 'Intern Evaluation (800)' },
-                            { value: 'Cancellation Fee', label: 'Cancellation Fee' },
-                          ]
-                          const maps = {
-                            OT: ['OT SESSION','OT-IE','OT-FE','SPECIALIZED OT TX','PR','PR-RUSHED','IE REPORT','Cancellation Fee'],
-                            ST: ['ST SESSION','ST-IE','ST-FE','SPECIALIZED ST TX','PR','PR-RUSHED','IE REPORT','Cancellation Fee'],
-                            PT: ['PT SESSION','PT-IE','PT FE','Cancellation Fee'],
-                            SPED: ['SPED SESSION','SPED IE','SPED FE','PLAYSCHOOL','Cancellation Fee'],
-                          }
-                          return (maps[specialty] || maps.OT).map(v => ({ value: v, label: `${v} ${SESSION_TYPE_RATES[v] !== undefined ? `(₱${SESSION_TYPE_RATES[v].toLocaleString()})` : ''}` }))
-                        } 
 
                         return (
                           <div key={si}
