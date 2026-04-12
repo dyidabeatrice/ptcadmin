@@ -98,6 +98,8 @@ function getSessionColor(session) {
   return { bg: '#E6F1FB', border: '#B5D4F4', color: '#0C447C' }
 }
 
+const [contextMenu, setContextMenu] = useState(null) // { session, x, y }
+
 export default function SchedulePage() {
   const [weeks, setWeeks] = useState([])
   const [selectedWeek, setSelectedWeek] = useState(null)
@@ -436,10 +438,59 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
         </div>
       )}
 
+      {contextMenu && (
+        <div
+          onClick={() => setContextMenu(null)}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 200 }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: 'fixed', top: contextMenu.y, left: contextMenu.x,
+              background: 'white', borderRadius: '8px', border: '1px solid #e0e0e0',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.12)', zIndex: 201, minWidth: '200px', padding: '6px 0'
+            }}
+          >
+            <div style={{ fontSize: '11px', color: '#999', padding: '4px 12px 6px', borderBottom: '1px solid #f0f0f0', marginBottom: '4px' }}>
+              {contextMenu.session.client_name} — change type
+            </div>
+            {getTypesForTherapist(contextMenu.session.therapist).map(t => (
+              <button key={t.value} onClick={async () => {
+                const isIntern = therapistData.find(x => x.name === contextMenu.session.therapist)?.is_intern
+                const amount = isIntern
+                  ? (t.value === 'OT-IE' ? 800 : 600)
+                  : (SESSION_TYPE_RATES[t.value] ?? 0)
+                const sheets = selectedWeek
+                await fetch('/api/sessions', {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'update_type',
+                    week_key: selectedWeek.key,
+                    rowIndex: contextMenu.session.index,
+                    session_type: t.value,
+                    amount
+                  })
+                })
+                setContextMenu(null)
+                fetchSessions(selectedWeek.key)
+              }} style={{
+                display: 'block', width: '100%', textAlign: 'left',
+                padding: '6px 12px', border: 'none', background: 'none',
+                fontSize: '12px', color: '#333', cursor: 'pointer',
+                fontWeight: contextMenu.session.session_type === t.value ? '600' : '400',
+                background: contextMenu.session.session_type === t.value ? '#f0f0f0' : 'none'
+              }}>{t.label}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h1 style={{ color: '#0f4c81', margin: '0 0 4px' }}>Schedule</h1>
           {selectedWeek && <p style={{ margin: 0, fontSize: '13px', color: '#999' }}>{selectedWeek.label}</p>}
+          <span style={{ fontSize: '11px', color: '#999' }}>Right-click any session to change its type</span>
         </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
           <input placeholder="Search client..." value={search} onChange={e => setSearch(e.target.value)}
@@ -999,6 +1050,32 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
                         const stackedTop = topOffset + 1 + (stackIndex * (height / stackCount))
                         const stackedHeight = Math.max((height / stackCount) - 2, 14)
 
+                        const SESSION_TYPE_RATES = {
+                          'OT SESSION': 1200, 'OT-IE': 2800, 'OT-FE': 1500, 'SPECIALIZED OT TX': 1700,
+                          'PR': 750, 'PR-RUSHED': 1000, 'IE REPORT': 0,
+                          'ST SESSION': 1300, 'ST-IE': 2800, 'ST-FE': 1500, 'SPECIALIZED ST TX': 1700,
+                          'PT SESSION': 900, 'PT-IE': 2800, 'PT FE': 1500,
+                          'SPED SESSION': 900, 'SPED IE': 1500, 'SPED FE': 1500, 'PLAYSCHOOL': 750,
+                        }
+
+                        function getTypesForTherapist(therapistName) {
+                          const t = therapistData.find(x => x.name === therapistName)
+                          const specialty = t?.specialty || 'OT'
+                          const isIntern = t?.is_intern
+                          if (isIntern) return [
+                            { value: 'OT SESSION', label: 'Intern Session (600)' },
+                            { value: 'OT-IE', label: 'Intern Evaluation (800)' },
+                            { value: 'Cancellation Fee', label: 'Cancellation Fee' },
+                          ]
+                          const maps = {
+                            OT: ['OT SESSION','OT-IE','OT-FE','SPECIALIZED OT TX','PR','PR-RUSHED','IE REPORT','Cancellation Fee'],
+                            ST: ['ST SESSION','ST-IE','ST-FE','SPECIALIZED ST TX','PR','PR-RUSHED','IE REPORT','Cancellation Fee'],
+                            PT: ['PT SESSION','PT-IE','PT FE','Cancellation Fee'],
+                            SPED: ['SPED SESSION','SPED IE','SPED FE','PLAYSCHOOL','Cancellation Fee'],
+                          }
+                          return (maps[specialty] || maps.OT).map(v => ({ value: v, label: `${v} ${SESSION_TYPE_RATES[v] !== undefined ? `(₱${SESSION_TYPE_RATES[v].toLocaleString()})` : ''}` }))
+                        } 
+
                         return (
                           <div key={si}
                             draggable
@@ -1036,6 +1113,10 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
                               setDragSession(null)
                               setDragOver(null)
                               fetchSessions(selectedWeek.key)
+                            }}
+                            onContextMenu={e => {
+                              e.preventDefault()
+                              setContextMenu({ session: s, x: e.clientX, y: e.clientY })
                             }}
                             style={{
                               position: 'absolute',

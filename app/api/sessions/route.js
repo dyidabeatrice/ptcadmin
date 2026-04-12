@@ -87,6 +87,23 @@ export async function PATCH(request) {
     const weekKey = body.week_key
     const sheetRow = body.rowIndex + 2
 
+    if (body.action === 'update_type') {
+        const sheetRow = body.rowIndex + 2
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `${body.week_key}!H${sheetRow}:H${sheetRow}`,
+          valueInputOption: 'RAW',
+          requestBody: { values: [[body.session_type]] }
+        })
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `${body.week_key}!L${sheetRow}:L${sheetRow}`,
+          valueInputOption: 'RAW',
+          requestBody: { values: [[body.amount]] }
+        })
+        return Response.json({ success: true })
+      }
+
     if (body.action === 'status') {
       const sessions = await getWeekSheet(weekKey)
       const session = sessions.find(s => s.index === body.rowIndex)
@@ -99,7 +116,7 @@ export async function PATCH(request) {
         range: `${weekKey}!I${sheetRow}`,
         valueInputOption: 'RAW',
         requestBody: { values: [[newStatus]] }
-      })
+      })  
 
       const nowOwes = !isPaid && (newStatus === 'Present' || newStatus === 'Cancelled')
       const wasOwing = !isPaid && (oldStatus === 'Present' || oldStatus === 'Cancelled')
@@ -174,7 +191,7 @@ export async function PATCH(request) {
 
       return Response.json({ success: true })
     }
-
+    
     if (body.action === 'pay') {
       const mop = body.use_credit ? 'Credit' : body.split ? 'Split' : body.mop
       const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://potentialstherapycenter.com/'

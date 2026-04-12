@@ -194,9 +194,9 @@ export async function GET(request) {
         [],
         headers,
         ...payments.map(p => {
-          const total = p.amount || 0
+          const isIE = p.session_type === 'Intern Evaluation'
+          const total = isIE ? 800 : (p.amount || 600)
           return [p.date, p.client_name, p.session_type, p.mop, p.reference, total, 0, total, p.comments]
-
         }),
         [],
         ['TOTALS', '', '', '', '',
