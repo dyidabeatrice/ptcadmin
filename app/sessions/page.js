@@ -163,11 +163,8 @@ export default function SchedulePage() {
       const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
       const monday = getMondayOf(today)
       const currentKey = getWeekKey(monday)
-      const dayOfWeek = today.getDay()
-      const defaultWeek = dayOfWeek === 0
-        ? (weeksJson.data.find(w => w.key !== currentKey) || weeksJson.data[weeksJson.data.length - 1])
-        : (weeksJson.data.find(w => w.key === currentKey) || weeksJson.data[weeksJson.data.length - 1])
-      setSelectedWeek(defaultWeek)
+      const current = weeksJson.data.find(w => w.key === currentKey) || weeksJson.data[weeksJson.data.length - 1]
+      setSelectedWeek(current)
       await fetchSessions(current.key)
     }
     setLoading(false)
