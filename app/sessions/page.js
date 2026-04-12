@@ -148,8 +148,8 @@ export default function SchedulePage() {
       { value: 'Cancellation Fee', label: 'Cancellation Fee' },
     ]
     const maps = {
-      OT: ['OT SESSION','OT-IE','OT-FE','SPECIALIZED OT TX','PR','PR-RUSHED','IE REPORT','Cancellation Fee'],
-      ST: ['ST SESSION','ST-IE','ST-FE','SPECIALIZED ST TX','PR','PR-RUSHED','IE REPORT','Cancellation Fee'],
+      OT: ['OT SESSION','OT-IE','OT-FE','SPECIALIZED OT TX','Cancellation Fee'],
+      ST: ['ST SESSION','ST-IE','ST-FE','SPECIALIZED ST TX','Cancellation Fee'],
       PT: ['PT SESSION','PT-IE','PT FE','Cancellation Fee'],
       SPED: ['SPED SESSION','SPED IE','SPED FE','PLAYSCHOOL','Cancellation Fee'],
     }
