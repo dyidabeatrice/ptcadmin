@@ -143,8 +143,8 @@ export default function SchedulePage() {
     const specialty = t?.specialty || 'OT'
     const isIntern = t?.is_intern
     if (isIntern) return [
-      { value: 'OT SESSION', label: 'Intern Session (600)' },
-      { value: 'OT-IE', label: 'Intern Evaluation (800)' },
+      { value: 'OT SESSION', label: 'Intern Session (₱600)' },
+      { value: 'OT-IE', label: 'Intern Evaluation (₱800)' },
       { value: 'Cancellation Fee', label: 'Cancellation Fee' },
     ]
     const maps = {
