@@ -868,7 +868,7 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
               const isNewGroup = therapistIndex > 0 && therapistEntry?.time_start !== prevEntry?.time_start
 
               return (
-                <div key={therapist} style={{ flexShrink: 0, width: '170px', borderLeft: isNewGroup ? '3px solid #0f4c81' : '1px solid #e0e0e0' }}>
+                <div key={therapist} style={{ flexShrink: 0, width: '155px', borderLeft: isNewGroup ? '3px solid #0f4c81' : '1px solid #e0e0e0' }}>
                   {/* Header */}
                   <div style={{
                     height: '60px', background: isAbsent ? '#777' : '#0f4c81', color: 'white',
@@ -1040,7 +1040,7 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
                             style={{
                               position: 'absolute',
                               top: `${stackCount > 1 ? stackedTop : topOffset + 1}px`,
-                              left: '11%', width: '82%',
+                              left: '8%', width: '85%',
                               height: `${stackCount > 1 ? stackedHeight : height}px`,
                               background: sc.bg, border: `1px solid ${sc.border}`,
                               borderRadius: '4px', padding: '3px 5px',
