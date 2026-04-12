@@ -17,11 +17,14 @@ export default function Dashboard() {
   const [messages, setMessages] = useState<any[]>([])
   const [todaySessions, setTodaySessions] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-
   const [currentTime, setCurrentTime] = useState('')
 
-  const now = new Date()
-  const gmt8Time = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
+  const nowUTC = new Date()
+  const gmt8Time = new Date(nowUTC.getTime() + (8 * 60 * 60 * 1000))
+  const today = gmt8Time
+  const todayDay = today.toLocaleDateString('en-US', { weekday: 'long' })
+  const todayDate = today.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+  const todayStr = today.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
   useEffect(() => {
     async function load() {
@@ -39,7 +42,6 @@ export default function Dashboard() {
       if (mJson.success) setMessages(mJson.data)
 
       if (wJson.success && wJson.data.length > 0) {
-        const today = gmt8Time
         const day = today.getDay()
         const monday = new Date(today)
         monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1))
@@ -52,7 +54,6 @@ export default function Dashboard() {
           const sRes = await fetch(`/api/sessions?week=${currentKey}`)
           const sJson = await sRes.json()
           if (sJson.success) {
-            const todayDay = gmt8Time.toLocaleDateString('en-US', { weekday: 'long' })
             setTodaySessions(sJson.data.filter((s: any) => s.day === todayDay))
           }
         }
@@ -72,11 +73,6 @@ export default function Dashboard() {
     const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
   }, [])
-
-  const today = gmt8Time
-  const todayDay = today.toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'long' })
-  const todayDate = today.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
-  const todayStr = today.toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
   const presentToday = todaySessions.filter(s => s.status === 'Present').length
   const absentToday = todaySessions.filter(s => s.status === 'Absent').length
