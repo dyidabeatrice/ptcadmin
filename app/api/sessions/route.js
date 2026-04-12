@@ -289,7 +289,7 @@ export async function PATCH(request) {
             const [, ...clientRows] = clientData
             const client = clientRows.find(r => r && r[1] === body.client_name)
             const psid = client?.[11] || ''
-            const policiesMessage = "Hello po! Thank you for completing ${body.client_name}'s evaluation at Potentials Therapy Center. Please expect our secretary to send you our clinic policies shortly. 😊"
+            const policiesMessage = `Hello po! Thank you for completing ${body.client_name}'s evaluation at Potentials Therapy Center. Please expect our secretary to send you our clinic policies shortly. 😊`
             await sheets.spreadsheets.values.append({
                 spreadsheetId: SPREADSHEET_ID,
                 range: 'messages',
