@@ -868,7 +868,7 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
               const isNewGroup = therapistIndex > 0 && therapistEntry?.time_start !== prevEntry?.time_start
 
               return (
-                <div key={therapist} style={{ flexShrink: 0, width: '190px', borderLeft: isNewGroup ? '3px solid #0f4c81' : '1px solid #e0e0e0' }}>
+                <div key={therapist} style={{ flexShrink: 0, width: '170px', borderLeft: isNewGroup ? '3px solid #0f4c81' : '1px solid #e0e0e0' }}>
                   {/* Header */}
                   <div style={{
                     height: '60px', background: isAbsent ? '#777' : '#0f4c81', color: 'white',
@@ -1100,9 +1100,9 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
         {[
           { bg: '#FFFBE6', border: '#FFD666', label: 'Pencil' },
           { bg: '#E6F1FB', border: '#B5D4F4', label: 'Confirmed/Unpaid or Paid' },
-          { bg: '#EAF3DE', border: '#97C459', label: 'Present + Paid or Cancelled + Paid' },
-          { bg: '#FCEBEB', border: '#F09595', label: 'Absent' },
-          { bg: '#FAEEDA', border: '#EF9F27', label: 'Cancelled + Unpaid' },
+          { bg: '#D9EAD3', border: '#6AA84F', label: 'Present/Cancelled + Paid' },
+          { bg: '#F4CCCC', border: '#E06666', label: 'Absent' },
+          { bg: '#FCE5CD', border: '#E69138', label: 'Present/Cancelled + Unpaid' },
         ].map(item => (
           <span key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span style={{ width: '10px', height: '10px', background: item.bg, border: `1px solid ${item.border}`, borderRadius: '2px', display: 'inline-block' }}></span>
