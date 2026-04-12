@@ -1040,7 +1040,7 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
                             style={{
                               position: 'absolute',
                               top: `${stackCount > 1 ? stackedTop : topOffset + 1}px`,
-                              left: '11%', width: '78%',
+                              left: '11%', width: '82%',
                               height: `${stackCount > 1 ? stackedHeight : height}px`,
                               background: sc.bg, border: `1px solid ${sc.border}`,
                               borderRadius: '4px', padding: '3px 5px',
