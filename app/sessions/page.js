@@ -320,6 +320,9 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
     })
     setPayModal(null)
     fetchSessions(selectedWeek.key)
+    const cRes = await fetch('/api/clients')
+    const cJson = await cRes.json()
+    if (cJson.success) setClients(cJson.data.filter(c => c.status !== 'inactive'))
     setSaving(false)
   }
 
@@ -327,6 +330,9 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
     if (!confirm(`Reverse payment for ${session.client_name}?`)) return
     await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'unpay', week_key: selectedWeek.key, rowIndex: session.index, session_id: session.id, client_name: session.client_name, amount: session.amount }) })
     fetchSessions(selectedWeek.key)
+    const cRes = await fetch('/api/clients')
+    const cJson = await cRes.json()
+    if (cJson.success) setClients(cJson.data.filter(c => c.status !== 'inactive'))
   }
 
   async function deleteSession(session) {
