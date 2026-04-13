@@ -408,7 +408,7 @@ export async function PATCH(request) {
         requestBody: { values: [[
           Date.now().toString(),
           body.therapist, body.day,
-          '8:00 AM', '6:00 PM',
+          '', '',
           'absent', `Absent ${body.week_key}`
         ]]}
       })

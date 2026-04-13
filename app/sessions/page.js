@@ -1033,8 +1033,8 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
 
                     {/* Blocked slots */}
                     {blockedSlots
-                      .filter(b => b.therapist === therapist && b.day === selectedDay)
-                      .map((b, bi) => {
+                        .filter(b => b.therapist === therapist && b.day === selectedDay && b.type !== 'absent')
+                        .map((b, bi) => {
                         const bStartMins = parseTime(b.time_start)
                         const bEndMins = parseTime(b.time_end)
                         const topOffset = ((bStartMins - gridStartMins) / 15) * ROW_HEIGHT
