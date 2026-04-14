@@ -243,7 +243,7 @@ export default function HelpPage() {
 
           <SubSection title="How to reverse a payment / issue a refund / add to credit via Schedule page">
             <p>If a client has the status of 'Confirmed' or 'Present,' payments may be reversed directly by clicking the green <strong>Paid ✓</strong> button on a session block. You'll be prompted to confirm — the payment will be reversed and the record will be completely <strong>deleted</strong>.</p>
-            <p>If a client wishes to request their payment be credited for a session they paid for and did not attend, mark the client <strong>absent and paid</strong> which will automatically add to their credit which can be used in future sessions.</p>
+            <p>If a client wishes to request their payment be credited for a session they paid for in advance but could not attend, make sure they are marked as <strong>Paid ✓ before marking them Absent</strong> which will automatically add to their credit which can be used in future sessions.</p>
           </SubSection>
 
           <SubSection title="How to send a reminder to a client">
