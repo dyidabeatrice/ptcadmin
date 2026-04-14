@@ -122,7 +122,8 @@ export async function GET(request) {
       monthPayments.filter(p => p.payment_type === 'session').map(p => p.session_id)
     )
     const deduped = monthPayments.filter(p =>
-      !(p.payment_type === 'attendance' && paidSessionIds.has(p.session_id))
+      !(p.payment_type === 'attendance' && paidSessionIds.has(p.session_id)) &&
+      p.payment_type !== 'refund'
     )
 
     const byTherapist = {}

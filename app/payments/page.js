@@ -740,9 +740,12 @@ export default function PaymentsPage() {
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '380px', maxWidth: '90vw' }}>
             <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Process refund</h3>
             <p style={{ margin: '0 0 0.5rem', fontSize: '14px', color: '#333' }}>{refundModal.name}</p>
-            <p style={{ margin: '0 0 1.25rem', fontSize: '13px', color: '#999' }}>
+            <p style={{ margin: '0 0 0.75rem', fontSize: '13px', color: '#999' }}>
               Available credit: ₱{Number(refundModal.credit_balance || 0).toLocaleString()}
             </p>
+            <div style={{ marginBottom: '1rem', padding: '10px 12px', background: '#FAEEDA', border: '1px solid #EF9F27', borderRadius: '8px', fontSize: '12px', color: '#633806' }}>
+              ⚠️ This should only be used to refund <strong>advance/credit payments</strong> not tied to a specific session. If a client paid for a session and wants an immediate refund, use the <strong>✕ button on the Schedule page</strong> to reverse and delete the session instead.
+            </div>
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Refund amount (₱)</label>
               <input type="number" value={refundAmount} onChange={e => setRefundAmount(e.target.value)}

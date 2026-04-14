@@ -276,6 +276,7 @@ export default function HelpPage() {
 
           <SubSection title="Credits tab">
             <p>Shows all clients with available credit balances. Use the <strong>Process refund</strong> button to return credit to a client in cash.</p>
+            <Note type="warning">Refunds here should only be used for <strong>advance/credit payments</strong> that were never tied to a specific session. If a client paid for a session and wants an immediate refund, use the <strong>✕ button on the Schedule page</strong> to reverse and delete the session instead — this keeps records clean.</Note>
           </SubSection>
 
           <SubSection title="Outstanding tab">
