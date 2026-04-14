@@ -11,6 +11,10 @@ function OutstandingTab({ clients, onSettle }) {
   const [payForm, setPayForm] = useState({ mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0 })
   const [clientCredit, setClientCredit] = useState(0)
   const [saving, setSaving] = useState(false)
+  const [selectedDay, setSelectedDay] = useState(() => {
+  const nowPH = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
+  return nowPH.toLocaleDateString('en-US', { weekday: 'long' })
+})
 
   useEffect(() => { fetchOutstanding() }, [])
 
@@ -504,6 +508,26 @@ export default function PaymentsPage() {
     return pDate >= monday && pDate <= sunday
   })
 
+  const dayPayments = selectedDay === 'All'
+    ? weekPayments
+    : weekPayments.filter(p => {
+        const pDate = parsePaymentDate(p.date)
+        if (!pDate) return false
+        return pDate.toLocaleDateString('en-US', { weekday: 'long' }) === selectedDay
+      })
+
+  const dayTotal = dayPayments
+    .filter(p => p.payment_type !== 'refund' && p.payment_type !== 'outstanding')
+    .reduce((sum, p) => sum + Number(p.amount || 0), 0)
+
+  const dayRefunds = dayPayments.filter(p => p.payment_type === 'refund')
+    .reduce((sum, p) => sum + Math.abs(Number(p.amount || 0)), 0)
+
+  const dayMopTotals = MOP_OPTIONS.reduce((acc, mop) => {
+    acc[mop] = dayPayments.filter(p => p.mop === mop && p.payment_type !== 'refund').reduce((sum, p) => sum + Number(p.amount || 0), 0)
+    return acc
+  }, {})
+
   const weekTotal = weekPayments
     .filter(p => p.payment_type !== 'refund' && p.payment_type !== 'outstanding')
     .reduce((sum, p) => sum + Number(p.amount || 0), 0)
@@ -518,7 +542,7 @@ export default function PaymentsPage() {
     return acc
   }, {})
 
-  const filtered = weekPayments.filter(p => {
+  const filtered = dayPayments.filter(p => {
     const matchSearch = !search || p.client_name?.toLowerCase().includes(search.toLowerCase())
     const matchMop = filterMop === 'All' || p.mop === filterMop
     const matchType = filterType === 'All' ||
@@ -732,7 +756,7 @@ export default function PaymentsPage() {
           {/* Summary cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '1.5rem' }}>
             {[
-              { label: "Today's collections", value: `₱${todayTotal.toLocaleString()}`, sub: `${todayPayments.length} payments`, color: '#fcc200' },
+              { label: selectedDay === 'All' ? 'This week collections' : `${selectedDay} collections`, value: `₱${dayTotal.toLocaleString()}`, sub: `${dayPayments.filter(p => p.payment_type !== 'refund').length} payments`, color: '#fcc200' },
               { label: 'This week collected', value: `₱${weekTotal.toLocaleString()}`, sub: `${weekPayments.filter(p => p.payment_type !== 'refund').length} payments`, color: '#1D9E75' },
               { label: 'Credits held', value: `₱${totalCredits.toLocaleString()}`, sub: `${creditClients.length} clients`, color: '#0f4c81' },
               { label: 'Unpaid this week', value: unpaidSessions.length, sub: 'sessions', color: '#E24B4A' },
@@ -762,6 +786,16 @@ export default function PaymentsPage() {
           {/* Transactions tab */}
           {activeTab === 'transactions' && (
             <div>
+              {/* Day filter */}
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                {['All', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
+                  <button key={day} onClick={() => setSelectedDay(day)} style={{
+                    padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '12px',
+                    background: selectedDay === day ? '#0f4c81' : '#f0f0f0',
+                    color: selectedDay === day ? 'white' : '#666', fontWeight: selectedDay === day ? '500' : '400'
+                  }}>{day}</button>
+                ))}
+              </div>
               <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
                 <input placeholder="Search client..." value={search} onChange={e => setSearch(e.target.value)}
                   style={{ padding: '7px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px', width: '180px' }} />
@@ -782,7 +816,7 @@ export default function PaymentsPage() {
               </div>
 
               <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                {Object.entries(mopTotals).map(([mop, total]) => total > 0 && (
+                {Object.entries(dayMopTotals).map(([mop, total]) => total > 0 && (
                   <div key={mop} style={{ padding: '6px 14px', borderRadius: '8px', background: '#E6F1FB', border: '1px solid #B5D4F4' }}>
                     <span style={{ fontSize: '12px', color: '#0C447C', fontWeight: '500' }}>{mop}: </span>
                     <span style={{ fontSize: '12px', color: '#0C447C' }}>₱{total.toLocaleString()}</span>
