@@ -241,12 +241,16 @@ function OutstandingTab({ clients, onSettle }) {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {Object.entries(grouped).sort(([, sessionsA], [, sessionsB]) => {
-            const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
-            const dayA = days.indexOf(sessionsA[0]?.day || '')
-            const dayB = days.indexOf(sessionsB[0]?.day || '')
-            return dayA - dayB
-          }).map(([clientName, sessions]) => {
+        {Object.entries(grouped).sort(([, sessionsA], [, sessionsB]) => {
+          const parseDate = (dateStr) => {
+            if (!dateStr) return new Date(0)
+            const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
+            const parts = dateStr.replace(',', '').split(' ')
+            if (parts.length !== 3) return new Date(0)
+            return new Date(parseInt(parts[2]), months[parts[0]], parseInt(parts[1]))
+          }
+          return parseDate(sessionsA[0]?.date) - parseDate(sessionsB[0]?.date)
+        }).map(([clientName, sessions]) => {
             const client = clients.find(c => c.name === clientName)
             const total = sessions.reduce((sum, s) => sum + Number(s.amount || 0), 0)
             return (
