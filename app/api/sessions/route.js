@@ -383,11 +383,18 @@ export async function PATCH(request) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'absent_credit', client_name: body.client_name, amount: body.amount })
       })
-      await fetch(`${process.env.NEXT_PUBLIC_URL || 'https://potentialstherapycenter.com/'}/api/payments`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: body.session_id })
-      })
+      // Tag payment as absent_credit instead of deleting
+      const payData = await getSheetData('payments')
+      const [, ...payRows] = payData
+      const payIndex = payRows.findIndex(r => r && r[3] === body.session_id)
+      if (payIndex !== -1) {
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `payments!I${payIndex + 2}`,
+          valueInputOption: 'RAW',
+          requestBody: { values: [['absent_credit']] }
+        })
+      }
       return Response.json({ success: true })
     }
 
