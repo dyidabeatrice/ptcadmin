@@ -53,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 { href: '/documents', label: 'Reports' },
                 { href: '/messages', label: 'Messages' },
                 { href: '/therapists', label: 'Therapists' },
+                { href: '/help', label: 'Help' },
               ].map(l => (
                 <Link key={l.href} href={l.href} style={{
                   color: pathname === l.href ? '#fcc200' : 'rgba(255,255,255,0.8)',
