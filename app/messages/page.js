@@ -17,8 +17,42 @@ export default function MessagesPage() {
   const [sending, setSending] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [editText, setEditText] = useState('')
+  const [composeModal, setComposeModal] = useState(false)
+  const [composeForm, setComposeForm] = useState({ client_name: '', type: '', message: '' })
+  const [clients, setClients] = useState([])
+  const [composeSaving, setComposeSaving] = useState(false)
 
-  useEffect(() => { fetchMessages() }, [tab])
+  useEffect(() => { 
+  fetchMessages()
+  fetchClients()
+}, [tab])
+
+async function fetchClients() {
+  const res = await fetch('/api/clients')
+  const json = await res.json()
+  if (json.success) setClients(json.data.filter(c => c.status !== 'inactive'))
+}
+
+  async function composeSend() {
+  if (!composeForm.client_name || !composeForm.message) return alert('Please fill in client and message')
+  setComposeSaving(true)
+  const client = clients.find(c => c.name === composeForm.client_name)
+  await fetch('/api/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'create_draft',
+      client_name: composeForm.client_name,
+      psid: client?.psid || '',
+      type: composeForm.type || 'custom',
+      message: composeForm.message
+    })
+  })
+  setComposeModal(false)
+  setComposeForm({ client_name: '', type: '', message: '' })
+  fetchMessages()
+  setComposeSaving(false)
+}
 
   async function fetchMessages() {
     setLoading(true)
@@ -94,6 +128,10 @@ export default function MessagesPage() {
           <h1 style={{ color: '#0f4c81', margin: '0 0 4px' }}>Messages</h1>
           <p style={{ margin: 0, fontSize: '13px', color: '#999' }}>Review and send messages to clients via Messenger</p>
         </div>
+        <button onClick={() => setComposeModal(true)} style={{
+          background: '#0f4c81', color: 'white', border: 'none',
+          padding: '9px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '500'
+        }}>+ Compose</button>
         {tab === 'archive' && (
           <button onClick={clearOld} style={{
             background: 'white', border: '1px solid #ddd', color: '#999',
@@ -101,6 +139,50 @@ export default function MessagesPage() {
           }}>Clear old messages</button>
         )}
       </div>
+
+      {composeModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '480px', maxWidth: '90vw' }}>
+            <h3 style={{ margin: '0 0 1.25rem', color: '#0f4c81' }}>Compose message</h3>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Client</label>
+              <select value={composeForm.client_name} onChange={e => setComposeForm({ ...composeForm, client_name: e.target.value })}
+                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
+                <option value="">Select client...</option>
+                {clients.sort((a, b) => a.name.localeCompare(b.name)).map(c => (
+                  <option key={c.id} value={c.name}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Type</label>
+              <select value={composeForm.type} onChange={e => setComposeForm({ ...composeForm, type: e.target.value })}
+                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
+                <option value="">Select type...</option>
+                {Object.entries(MESSAGE_TYPES).map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
+                <option value="custom">Custom message</option>
+              </select>
+            </div>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Message</label>
+              <textarea value={composeForm.message} onChange={e => setComposeForm({ ...composeForm, message: e.target.value })}
+                rows={6} placeholder="Type your message..."
+                style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', lineHeight: '1.6', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'sans-serif' }} />
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => { setComposeModal(false); setComposeForm({ client_name: '', type: '', message: '' }) }}
+                style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={composeSend} disabled={composeSaving || !composeForm.client_name || !composeForm.message}
+                style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500',
+                opacity: composeSaving || !composeForm.client_name || !composeForm.message ? 0.5 : 1 }}>
+                {composeSaving ? 'Saving...' : 'Save as draft'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem' }}>
         {['drafts', 'archive'].map(t => (
