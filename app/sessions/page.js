@@ -295,7 +295,9 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
   }
 
   async function confirmAbsent() {
-    await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'absent_paid', week_key: selectedWeek.key, rowIndex: absentConfirm.index, client_name: absentConfirm.client_name, amount: absentConfirm.amount }) })
+    await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ action: 'absent_paid', week_key: selectedWeek.key, rowIndex: absentConfirm.index, client_name: absentConfirm.client_name, amount: absentConfirm.amount, session_id: absentConfirm.id }) 
+    })
     setAbsentConfirm(null)
     fetchSessions(selectedWeek.key)
   }
