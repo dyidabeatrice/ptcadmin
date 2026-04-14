@@ -521,8 +521,11 @@ export default function PaymentsPage() {
       })
 
   const dayTotal = dayPayments
-    .filter(p => p.payment_type !== 'refund' && p.payment_type !== 'outstanding')
-    .reduce((sum, p) => sum + Number(p.amount || 0), 0)
+  .filter(p => p.payment_type !== 'refund' && p.payment_type !== 'outstanding')
+  .reduce((sum, p) => sum + Number(p.amount || 0), 0)
+  - dayPayments
+    .filter(p => p.payment_type === 'refund')
+    .reduce((sum, p) => sum + Math.abs(Number(p.amount || 0)), 0)
 
   const dayRefunds = dayPayments.filter(p => p.payment_type === 'refund')
     .reduce((sum, p) => sum + Math.abs(Number(p.amount || 0)), 0)
