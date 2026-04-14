@@ -335,21 +335,28 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
     if (cJson.success) setClients(cJson.data.filter(c => c.status !== 'inactive'))
   }
 
-  async function deleteSession(session) {
-  if (!confirm(`Delete session for ${session.client_name}?`)) return
-  
-    // If paid, also remove payment record
-    if (session.payment === 'Paid') {
-      await fetch('/api/payments', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: session.id })
-      })
-    }
-    
-    await fetch('/api/sessions', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rowIndex: session.index, week_key: selectedWeek.key }) })
-    fetchSessions(selectedWeek.key)
+async function deleteSession(session) {
+  if (session.payment === 'Paid') {
+    if (!confirm(`This session for ${session.client_name} has already been paid. Reverse the payment and then delete?`)) return
+    // Reverse payment first
+    await fetch('/api/sessions', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'unpay', week_key: selectedWeek.key, rowIndex: session.index, session_id: session.id, client_name: session.client_name, amount: session.amount })
+    })
+  } else {
+    if (!confirm(`Delete session for ${session.client_name}?`)) return
+    // Clean up attendance/cancellation records
+    await fetch('/api/payments', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: session.id })
+    })
   }
+
+  await fetch('/api/sessions', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rowIndex: session.index, week_key: selectedWeek.key }) })
+  fetchSessions(selectedWeek.key)
+}
 
   async function confirmReschedule() {
     if (!rescheduleForm.day || !rescheduleForm.therapist || !rescheduleForm.time_start || !rescheduleForm.time_end) return alert('Please fill in all fields')

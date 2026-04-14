@@ -138,11 +138,10 @@ export async function DELETE(request) {
     const [, ...rows] = data
     const sheetId = await getSheetId('payments')
 
-    // Find ALL rows related to this session (session, attendance, cancellation)
     const toDelete = rows
       .map((r, i) => ({ r, i }))
       .filter(({ r }) => r && (r[3] === session_id || r[3]?.includes(session_id)))
-      .sort((a, b) => b.i - a.i) // delete from bottom up
+      .sort((a, b) => b.i - a.i)
 
     for (const { i } of toDelete) {
       await sheets.spreadsheets.batchUpdate({
