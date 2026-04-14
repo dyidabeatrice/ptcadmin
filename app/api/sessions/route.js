@@ -392,7 +392,7 @@ export async function PATCH(request) {
           spreadsheetId: SPREADSHEET_ID,
           range: `payments!I${payIndex + 2}`,
           valueInputOption: 'RAW',
-          requestBody: { values: [['absent_credit']] }
+          requestBody: { values: [['credit_transfer']] }
         })
       }
       return Response.json({ success: true })

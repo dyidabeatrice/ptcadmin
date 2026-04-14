@@ -125,7 +125,7 @@ export async function GET(request) {
     const deduped = monthPayments.filter(p =>
       !(p.payment_type === 'attendance' && paidSessionIds.has(p.session_id)) &&
       p.payment_type !== 'refund' &&
-      p.payment_type !== 'absent_credit'  // ← add this
+      p.payment_type !== 'credit_transfer'
     )
 
     const byTherapist = {}
