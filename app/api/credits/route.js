@@ -67,7 +67,7 @@ export async function POST(request) {
   try {
     const body = await request.json()
     const sheets = getGoogleSheets()
-    const today = new Date().toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+    const today = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
 
     if (body.action === 'add_credit') {
       const result = await updateClientBalances(body.client_name, body.amount, 0)
