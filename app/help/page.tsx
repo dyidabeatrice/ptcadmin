@@ -215,15 +215,15 @@ export default function HelpPage() {
           <SubSection title="How to change a session type (right-click)">
             <Step num={1}><strong>Right-click</strong> on any session block.</Step>
             <Step num={2}>A menu appears with session types for that therapist's specialty.</Step>
-            <Step num={3}>Select the correct type (e.g. OT-IE, ST SESSION, PLAYSCHOOL).</Step>
+            <Step num={3}>Select the correct type (e.g. OT-IE, SPECIALIZED ST TX, PLAYSCHOOL, etc.).</Step>
             <p>The session type and amount update automatically. If the session is unpaid and marked Present or Cancelled, the <strong>outstanding balance also updates</strong> to match the new amount.</p>
-            <Note type="tip">Look for the hint at the bottom of the schedule page as a reminder!</Note>
+            <Note type="tip">Look for the hint under the page name and week dates of the schedule page as a reminder!</Note>
           </SubSection>
 
           <SubSection title="How to move a session">
             <p>Two ways to move a session:</p>
-            <p><strong>Same day, different time:</strong> Drag the session block up or down the grid to the new time slot. The column highlights green when you're hovering over a valid slot.</p>
-            <p><strong>Different day or therapist:</strong> Click the <strong>Move</strong> button on the session block → select new day, therapist, and time → confirm.</p>
+            <p><strong>Same day, different time (possibly same or different therapist):</strong> Drag the session block up or down the grid to the new time slot. The column highlights green when you're hovering over a valid slot.</p>
+            <p><strong>Different day and/or therapist:</strong> Click the <strong>Move</strong> button on the session block → select new day, therapist, and time → confirm.</p>
           </SubSection>
 
           <SubSection title="How to add a one-off or make-up session">
@@ -241,8 +241,9 @@ export default function HelpPage() {
             <Note type="tip">If the client has a credit balance, you'll see options to use full credit, split payment, or pay normally.</Note>
           </SubSection>
 
-          <SubSection title="How to reverse a payment">
-            <p>Click the green <strong>Paid ✓</strong> button on a session block. You'll be prompted to confirm — the payment will be reversed and the amount will be moved to the client's <strong>credit balance</strong>, which can be applied to their next session.</p>
+          <SubSection title="How to reverse a payment / issue a refund / add to credit via Schedule page">
+            <p>If a client has the status of 'Confirmed' or 'Present,' payments may be reversed directly by clicking the green <strong>Paid ✓</strong> button on a session block. You'll be prompted to confirm — the payment will be reversed and the record will be completely <strong>deleted</strong>.</p>
+            <p>If a client wishes to request their payment be credited for a session they paid for and did not attend, mark the client <strong>absent and paid</strong> which will automatically add to their credit which can be used in future sessions.</p>
           </SubSection>
 
           <SubSection title="How to send a reminder to a client">
@@ -275,8 +276,8 @@ export default function HelpPage() {
           </SubSection>
 
           <SubSection title="Credits tab">
-            <p>Shows all clients with available credit balances. Use the <strong>Process refund</strong> button to return credit to a client in cash.</p>
-            <Note type="warning">Refunds here should only be used for <strong>advance/credit payments</strong> that were never tied to a specific session. If a client paid for a session and wants an immediate refund, use the <strong>✕ button on the Schedule page</strong> to reverse and delete the session instead — this keeps records clean.</Note>
+            <p>Shows all clients with available credit balances. Use the <strong>Process refund</strong> button to return credit to a client.</p>
+            <Note type="warning">Refunds here are advised to be only used for <strong>advance/credit payments</strong> that were never tied to a specific session. If a client paid for a session and wants an immediate refund, use the <strong>✕ button on the Schedule page</strong> to reverse and delete the session instead — this keeps records clean.</Note>
           </SubSection>
 
           <SubSection title="Outstanding tab">

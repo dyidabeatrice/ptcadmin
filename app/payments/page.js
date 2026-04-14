@@ -501,7 +501,7 @@ export default function PaymentsPage() {
   const weekPayments = payments.filter(p => {
     if (!selectedWeek) return false
     if (!p.date) return false
-    if (['attendance', 'cancellation'].includes(p.payment_type)) return false  // ← add this
+    if (['attendance', 'cancellation'].includes(p.payment_type)) return false
     const parts = selectedWeek.key.replace('week_', '').split('_')
     const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
     monday.setDate(monday.getDate() - 1)
