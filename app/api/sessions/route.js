@@ -278,7 +278,9 @@ export async function PATCH(request) {
           body.session_type || 'Regular',
           payDate,
           'session',
-          body.reference || ''
+          body.reference || '',
+          '', // col K — verified_by (empty, set later)
+          body.custom_notes || '' // col L — comments/notes
         ]]}
       })
 

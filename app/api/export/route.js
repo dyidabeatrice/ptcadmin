@@ -98,7 +98,7 @@ export async function GET(request) {
       session_id: row[3], amount: parseFloat(row[4] || 0),
       mop: row[5] || '', session_type: row[6] || '',
       date: row[7] || '', payment_type: row[8] || 'session',
-      reference: row[9] || '', comments: row[10] || ''
+      reference: row[9] || '', comments: row[11] || ''
     }))
 
     // Create workbook
