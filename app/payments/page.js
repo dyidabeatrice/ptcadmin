@@ -11,10 +11,6 @@ function OutstandingTab({ clients, onSettle }) {
   const [payForm, setPayForm] = useState({ mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0 })
   const [clientCredit, setClientCredit] = useState(0)
   const [saving, setSaving] = useState(false)
-  const [selectedDay, setSelectedDay] = useState(() => {
-  const nowPH = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
-  return nowPH.toLocaleDateString('en-US', { weekday: 'long' })
-})
 
   useEffect(() => { fetchOutstanding() }, [])
 
@@ -326,6 +322,14 @@ export default function PaymentsPage() {
   const [refundModal, setRefundModal] = useState(null)
   const [refundAmount, setRefundAmount] = useState('')
   const [saving, setSaving] = useState(false)
+  const [selectedDay, setSelectedDay] = useState(() => {
+    try {
+      const nowPH = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
+      return nowPH.toLocaleDateString('en-US', { weekday: 'long' })
+    } catch {
+      return 'All'
+    }
+  })
   const [exportMonth, setExportMonth] = useState(() => {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
