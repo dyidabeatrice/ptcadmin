@@ -277,7 +277,8 @@ export async function PATCH(request) {
           body.amount, mop,
           body.session_type || 'Regular',
           payDate,
-          'session'
+          'session',
+          body.reference || ''
         ]]}
       })
 

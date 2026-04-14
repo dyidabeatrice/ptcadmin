@@ -247,7 +247,7 @@ export default function HelpPage() {
 
           <SubSection title="How to send a reminder to a client">
             <Step num={1}>Click the <strong>Remind</strong> button on a session block.</Step>
-            <Step num={2}>Choose the type of message: IE Appointment Reminder, Outstanding Balance, or Make-up Request.</Step>
+            <Step num={2}>Choose the type of message: IE Appointment Reminder, Outstanding Balance, or Re-schedule / Make-up Request.</Step>
             <Step num={3}>A draft is automatically created on the <strong>Messages page</strong>.</Step>
             <Step num={4}>Go to Messages to review, edit, and send.</Step>
           </SubSection>
@@ -271,7 +271,7 @@ export default function HelpPage() {
           </SubSection>
 
           <SubSection title="Transactions tab">
-            <p>Shows all payments recorded for the selected week. Filter by type (Session, Advance, Refund, Document) or by mode of payment. You can also <strong>update the session type</strong> directly from the dropdown in the table, and <strong>verify</strong> each payment by selecting a verifier.</p>
+            <p>Shows all payments recorded for the selected week. Filter by day, type (Session, Advance, Refund, Document), or by mode of payment. You can also <strong>update the session type</strong> directly from the dropdown in the table, and <strong>verify</strong> each payment by selecting a verifier.</p>
           </SubSection>
 
           <SubSection title="Credits tab">
