@@ -917,11 +917,12 @@ async function deleteSession(session) {
                   </div>
                   <div style={{ fontSize: '12px', color: sc.color, opacity: 0.8 }}>{s.therapist} · {s.day} {s.time_start}–{s.time_end}</div>
                   </div>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.6)', color: sc.color }}>{s.status}</span>
-                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(255,255,255,0.6)', color: sc.color }}>{s.payment}</span>
+                  <button 
+                    onClick={() => deleteSession(s)}
+                    disabled={s.payment === 'Paid'}
+                    title={s.payment === 'Paid' ? 'Reverse payment first before deleting' : 'Delete session'}
+                    style={{ fontSize: '8px', padding: '1px 3px', borderRadius: '3px', border: '1px solid #fcc', background: s.payment === 'Paid' ? '#f5f5f5' : '#fff5f5', color: s.payment === 'Paid' ? '#ccc' : '#c00', cursor: s.payment === 'Paid' ? 'not-allowed' : 'pointer' }}>✕</button>
                   </div>
-                </div>
               )
             })}
           </div>
@@ -1179,8 +1180,11 @@ async function deleteSession(session) {
                                 <button onClick={() => openPayModal(s)}
                                   style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#FCEBEB', color: '#791F1F', cursor: 'pointer', fontWeight: '500' }}>Unpaid</button>
                               ) : (
-                                <button onClick={() => reversePayment(s)}
-                                  style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#EAF3DE', color: '#27500A', cursor: 'pointer' }}>Paid ✓</button>
+                                <button 
+                                  onClick={() => s.status === 'Absent' ? null : reversePayment(s)}
+                                  disabled={s.status === 'Absent'}
+                                  title={s.status === 'Absent' ? 'Payment moved to credit — cannot reverse' : 'Reverse payment'}
+                                  style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#EAF3DE', color: s.status === 'Absent' ? '#aaa' : '#27500A', cursor: s.status === 'Absent' ? 'not-allowed' : 'pointer' }}>Paid ✓</button>
                               )}
                               <button onClick={() => { setRescheduleModal(s); setRescheduleForm({ day: '', therapist: '', time_start: '', time_end: '' }) }}
                                 style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: '1px solid #ddd', background: 'white', color: '#666', cursor: 'pointer' }}>Move</button>
