@@ -136,15 +136,23 @@ export async function DELETE(request) {
     const sheets = getGoogleSheets()
     const data = await getSheetData('payments')
     const [, ...rows] = data
-    const rowIndex = rows.findIndex(r => r && r[3] === session_id)
-    if (rowIndex === -1) return Response.json({ success: false, error: 'Payment not found' })
     const sheetId = await getSheetId('payments')
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: SPREADSHEET_ID,
-      requestBody: { requests: [{ deleteDimension: {
-        range: { sheetId, dimension: 'ROWS', startIndex: rowIndex + 1, endIndex: rowIndex + 2 }
-      }}]}
-    })
+
+    // Find ALL rows related to this session (session, attendance, cancellation)
+    const toDelete = rows
+      .map((r, i) => ({ r, i }))
+      .filter(({ r }) => r && (r[3] === session_id || r[3]?.includes(session_id)))
+      .sort((a, b) => b.i - a.i) // delete from bottom up
+
+    for (const { i } of toDelete) {
+      await sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        requestBody: { requests: [{ deleteDimension: {
+          range: { sheetId, dimension: 'ROWS', startIndex: i + 1, endIndex: i + 2 }
+        }}]}
+      })
+    }
+
     return Response.json({ success: true })
   } catch (error) {
     return Response.json({ success: false, error: error.message })

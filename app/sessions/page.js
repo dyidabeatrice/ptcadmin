@@ -336,7 +336,17 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
   }
 
   async function deleteSession(session) {
-    if (!confirm(`Delete session for ${session.client_name}?`)) return
+  if (!confirm(`Delete session for ${session.client_name}?`)) return
+  
+    // If paid, also remove payment record
+    if (session.payment === 'Paid') {
+      await fetch('/api/payments', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: session.id })
+      })
+    }
+    
     await fetch('/api/sessions', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rowIndex: session.index, week_key: selectedWeek.key }) })
     fetchSessions(selectedWeek.key)
   }
