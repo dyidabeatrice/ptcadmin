@@ -533,8 +533,11 @@ export default function PaymentsPage() {
   }, {})
 
   const weekTotal = weekPayments
-    .filter(p => p.payment_type !== 'refund' && p.payment_type !== 'outstanding')
-    .reduce((sum, p) => sum + Number(p.amount || 0), 0)
+  .filter(p => p.payment_type !== 'refund' && p.payment_type !== 'outstanding')
+  .reduce((sum, p) => sum + Number(p.amount || 0), 0)
+  - weekPayments
+    .filter(p => p.payment_type === 'refund')
+    .reduce((sum, p) => sum + Math.abs(Number(p.amount || 0)), 0)
 
   const creditClients = clients.filter(c => c.credit_balance > 0)
   const totalCredits = creditClients.reduce((sum, c) => sum + Number(c.credit_balance || 0), 0)
