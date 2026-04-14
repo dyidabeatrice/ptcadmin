@@ -235,57 +235,69 @@ function OutstandingTab({ clients, onSettle }) {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading outstanding sessions...</div>
-      ) : Object.keys(grouped).length === 0 ? (
+      ) : unpaidSessions.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#1D9E75', background: '#EAF3DE', borderRadius: '12px' }}>
           All caught up — no outstanding balances!
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {Object.entries(grouped).sort(([, sessionsA], [, sessionsB]) => {
-          const parseDate = (dateStr) => {
-            if (!dateStr) return new Date(0)
-            const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
-            const parts = dateStr.replace(',', '').split(' ')
-            if (parts.length !== 3) return new Date(0)
-            return new Date(parseInt(parts[2]), months[parts[0]], parseInt(parts[1]))
-          }
-          return parseDate(sessionsA[0]?.date) - parseDate(sessionsB[0]?.date)
-        }).map(([clientName, sessions]) => {
-            const client = clients.find(c => c.name === clientName)
-            const total = sessions.reduce((sum, s) => sum + Number(s.amount || 0), 0)
-            return (
-              <div key={clientName} style={{ background: 'white', borderRadius: '12px', border: '1px solid #F09595', overflow: 'hidden' }}>
-                <div style={{ background: '#FFF5F5', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <span style={{ fontWeight: '500', color: '#791F1F', fontSize: '14px' }}>{clientName}</span>
-                    {client?.credit_balance > 0 && (
-                      <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#EAF3DE', color: '#27500A' }}>
-                        💳 ₱{Number(client.credit_balance).toLocaleString()} credit available
-                      </span>
-                    )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {(() => {
+            // Group by date
+            const byDate = {}
+            unpaidSessions.forEach(s => {
+              const key = s.date || 'No date'
+              if (!byDate[key]) byDate[key] = []
+              byDate[key].push(s)
+            })
+
+            // Sort dates
+            const parseDate = (dateStr) => {
+              if (!dateStr) return new Date(0)
+              const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
+              const parts = dateStr.replace(',', '').split(' ')
+              if (parts.length !== 3) return new Date(0)
+              return new Date(parseInt(parts[2]), months[parts[0]], parseInt(parts[1]))
+            }
+
+            return Object.entries(byDate)
+              .sort(([dateA], [dateB]) => parseDate(dateA) - parseDate(dateB))
+              .map(([date, dateSessions]) => (
+                <div key={date}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f4c81', marginBottom: '8px', padding: '4px 0', borderBottom: '2px solid #E6F1FB' }}>
+                    {date}
                   </div>
-                  <span style={{ fontWeight: '700', color: '#791F1F', fontSize: '16px' }}>₱{total.toLocaleString()} due</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {dateSessions.sort((a, b) => a.client_name.localeCompare(b.client_name)).map((s, i) => {
+                      const client = clients.find(c => c.name === s.client_name)
+                      return (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', background: 'white', border: '1px solid #F09595' }}>
+                          <div>
+                            <div style={{ fontSize: '13px', fontWeight: '500', color: '#791F1F' }}>
+                              {s.client_name}
+                              {client?.credit_balance > 0 && (
+                                <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 6px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A' }}>
+                                  💳 ₱{Number(client.credit_balance).toLocaleString()} credit
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}>
+                              {s.time_start}–{s.time_end} · {s.therapist} · {s.status} · {s.session_type || 'Regular'}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                            <span style={{ fontSize: '13px', fontWeight: '500', color: '#E24B4A' }}>₱{Number(s.amount || 0).toLocaleString()}</span>
+                            <button onClick={() => openSettle(s)} style={{
+                              padding: '5px 12px', borderRadius: '6px', border: 'none',
+                              background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '500'
+                            }}>Settle</button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
-                <div style={{ padding: '8px' }}>
-                  {sessions.map((s, i) => (
-                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', borderRadius: '6px', marginBottom: '4px', background: '#f8f9fa', border: '1px solid #e0e0e0' }}>
-                      <div>
-                        <div style={{ fontSize: '13px', color: '#333' }}>{s.date} · {s.time_start}–{s.time_end}</div>
-                        <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>{s.therapist} · {s.status} · {s.session_type || 'Regular'}</div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <span style={{ fontSize: '13px', fontWeight: '500', color: '#E24B4A' }}>₱{Number(s.amount || 0).toLocaleString()}</span>
-                        <button onClick={() => openSettle(s)} style={{
-                          padding: '5px 12px', borderRadius: '6px', border: 'none',
-                          background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '500'
-                        }}>Settle</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )
-          })}
+              ))
+          })()}
         </div>
       )}
     </div>
