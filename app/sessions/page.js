@@ -1186,8 +1186,11 @@ async function deleteSession(session) {
                                 style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: '1px solid #ddd', background: 'white', color: '#666', cursor: 'pointer' }}>Move</button>
                               <button onClick={() => setRemindModal(s)}
                                 style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: '1px solid #B5D4F4', background: '#E6F1FB', color: '#0C447C', cursor: 'pointer' }}>Remind</button>
-                              <button onClick={() => deleteSession(s)}
-                                style={{ fontSize: '8px', padding: '1px 3px', borderRadius: '3px', border: '1px solid #fcc', background: '#fff5f5', color: '#c00', cursor: 'pointer' }}>✕</button>
+                              <button 
+                                onClick={() => deleteSession(s)}
+                                disabled={s.payment === 'Paid'}
+                                title={s.payment === 'Paid' ? 'Reverse payment first before deleting' : 'Delete session'}
+                                style={{ fontSize: '8px', padding: '1px 3px', borderRadius: '3px', border: '1px solid #fcc', background: s.payment === 'Paid' ? '#f5f5f5' : '#fff5f5', color: s.payment === 'Paid' ? '#ccc' : '#c00', cursor: s.payment === 'Paid' ? 'not-allowed' : 'pointer' }}>✕</button>
                             </div>
                           </div>
                         )
