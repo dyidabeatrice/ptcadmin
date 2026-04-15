@@ -194,8 +194,8 @@ export default function TherapistDashboard() {
                     <div key={i} style={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                       padding: '10px 14px', borderRadius: '8px',
-                      background: s.status === 'Cancelled' ? '#f8f8f8' : '#E6F1FB',
-                      border: `1px solid ${s.status === 'Cancelled' ? '#e0e0e0' : '#B5D4F4'}`,
+                      background: s.status === 'Absent' ? '#F4CCCC' : s.status === 'Cancelled' ? '#f8f8f8' : s.status === 'Pencil' ? '#FFFBE6' : s.status === 'Present' ? '#D9EAD3' : '#E6F1FB',
+                      border: `1px solid ${s.status === 'Absent' ? '#E06666' : s.status === 'Cancelled' ? '#e0e0e0' : s.status === 'Pencil' ? '#FFD666' : s.status === 'Present' ? '#6AA84F' : '#B5D4F4'}`,
                       opacity: s.status === 'Cancelled' ? 0.6 : 1
                     }}>
                       <div>
