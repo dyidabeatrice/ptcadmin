@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import PaymentScreenshotReader from '@/components/PaymentScreenshotReader'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
@@ -681,8 +682,7 @@ async function deleteSession(session) {
                 )}
               </div>
             )}
-            import PaymentScreenshotReader from '@/components/PaymentScreenshotReader'
-
+            
             // Inside payModal, just before the MOP buttons:
             {!payForm.use_credit && (
               <div style={{ marginBottom: '1.25rem' }}>
