@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect } from 'react'
-import PaymentScreenshotReader from '@/components/PaymentScreenshotReader'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
