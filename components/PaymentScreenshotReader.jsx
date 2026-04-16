@@ -15,8 +15,11 @@ export default function PaymentScreenshotReader({ onExtract }) {
       const Tesseract = (await import('tesseract.js')).default
       const { data: { text } } = await Tesseract.recognize(file, 'eng', { logger: () => {} })
 
+      console.log('OCR text:', text) // for debugging
+
       // Extract amount
-      const amountMatch = text.match(/PHP\s*([\d,]+\.?\d*)/i)
+      const amountMatch = text.match(/PHP\s*([\d,]+\.?\d*)/i) ||
+                          text.match(/([\d,]+\.00)\s*$/m)
       const amount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : null
 
       // Extract reference
@@ -24,6 +27,8 @@ export default function PaymentScreenshotReader({ onExtract }) {
         /Reference\s*[Nn]o\.?\s*\n?\s*([A-Z0-9\-]+)/,
         /Reference\s*[Nn]umber\s*\n?\s*([A-Z0-9\-]+)/,
         /Ref\s*[Nn]o\.?\s*:?\s*([A-Z0-9\-]+)/,
+        /^(UB[0-9]+)/m,
+        /^(PC-[A-Z0-9\-]+)/m,
       ]
       let reference = null
       for (const pattern of refPatterns) {
@@ -33,8 +38,11 @@ export default function PaymentScreenshotReader({ onExtract }) {
 
       // Detect bank
       let mop = null
-      if (text.match(/UnionBank|Union Bank|0023\s*1000\s*9113/i)) mop = 'Union Bank'
-      else if (text.match(/BDO|012220028786|PC-NDBMOB|NDBMOB/i)) mop = 'BDO'
+      if (text.match(/UnionBank|Union Bank|0023\s*1000\s*9113|UB[0-9]{6}|Thank you for using/i)) {
+        mop = 'Union Bank'
+      } else if (text.match(/BDO|012220028786|PC-NDBMOB|NDBMOB|Sent!/i)) {
+        mop = 'BDO'
+      }
 
       const confidence = amount && reference && mop ? 'high' : amount && reference ? 'medium' : 'low'
 
