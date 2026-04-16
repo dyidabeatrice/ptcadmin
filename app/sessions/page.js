@@ -476,7 +476,7 @@ async function deleteSession(session) {
   const therapistKey = payModal ? getTherapistKey(payModal.therapist, therapistData) : 'OT'
   const sessionTypes = SESSION_TYPES[therapistKey] || SESSION_TYPES.OT
   const isCustomAmount = ['SPECIALIZED OT TX', 'SPECIALIZED ST TX', 'Cancellation Fee', 'Custom Amount', 'IE REPORT'].includes(payForm.session_type)
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long' })
+  const today = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'long' })
   const searchedSessions = search ? sessions.filter(s => s.client_name?.toLowerCase().includes(search.toLowerCase())) : null
 
   return (
