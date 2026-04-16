@@ -23,7 +23,7 @@ export default function Dashboard() {
   const gmt8Time = new Date(nowUTC.getTime() + (8 * 60 * 60 * 1000))
   const today = gmt8Time
   const todayDay = today.toLocaleDateString('en-US', { weekday: 'long' })
-  const todayDate = today.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+  const todayDate = today.toLocaleDateString('en-US', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
   const todayStr = today.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
   useEffect(() => {
@@ -77,7 +77,10 @@ export default function Dashboard() {
   const presentToday = todaySessions.filter(s => s.status === 'Present').length
   const absentToday = todaySessions.filter(s => s.status === 'Absent').length
   const unpaidToday = todaySessions.filter(s => s.payment === 'Unpaid' && s.status !== 'Cancelled')
-  const todayPayments = payments.filter(p => p.date === todayDate && p.payment_type !== 'refund')
+  const todayPayments = payments.filter(p => 
+    p.date === todayDate && 
+    !['refund', 'attendance', 'cancellation', 'credit_transfer'].includes(p.payment_type)
+  )
   const todayTotal = todayPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0)
   const pendingMessages = messages.filter((m: any) => !m.sent)
   const therapistsToday = [...new Set(todaySessions
