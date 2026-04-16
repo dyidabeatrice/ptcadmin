@@ -12,26 +12,41 @@ export default function PaymentScreenshotReader({ onExtract }) {
     setError('')
     setLoading(true)
     try {
-      const base64 = await new Promise((res, rej) => {
-        const reader = new FileReader()
-        reader.onload = () => res(reader.result.split(',')[1])
-        reader.onerror = rej
-        reader.readAsDataURL(file)
-      })
-      const response = await fetch('/api/extract-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64, mediaType: file.type })
-      })
-      const json = await response.json()
-      if (!json.success) throw new Error(json.error)
-      if (json.data.confidence === 'low') {
+      const Tesseract = (await import('tesseract.js')).default
+      const { data: { text } } = await Tesseract.recognize(file, 'eng', { logger: () => {} })
+
+      // Extract amount
+      const amountMatch = text.match(/PHP\s*([\d,]+\.?\d*)/i)
+      const amount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : null
+
+      // Extract reference
+      const refPatterns = [
+        /Reference\s*[Nn]o\.?\s*\n?\s*([A-Z0-9\-]+)/,
+        /Reference\s*[Nn]umber\s*\n?\s*([A-Z0-9\-]+)/,
+        /Ref\s*[Nn]o\.?\s*:?\s*([A-Z0-9\-]+)/,
+      ]
+      let reference = null
+      for (const pattern of refPatterns) {
+        const match = text.match(pattern)
+        if (match) { reference = match[1].trim(); break }
+      }
+
+      // Detect bank
+      let mop = null
+      if (text.match(/UnionBank|Union Bank|0023\s*1000\s*9113/i)) mop = 'Union Bank'
+      else if (text.match(/BDO|012220028786|PC-NDBMOB|NDBMOB/i)) mop = 'BDO'
+
+      const confidence = amount && reference && mop ? 'high' : amount && reference ? 'medium' : 'low'
+
+      if (confidence === 'low') {
         setError('Could not read image clearly — please fill in manually.')
         return
       }
-      onExtract(json.data)
+
+      onExtract({ amount, reference, mop })
     } catch (err) {
       setError('Could not read image — please fill in manually.')
+      console.error(err)
     } finally {
       setLoading(false)
       if (fileRef.current) fileRef.current.value = ''
