@@ -15,8 +15,6 @@ export default function PaymentScreenshotReader({ onExtract }) {
       const Tesseract = (await import('tesseract.js')).default
       const { data: { text } } = await Tesseract.recognize(file, 'eng', { logger: () => {} })
 
-      console.log('OCR text:', text) // for debugging
-
       // Extract amount
       const amountMatch = text.match(/PHP\s*([\d,]+\.?\d*)/i) ||
                           text.match(/([\d,]+\.00)\s*$/m)
@@ -38,17 +36,22 @@ export default function PaymentScreenshotReader({ onExtract }) {
 
       // Detect bank
       let mop = null
-      if (text.match(/UnionBank|Union Bank|0023\s*1000\s*9113|UB[0-9]{6}|Thank you for using/i)) {
+      if (text.match(/UnionBank|Union Bank|00231000\s*9113|0023\s*1000\s*9113/i)) {
         mop = 'Union Bank'
       } else if (text.match(/BDO|012220028786|PC-NDBMOB|NDBMOB|Sent!/i)) {
         mop = 'BDO'
       }
 
-      const confidence = amount && reference && mop ? 'high' : amount && reference ? 'medium' : 'low'
+      const confidence = amount && reference && mop ? 'high' :
+                         amount && mop ? 'medium' : 'low'
 
       if (confidence === 'low') {
         setError('Could not read image clearly — please fill in manually.')
         return
+      }
+
+      if (confidence === 'medium') {
+        setError('Partially read — please verify and fill in any missing fields.')
       }
 
       onExtract({ amount, reference, mop })
@@ -74,8 +77,8 @@ export default function PaymentScreenshotReader({ onExtract }) {
         {loading ? '⏳ Reading...' : '📷 Upload payment screenshot'}
       </label>
       {error && (
-        <div style={{ marginTop: '6px', fontSize: '12px', color: '#791F1F',
-          background: '#FCEBEB', padding: '6px 10px', borderRadius: '6px', border: '1px solid #F09595' }}>
+        <div style={{ marginTop: '6px', fontSize: '12px', color: '#633806',
+          background: '#FAEEDA', padding: '6px 10px', borderRadius: '6px', border: '1px solid #EF9F27' }}>
           ⚠️ {error}
         </div>
       )}
