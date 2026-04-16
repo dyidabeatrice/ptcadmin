@@ -7,7 +7,7 @@ export async function POST(request) {
     const { image, mediaType } = await request.json()
 
     const response = await client.messages.create({
-      model: 'claude-opus-4-5',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
       messages: [{
         role: 'user',
@@ -18,17 +18,21 @@ export async function POST(request) {
           },
           {
             type: 'text',
-            text: `This is a screenshot of a bank transfer payment. Extract the following and respond ONLY with a JSON object, no other text:
+            text: `This is a screenshot of a bank transfer payment to Potentials Therapy Center.
+Extract the following and respond ONLY with a JSON object, no other text, no markdown:
 {
-  "amount": <number or null>,
-  "reference": "<reference/confirmation number or null>",
-  "mop": "<BDO, Union Bank, or Cash or null>",
+  "amount": <number only, no currency symbols>,
+  "reference": "<reference number>",
+  "mop": "<BDO or Union Bank>",
   "confidence": "<high, medium, or low>"
 }
 
-For mop: look for bank name, logo color (BDO=blue, UnionBank=orange/red). If unclear set to null.
-For amount: return as number only, no currency symbols.
-For reference: look for confirmation number, reference number, transaction ID.`
+Rules:
+- If you see account number 012220028786 or BDO anywhere → mop is "BDO"
+- If you see account number 0023100091 or 0023 1000 9113 or UnionBank or Union Bank anywhere → mop is "Union Bank"
+- Amount: extract the PHP amount as a plain number only (e.g. 1300 not "PHP 1,300.00")
+- Reference: look for "Reference no.", "Reference Number", "Ref No", or transaction ID field
+- confidence: set to "high" if all three fields are clearly visible, "medium" if one is unclear, "low" if image is unreadable`
           }
         ]
       }]
