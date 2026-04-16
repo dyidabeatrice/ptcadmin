@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import PaymentScreenshotReader from '@/components/PaymentScreenshotReader'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
@@ -684,6 +685,16 @@ async function deleteSession(session) {
             
             {!payForm.use_credit && (
               <div style={{ marginBottom: '1.25rem' }}>
+                <PaymentScreenshotReader onExtract={({ amount, reference, mop }) => {
+                  const newMop = ['BDO', 'Union Bank', 'Cash'].includes(mop) ? mop : payForm.mop
+                  setPayForm(prev => ({
+                    ...prev,
+                    amount: amount || prev.amount,
+                    reference: reference || prev.reference,
+                    mop: newMop,
+                    split_cash: amount || prev.split_cash,
+                  }))
+                }} />
                 <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Mode of payment</label>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {MOP_OPTIONS.map(mop => (
