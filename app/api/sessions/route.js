@@ -164,7 +164,7 @@ if (body.action === 'status') {
       const sheetId = await getSheetId('payments')
       const toDelete = payRows
         .map((r, i) => ({ r, i }))
-        .filter(({ r }) => r && (r[3] === `ATTEND-${session.id}` || r[3] === `CANCEL-${session.id}`))
+        .filter(({ r }) => r && r[3] === session.id && (r[8] === 'attendance' || r[8] === 'cancellation'))
         .sort((a, b) => b.i - a.i)
       for (const { i } of toDelete) {
         await sheets.spreadsheets.batchUpdate({
