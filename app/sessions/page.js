@@ -683,22 +683,8 @@ async function deleteSession(session) {
               </div>
             )}
             
-            // Inside payModal, just before the MOP buttons:
             {!payForm.use_credit && (
               <div style={{ marginBottom: '1.25rem' }}>
-                    <PaymentScreenshotReader onExtract={({ amount, reference, mop }) => {
-                    const newMop = ['BDO', 'Union Bank', 'Cash'].includes(mop) ? mop : payForm.mop
-                    const types = SESSION_TYPES[therapistKey] || SESSION_TYPES.OT
-                    const matchedType = types.find(t => t.amount === amount)
-                    setPayForm(prev => ({
-                      ...prev,
-                      amount: amount || prev.amount,
-                      reference: reference || prev.reference,
-                      mop: newMop,
-                      split_cash: amount || prev.split_cash,
-                      ...(matchedType ? { session_type: matchedType.value } : {})
-                    }))
-                  }} />
                 <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Mode of payment</label>
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {MOP_OPTIONS.map(mop => (
