@@ -114,7 +114,7 @@ export default function SchedulePage() {
   const [clients, setClients] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedDay, setSelectedDay] = useState(() => {
-    const day = new Date().toLocaleDateString('en-US', { weekday: 'long' })
+    const day = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'long' })
     return DAYS.includes(day) ? day : 'Monday'
   })
   const [notification, setNotification] = useState(null)
