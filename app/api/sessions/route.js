@@ -143,19 +143,38 @@ export async function PATCH(request) {
       return Response.json({ success: true })
     }
 
-    if (body.action === 'status') {
-      const sessions = await getWeekSheet(weekKey)
-      const session = sessions.find(s => s.index === body.rowIndex)
-      const oldStatus = session?.status
-      const newStatus = body.status
-      const isPaid = session?.payment === 'Paid'
+if (body.action === 'status') {
+  const sessions = await getWeekSheet(weekKey)
+  const session = sessions.find(s => s.index === body.rowIndex)
+  const oldStatus = session?.status
+  const newStatus = body.status
+  const isPaid = session?.payment === 'Paid'
 
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `${weekKey}!I${sheetRow}`,
-        valueInputOption: 'RAW',
-        requestBody: { values: [[newStatus]] }
-      })  
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${weekKey}!I${sheetRow}`,
+    valueInputOption: 'RAW',
+    requestBody: { values: [[newStatus]] }
+  })
+
+    // If changing to Absent, delete attendance/cancellation records
+    if ((newStatus === 'Absent' || newStatus === 'Pencil' || newStatus === 'Scheduled') && session?.id) {
+      const payData = await getSheetData('payments')
+      const [, ...payRows] = payData
+      const sheetId = await getSheetId('payments')
+      const toDelete = payRows
+        .map((r, i) => ({ r, i }))
+        .filter(({ r }) => r && (r[3] === `ATTEND-${session.id}` || r[3] === `CANCEL-${session.id}`))
+        .sort((a, b) => b.i - a.i)
+      for (const { i } of toDelete) {
+        await sheets.spreadsheets.batchUpdate({
+          spreadsheetId: SPREADSHEET_ID,
+          requestBody: { requests: [{ deleteDimension: {
+            range: { sheetId, dimension: 'ROWS', startIndex: i + 1, endIndex: i + 2 }
+          }}]}
+        })
+      }
+    } 
 
       const nowOwes = !isPaid && (newStatus === 'Present' || newStatus === 'Cancelled')
       const wasOwing = !isPaid && (oldStatus === 'Present' || oldStatus === 'Cancelled')

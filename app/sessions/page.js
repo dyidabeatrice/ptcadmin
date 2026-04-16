@@ -287,7 +287,7 @@ const daySessions = sessions.filter(s => s.day === selectedDay)
 
   async function updateStatus(session, status) {
     if (status === 'Absent' && session.payment === 'Paid') { setAbsentConfirm(session); return }
-    await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'status', week_key: selectedWeek.key, rowIndex: session.index, status }) })
+    await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'status', week_key: selectedWeek.key, rowIndex: session.index, status, session_id: session.id }) })
     fetchSessions(selectedWeek.key)
     const cRes = await fetch('/api/clients')
     const cJson = await cRes.json()
