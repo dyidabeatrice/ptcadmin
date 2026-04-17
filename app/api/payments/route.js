@@ -46,6 +46,19 @@ export async function GET(request) {
       return Response.json({ success: true, data: unpaid })
     }
 
+    if (searchParams.get('action') === 'pending') {
+      const data = await getSheetData('pending_payments')
+      const [, ...rows] = data
+      const pending = rows
+        .filter(r => r && r[0])
+        .map(row => ({
+          id: row[0], psid: row[1], client_name: row[2],
+          drive_file_id: row[3], image_url: row[4],
+          received_at: row[5], status: row[6]
+        }))
+      return Response.json({ success: true, data: pending })
+    }
+
     const data = await getSheetData('payments')
     const [, ...rows] = data
     if (!rows || rows.length === 0) return Response.json({ success: true, data: [] })
@@ -121,6 +134,21 @@ export async function PATCH(request) {
         valueInputOption: 'RAW',
         requestBody: { values: [[body.session_type]] }
       })
+      return Response.json({ success: true })
+    }
+
+    if (body.action === 'process_pending') {
+      const data = await getSheetData('pending_payments')
+      const [, ...rows] = data
+      const rowIndex = rows.findIndex(r => r && r[0] === body.id)
+      if (rowIndex !== -1) {
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `pending_payments!G${rowIndex + 2}`,
+          valueInputOption: 'RAW',
+          requestBody: { values: [['processed']] }
+        })
+      }
       return Response.json({ success: true })
     }
 
