@@ -1119,11 +1119,24 @@ export default function PaymentsPage() {
                           </span>
                           <span style={{ marginLeft: '8px', fontSize: '11px', color: '#633806', opacity: 0.7 }}>received {p.received_at}</span>
                         </div>
-                        <button onClick={() => openProcessModal(p)} style={{
-                          padding: '6px 16px', borderRadius: '6px', border: 'none',
-                          background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '500'
-                        }}>Process</button>
-                      </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button onClick={async () => {
+                            if (!confirm('Dismiss this screenshot?')) return
+                            await fetch('/api/payments', {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ action: 'process_pending', id: p.id })
+                            })
+                            fetchPendingPayments()
+                          }} style={{
+                            padding: '6px 14px', borderRadius: '6px', border: '1px solid #ddd',
+                            background: 'white', color: '#666', cursor: 'pointer', fontSize: '12px'
+                          }}>Dismiss</button>
+                          <button onClick={() => openProcessModal(p)} style={{
+                            padding: '6px 16px', borderRadius: '6px', border: 'none',
+                            background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '500'
+                          }}>Process</button>
+                        </div>
                       {p.image_url && (
                         <div style={{ padding: '12px 16px' }}>
                           <img src={p.image_url} alt="Payment screenshot"

@@ -166,7 +166,6 @@ export async function POST(request) {
             try {
               const clientName = await getClientByPsid(psid)
               await savePendingPayment(psid, clientName, imageUrl)
-              await sendMessage(psid, 'Thank you! We received your payment screenshot and will process it shortly. 😊')
             } catch (imgError) {
               console.error('Image processing error:', imgError)
             }
