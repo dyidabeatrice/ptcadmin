@@ -15,31 +15,45 @@ export default function PaymentScreenshotReader({ onExtract }) {
       const Tesseract = (await import('tesseract.js')).default
       const { data: { text } } = await Tesseract.recognize(file, 'eng', { logger: () => {} })
 
-      // Extract amount
-      const amountMatch = text.match(/PHP\s*([\d,]+\.?\d*)/i) ||
-                          text.match(/([\d,]+\.00)\s*$/m)
-      const amount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : null
+      console.log('OCR text:', text)
 
-      // Extract reference
-      const refPatterns = [
-        /Reference\s*[Nn]o\.?\s*\n?\s*([A-Z0-9\-]+)/,
+      // Detect bank by destination account number or bank name
+      let mop = null
+      if (text.match(/012220028786|BDO\s*Unibank|012220028786/i)) {
+        mop = 'BDO'
+      } else if (text.match(/00231000\s*9113|0023\s*1000\s*9113|UnionBank|Union Bank/i)) {
+        mop = 'Union Bank'
+      }
+
+      // Extract transfer amount (not total which includes fees)
+      let amount = null
+      const transferAmountMatch = text.match(/Transfer\s*[Aa]mount[\s\S]*?PHP\s*([\d,]+\.?\d*)/i) ||
+                                  text.match(/Transfer\s*[Aa]mount\s+([\d,]+\.?\d*)/i)
+      if (transferAmountMatch) {
+        amount = parseFloat(transferAmountMatch[1].replace(/,/g, ''))
+      } else {
+        // Fallback to any PHP amount
+        const amountMatch = text.match(/PHP\s*([\d,]+\.?\d*)/i)
+        if (amountMatch) amount = parseFloat(amountMatch[1].replace(/,/g, ''))
+      }
+
+      // Extract reference number — try multiple field names
+        const refPatterns = [
+        /Transaction\s*Ref\.?\s*[Nn]o\.?\s*\n?\s*([A-Z0-9\-]+)/,  // ← move to top
+        /Ref(?:erence)?\s*[Nn]o\.?\s*\n?\s*([A-Z0-9\-]+)/,
         /Reference\s*[Nn]umber\s*\n?\s*([A-Z0-9\-]+)/,
-        /Ref\s*[Nn]o\.?\s*:?\s*([A-Z0-9\-]+)/,
-        /^(UB[0-9]+)/m,
-        /^(PC-[A-Z0-9\-]+)/m,
-      ]
+        /Confirmation\s*[Nn]o\.?\s*\n?\s*([0-9]+)/,               // ← move to bottom
+        /InstaPay\s*Invoice\s*[Nn]o\.?\s*\n?\s*([0-9]+)/,
+        /Ref\s*[Nn]o\.\s+([0-9]{10,})/,
+        /Reference\s*Number\s+([0-9]+)/,
+        /Transaction\s*Ref\.\s*No\.\s+([0-9]+)/,
+        /(UB[0-9]{6,})/,
+        /(PC-[A-Z0-9\-]+)/,
+        ]
       let reference = null
       for (const pattern of refPatterns) {
         const match = text.match(pattern)
         if (match) { reference = match[1].trim(); break }
-      }
-
-      // Detect bank
-      let mop = null
-      if (text.match(/UnionBank|Union Bank|00231000\s*9113|0023\s*1000\s*9113/i)) {
-        mop = 'Union Bank'
-      } else if (text.match(/BDO|012220028786|PC-NDBMOB|NDBMOB|Sent!/i)) {
-        mop = 'BDO'
       }
 
       const confidence = amount && reference && mop ? 'high' :
