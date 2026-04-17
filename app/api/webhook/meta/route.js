@@ -1,3 +1,4 @@
+import { google } from 'googleapis'
 import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../../lib/sheets'
 
 const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN
@@ -85,6 +86,87 @@ async function updateSessionStatus(weekKey, rowIndex, status) {
   })
 }
 
+async function getClientByPsid(psid) {
+  if (!psid) return ''
+  const data = await getSheetData('clients')
+  const [, ...rows] = data
+  const match = rows.find(r => r && r[11] === psid)
+  return match ? match[1] : ''
+}
+
+async function uploadToDrive(base64Data, contentType, psid) {
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
+      private_key: process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    },
+    scopes: [
+      'https://www.googleapis.com/auth/spreadsheets',
+      'https://www.googleapis.com/auth/drive.file'
+    ],
+  })
+
+  const drive = google.drive({ version: 'v3', auth })
+
+  // Use existing folder or create one
+  let folderId = process.env.GDRIVE_SCREENSHOTS_FOLDER_ID
+  if (!folderId) {
+    const folderRes = await drive.files.create({
+      requestBody: {
+        name: 'PTC Payment Screenshots',
+        mimeType: 'application/vnd.google-apps.folder',
+      },
+      fields: 'id',
+    })
+    folderId = folderRes.data.id
+    console.log('Created Drive folder:', folderId, '— add to env as GDRIVE_SCREENSHOTS_FOLDER_ID')
+  }
+
+  const fileName = `payment_${psid}_${Date.now()}.jpg`
+  const { Readable } = await import('stream')
+  const buffer = Buffer.from(base64Data, 'base64')
+  const stream = Readable.from(buffer)
+
+  const fileRes = await drive.files.create({
+    requestBody: {
+      name: fileName,
+      parents: [folderId],
+    },
+    media: {
+      mimeType: contentType,
+      body: stream,
+    },
+    fields: 'id, webViewLink',
+  })
+
+  return { id: fileRes.data.id, url: fileRes.data.webViewLink }
+}
+
+async function savePendingPayment(psid, clientName, driveFile) {
+  const sheets = getGoogleSheets()
+  const now = new Date().toLocaleDateString('en-US', {
+    timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  })
+
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SPREADSHEET_ID,
+    range: 'pending_payments',
+    valueInputOption: 'RAW',
+    requestBody: {
+      values: [[
+        Date.now().toString(),
+        psid || '',
+        clientName || '',
+        driveFile.id || '',
+        driveFile.url || '',
+        now,
+        'pending'
+      ]]
+    }
+  })
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url)
   const mode = searchParams.get('hub.mode')
@@ -120,6 +202,40 @@ export async function POST(request) {
         // Auto-save PSID if we have a name
         if (senderName) {
           await autoSavePsid(psid, senderName)
+        }
+
+        // Handle image attachments — payment screenshots
+        const attachments = event.message?.attachments || []
+        const imageAttachments = attachments.filter(a => a.type === 'image')
+
+        if (imageAttachments.length > 0) {
+          for (const attachment of imageAttachments) {
+            const imageUrl = attachment.payload?.url
+            if (!imageUrl) continue
+
+            try {
+              // Download image from Meta
+              const imgRes = await fetch(imageUrl)
+              const imgBuffer = await imgRes.arrayBuffer()
+              const imgBase64 = Buffer.from(imgBuffer).toString('base64')
+              const contentType = imgRes.headers.get('content-type') || 'image/jpeg'
+
+              // Upload to Google Drive
+              const driveFile = await uploadToDrive(imgBase64, contentType, psid)
+
+              // Look up client by PSID
+              const clientName = await getClientByPsid(psid)
+
+              // Save to pending_payments sheet
+              await savePendingPayment(psid, clientName, driveFile)
+
+              // Send acknowledgement to sender
+              await sendMessage(psid, 'Thank you! We received your payment screenshot and will process it shortly. 😊')
+            } catch (imgError) {
+              console.error('Image processing error:', imgError)
+            }
+          }
+          continue // skip text/quick reply handling if it was an image message
         }
 
         // Handle quick reply button taps
