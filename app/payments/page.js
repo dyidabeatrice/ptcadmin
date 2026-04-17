@@ -330,6 +330,12 @@ export default function PaymentsPage() {
       return 'All'
     }
   })
+  const [pendingPayments, setPendingPayments] = useState([])
+  const [processModal, setProcessModal] = useState(null)
+  const [processForm, setProcessForm] = useState({ client_name: '', mop: 'BDO', amount: '', reference: '' })
+  const [processSaving, setProcessSaving] = useState(false)
+  const [ocrLoading, setOcrLoading] = useState(false)
+  const [selectedSession, setSelectedSession] = useState(null)
   const [exportMonth, setExportMonth] = useState(() => {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -356,6 +362,7 @@ export default function PaymentsPage() {
       setSelectedWeek(current)
       await fetchWeekSessions(current.key)
     }
+    await fetchPendingPayments()
     setLoading(false)
   }
 
@@ -382,6 +389,95 @@ export default function PaymentsPage() {
     const res = await fetch(`/api/sessions?week=${weekKey}`)
     const json = await res.json()
     if (json.success) setWeekSessions(json.data)
+  }
+
+  async function fetchPendingPayments() {
+    const res = await fetch('/api/payments?action=pending')
+    const json = await res.json()
+    if (json.success) setPendingPayments(json.data)
+  }
+
+  async function openProcessModal(payment) {
+    setProcessModal(payment)
+    setProcessForm({ client_name: payment.client_name || '', mop: 'BDO', amount: '', reference: '' })
+    setSelectedSession(null)
+    if (payment.image_url) {
+      setOcrLoading(true)
+      try {
+        const Tesseract = (await import('tesseract.js')).default
+        const { data: { text } } = await Tesseract.recognize(payment.image_url, 'eng', { logger: () => {} })
+        const amountMatch =
+          text.match(/Transfer\s*[Aa]mount[\s\S]{0,20}?PHP\s*([\d,]+\.?\d*)/i) ||
+          text.match(/Transfer\s*[Aa]mount[\s\n\r]+([\d,]+\.?\d*)/i) ||
+          text.match(/Amount[\s\n\r]+PHP\s*([\d,]+\.?\d*)/i) ||
+          text.match(/[-−]\s*[$₱£P]\s*([\d,]+\.?\d*)/) ||
+          text.match(/[$₱£P]\s*([\d,]+\.?\d*)/) ||
+          text.match(/PHP\s*([\d,]+\.?\d*)/i)
+        const amount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : null
+        const refPatterns = [
+          /Reference\s*ID\s+([A-Z0-9]+(?:\s+[A-Z0-9]+)*)/i,
+          /Reference\s*No\.?\s+([A-Z0-9\-]+)/i,
+          /Ref:\s*([A-Z0-9\-]+)/i,
+          /Transaction\s*Ref\.?\s*[Nn]o\.?\s*[\n\r]+\s*([A-Z0-9\-]+)/i,
+          /Reference\s*[Nn]umber\s*[\n\r]+\s*([A-Z0-9\-]+)/i,
+          /Ref\s*No\.?\s+([0-9]{10,})/i,
+          /IPS\s*Reference\s*[Nn]o\.?\s+[*]+([0-9]+)/i,
+          /InstaPay\s*Reference\s*[Nn]umber\s*[\n\r]+\s*([0-9]+)/i,
+          /InstaPay\s*Ref\.?\s*[Nn]o\.?\s+([0-9]+)/i,
+          /Confirmation\s*[Nn]o\.?\s+([0-9]+)/i,
+          /Transaction\s*Ref\.?\s*[Nn]o\.?\s+([0-9]+)/i,
+          /(IPX-[A-Z0-9\-]+)/i,
+          /(ENT[0-9]+)/i,
+          /(PC-[A-Z0-9\-]+)/i,
+          /(UB[0-9]{4,})/i,
+        ]
+        let reference = null
+        for (const pattern of refPatterns) {
+          const match = text.match(pattern)
+          if (match) { reference = match[1].trim().replace(/\s+/g, ' '); break }
+        }
+        let mop = 'BDO'
+        if (text.match(/0122\s*2\s*0+\s*2\s*8786|BDO\s*Unibank|012220028786/i)) mop = 'BDO'
+        else if (text.match(/00231000\s*9113|0023\s*1000\s*9113|UnionBank|Union Bank/i)) mop = 'Union Bank'
+        setProcessForm(prev => ({ ...prev, amount: amount || '', reference: reference || '', mop }))
+      } catch (err) { console.error('OCR error:', err) }
+      setOcrLoading(false)
+    }
+  }
+
+  async function confirmProcess() {
+    if (!processForm.client_name) return alert('Please select a client')
+    if (!processForm.amount) return alert('Please enter an amount')
+    if (!selectedSession) return alert('Please select a session')
+    setProcessSaving(true)
+    await fetch('/api/sessions', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'pay',
+        week_key: selectedSession.week_key,
+        rowIndex: selectedSession.index,
+        session_id: selectedSession.id,
+        client_name: selectedSession.client_name,
+        therapist: selectedSession.therapist,
+        date: selectedSession.date,
+        session_type: selectedSession.session_type || 'Regular',
+        mop: processForm.mop,
+        amount: Number(processForm.amount),
+        use_credit: false, split: false, split_credit: 0,
+        split_cash: Number(processForm.amount),
+        credit_balance: 0,
+        reference: processForm.reference || ''
+      })
+    })
+    await fetch('/api/payments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'process_pending', id: processModal.id })
+    })
+    setProcessModal(null)
+    fetchAll()
+    setProcessSaving(false)
   }
 
   async function switchWeek(week) {
@@ -568,6 +664,7 @@ export default function PaymentsPage() {
     { key: 'transactions', label: 'Transactions' },
     { key: 'credits', label: 'Credits' },
     { key: 'outstanding', label: `Outstanding (${outstandingClients.length})` },
+    { key: 'pending', label: `Pending Payments${pendingPayments.filter(p => p.status === 'pending').length > 0 ? ` (${pendingPayments.filter(p => p.status === 'pending').length})` : ''}` },
   ]
 
   return (
@@ -938,6 +1035,122 @@ export default function PaymentsPage() {
           {/* Outstanding tab */}
           {activeTab === 'outstanding' && (
             <OutstandingTab clients={clients} onSettle={fetchAll} />
+          )}
+
+          {/* Process payment modal */}
+          {processModal && (
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '560px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto' }}>
+                <h3 style={{ margin: '0 0 1rem', color: '#0f4c81' }}>Process payment screenshot</h3>
+                {processModal.image_url && (
+                  <div style={{ marginBottom: '1rem' }}>
+                    <img src={processModal.image_url} alt="Payment screenshot"
+                      style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #e0e0e0' }} />
+                  </div>
+                )}
+                {ocrLoading && (
+                  <div style={{ marginBottom: '1rem', padding: '10px 14px', background: '#E6F1FB', borderRadius: '8px', fontSize: '13px', color: '#0C447C' }}>
+                    ⏳ Reading payment details from screenshot...
+                  </div>
+                )}
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Client</label>
+                  <select value={processForm.client_name} onChange={e => setProcessForm({ ...processForm, client_name: e.target.value })}
+                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
+                    <option value="">Select client...</option>
+                    {clients.sort((a, b) => a.name.localeCompare(b.name)).map(c => (
+                      <option key={c.id} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Apply to session</label>
+                  <select value={selectedSession?.id || ''} onChange={e => {
+                    const s = weekSessions.find(x => x.id === e.target.value)
+                    setSelectedSession(s || null)
+                  }} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
+                    <option value="">Select session...</option>
+                    {weekSessions
+                      .filter(s => s.payment === 'Unpaid' && s.status !== 'Cancelled' && s.status !== 'Pencil')
+                      .filter(s => !processForm.client_name || s.client_name === processForm.client_name)
+                      .map(s => (
+                        <option key={s.id} value={s.id}>{s.client_name} — {s.day} {s.time_start} ({s.therapist})</option>
+                      ))}
+                  </select>
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Amount (₱)</label>
+                  <input type="number" value={processForm.amount} onChange={e => setProcessForm({ ...processForm, amount: e.target.value })}
+                    placeholder="Enter amount..."
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '16px', fontWeight: '500', boxSizing: 'border-box' }} />
+                </div>
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Mode of payment</label>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {MOP_OPTIONS.map(mop => (
+                      <button key={mop} onClick={() => setProcessForm({ ...processForm, mop })} style={{
+                        padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
+                        border: processForm.mop === mop ? '2px solid #0f4c81' : '1px solid #ddd',
+                        background: processForm.mop === mop ? '#E6F1FB' : 'white',
+                        color: processForm.mop === mop ? '#0f4c81' : '#666',
+                        fontWeight: processForm.mop === mop ? '500' : '400'
+                      }}>{mop}</button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Reference number</label>
+                  <input value={processForm.reference} onChange={e => setProcessForm({ ...processForm, reference: e.target.value })}
+                    placeholder="Enter reference number..."
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+                </div>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button onClick={() => setProcessModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+                  <button onClick={confirmProcess} disabled={processSaving || !processForm.client_name || !processForm.amount || !selectedSession}
+                    style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500',
+                    opacity: processSaving || !processForm.client_name || !processForm.amount || !selectedSession ? 0.5 : 1 }}>
+                    {processSaving ? 'Processing...' : `Confirm ₱${Number(processForm.amount || 0).toLocaleString()}`}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Pending Payments tab */}
+          {activeTab === 'pending' && (
+            <div>
+              {pendingPayments.filter(p => p.status === 'pending').length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: '#999', background: '#f8f9fa', borderRadius: '12px' }}>
+                  No pending payment screenshots — they'll appear here when clients send them via Messenger.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {pendingPayments.filter(p => p.status === 'pending').map((p, i) => (
+                    <div key={i} style={{ background: 'white', borderRadius: '12px', border: '1px solid #EF9F27', overflow: 'hidden' }}>
+                      <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FAEEDA' }}>
+                        <div>
+                          <span style={{ fontWeight: '600', color: '#633806', fontSize: '14px' }}>
+                            {p.client_name || '❓ Unknown client'}
+                          </span>
+                          <span style={{ marginLeft: '8px', fontSize: '11px', color: '#633806', opacity: 0.7 }}>received {p.received_at}</span>
+                        </div>
+                        <button onClick={() => openProcessModal(p)} style={{
+                          padding: '6px 16px', borderRadius: '6px', border: 'none',
+                          background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '500'
+                        }}>Process</button>
+                      </div>
+                      {p.image_url && (
+                        <div style={{ padding: '12px 16px' }}>
+                          <img src={p.image_url} alt="Payment screenshot"
+                            style={{ maxWidth: '200px', maxHeight: '150px', objectFit: 'contain', borderRadius: '6px', border: '1px solid #e0e0e0', cursor: 'pointer' }}
+                            onClick={() => window.open(p.image_url, '_blank')} />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </>
       )}
