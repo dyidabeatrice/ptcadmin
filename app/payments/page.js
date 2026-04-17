@@ -1137,6 +1137,7 @@ export default function PaymentsPage() {
                             background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '500'
                           }}>Process</button>
                         </div>
+                      </div>
                       {p.image_url && (
                         <div style={{ padding: '12px 16px' }}>
                           <img src={p.image_url} alt="Payment screenshot"
