@@ -18,7 +18,6 @@ export default function PaymentScreenshotReader({ onExtract }) {
       console.log('OCR text:', text)
 
       // Detect bank by destination account number or bank name
-      // BDO account: 012220028786 or 0122 2002 8786 or 0122 20002 8786
       let mop = null
       if (text.match(/0122\s*2\s*0+\s*2\s*8786|BDO\s*Unibank|012220028786/i)) {
         mop = 'BDO'
@@ -28,33 +27,35 @@ export default function PaymentScreenshotReader({ onExtract }) {
 
       // Extract transfer amount (not total which includes fees)
       let amount = null
-      // Try "Transfer amount" or "Transfer Amount" label first
-      const transferAmountMatch = 
+      const transferAmountMatch =
         text.match(/Transfer\s*[Aa]mount[\s\S]{0,20}?PHP\s*([\d,]+\.?\d*)/i) ||
         text.match(/Transfer\s*[Aa]mount[\s\n\r]+PHP\s*([\d,]+\.?\d*)/i) ||
         text.match(/Transfer\s*[Aa]mount[\s\n\r]+([\d,]+\.?\d*)/i) ||
         text.match(/^Amount[\s\n\r]+PHP\s*([\d,]+\.?\d*)/im) ||
-        text.match(/Amount[\s\n\r]+PHP\s*([\d,]+\.?\d*)/i)
+        text.match(/Amount[\s\n\r]+PHP\s*([\d,]+\.?\d*)/i) ||
+        text.match(/[-−]\s*[₱P]\s*([\d,]+\.?\d*)/) ||
+        text.match(/[₱P]\s*([\d,]+\.?\d*)/)
       if (transferAmountMatch) {
         amount = parseFloat(transferAmountMatch[1].replace(/,/g, ''))
       } else {
-        // Fallback to first PHP amount found
         const amountMatch = text.match(/PHP\s*([\d,]+\.?\d*)/i)
         if (amountMatch) amount = parseFloat(amountMatch[1].replace(/,/g, ''))
       }
 
       // Extract reference number — ordered by priority
       const refPatterns = [
-        // Inline formats (reference on same line)
-        /Reference\s*No\.?\s+([A-Z0-9\-]+)/i,
-        /Ref:\s*([A-Z0-9\-]+)/i,
-        /Ref\s*No\.?\s+([A-Z0-9\-]+)/i,
-        // Multiline formats (reference on next line)
+        // Highest priority — specific reference fields
+        /Reference\s*ID\s+([A-Z0-9]+(?:\s+[A-Z0-9]+)*)/i,           // Maya: AE81 A78D D1D9
+        /Reference\s*No\.?\s+([A-Z0-9\-]+)/i,                        // CIMB: ENT2026...
+        /Ref:\s*([A-Z0-9\-]+)/i,                                      // Security Bank: IPX-...
         /Transaction\s*Ref\.?\s*[Nn]o\.?\s*[\n\r]+\s*([A-Z0-9\-]+)/i,
-        /Reference\s*[Nn]umber\s*[\n\r]+\s*([A-Z0-9\-]+)/i,
-        /Instapay\s*Reference\s*[Nn]umber\s*[\n\r]+\s*([A-Z0-9\-]+)/i,
-        /IPS\s*Reference\s*[Nn]o\.?\s+[*]+([0-9]+)/i,
-        /Confirmation\s*[Nn]o\.?\s+([0-9]+)/i,
+        /Reference\s*[Nn]umber\s*[\n\r]+\s*([A-Z0-9\-]+)/i,          // MariBank: 371667
+        /Ref\s*No\.?\s+([0-9]{10,})/i,                               // GCash: 6028479254695
+        /IPS\s*Reference\s*[Nn]o\.?\s+[*]+([0-9]+)/i,                // CIMB IPS ref
+        /InstaPay\s*Reference\s*[Nn]umber\s*[\n\r]+\s*([0-9]+)/i,    // InstaPay ref number
+        /InstaPay\s*Ref\.?\s*[Nn]o\.?\s+([0-9]+)/i,                  // Maya: 152441
+        /Confirmation\s*[Nn]o\.?\s+([0-9]+)/i,                       // BPI confirmation
+        /Transaction\s*Ref\.?\s*[Nn]o\.?\s+([0-9]+)/i,               // BPI transaction ref
         // Specific formats
         /(IPX-[A-Z0-9\-]+)/i,
         /(ENT[0-9]+)/i,
@@ -64,7 +65,10 @@ export default function PaymentScreenshotReader({ onExtract }) {
       let reference = null
       for (const pattern of refPatterns) {
         const match = text.match(pattern)
-        if (match) { reference = match[1].trim(); break }
+        if (match) {
+          reference = match[1].trim().replace(/\s+/g, ' ')
+          break
+        }
       }
 
       const confidence = amount && reference && mop ? 'high' :
@@ -101,6 +105,9 @@ export default function PaymentScreenshotReader({ onExtract }) {
       }}>
         {loading ? '⏳ Reading...' : '📷 Upload payment screenshot'}
       </label>
+      <div style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>
+        Tip: Use screenshots with dark text on white background for best results
+      </div>
       {error && (
         <div style={{ marginTop: '6px', fontSize: '12px', color: '#633806',
           background: '#FAEEDA', padding: '6px 10px', borderRadius: '6px', border: '1px solid #EF9F27' }}>
