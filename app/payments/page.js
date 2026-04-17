@@ -448,33 +448,30 @@ export default function PaymentsPage() {
   async function confirmProcess() {
     if (!processForm.client_name) return alert('Please select a client')
     if (!processForm.amount) return alert('Please enter an amount')
-    if (!selectedSession) return alert('Please select a session')
     setProcessSaving(true)
-    await fetch('/api/sessions', {
-      method: 'PATCH',
+
+    const today = new Date().toLocaleDateString('en-US', {
+      timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric'
+    })
+    await fetch('/api/credits', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        action: 'pay',
-        week_key: selectedSession.week_key,
-        rowIndex: selectedSession.index,
-        session_id: selectedSession.id,
-        client_name: selectedSession.client_name,
-        therapist: selectedSession.therapist,
-        date: selectedSession.date,
-        session_type: selectedSession.session_type || 'Regular',
-        mop: processForm.mop,
+        action: 'add_credit',
+        client_name: processForm.client_name,
         amount: Number(processForm.amount),
-        use_credit: false, split: false, split_credit: 0,
-        split_cash: Number(processForm.amount),
-        credit_balance: 0,
+        mop: processForm.mop,
+        date: today,
         reference: processForm.reference || ''
       })
     })
+
     await fetch('/api/payments', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'process_pending', id: processModal.id })
     })
+
     setProcessModal(null)
     fetchAll()
     setProcessSaving(false)
@@ -1064,21 +1061,6 @@ export default function PaymentsPage() {
                   </select>
                 </div>
                 <div style={{ marginBottom: '12px' }}>
-                  <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Apply to session</label>
-                  <select value={selectedSession?.id || ''} onChange={e => {
-                    const s = weekSessions.find(x => x.id === e.target.value)
-                    setSelectedSession(s || null)
-                  }} style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
-                    <option value="">Select session...</option>
-                    {weekSessions
-                      .filter(s => s.payment === 'Unpaid' && s.status !== 'Cancelled' && s.status !== 'Pencil')
-                      .filter(s => !processForm.client_name || s.client_name === processForm.client_name)
-                      .map(s => (
-                        <option key={s.id} value={s.id}>{s.client_name} — {s.day} {s.time_start} ({s.therapist})</option>
-                      ))}
-                  </select>
-                </div>
-                <div style={{ marginBottom: '12px' }}>
                   <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Amount (₱)</label>
                   <input type="number" value={processForm.amount} onChange={e => setProcessForm({ ...processForm, amount: e.target.value })}
                     placeholder="Enter amount..."
@@ -1106,10 +1088,11 @@ export default function PaymentsPage() {
                 </div>
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                   <button onClick={() => setProcessModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
-                  <button onClick={confirmProcess} disabled={processSaving || !processForm.client_name || !processForm.amount || !selectedSession}
+                  <button onClick={confirmProcess} 
+                    disabled={processSaving || !processForm.client_name || !processForm.amount}
                     style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500',
-                    opacity: processSaving || !processForm.client_name || !processForm.amount || !selectedSession ? 0.5 : 1 }}>
-                    {processSaving ? 'Processing...' : `Confirm ₱${Number(processForm.amount || 0).toLocaleString()}`}
+                    opacity: processSaving || !processForm.client_name || !processForm.amount ? 0.5 : 1 }}>
+                    {processSaving ? 'Processing...' : `Record ₱${Number(processForm.amount || 0).toLocaleString()} as credit`}
                   </button>
                 </div>
               </div>
