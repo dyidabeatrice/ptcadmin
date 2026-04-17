@@ -761,6 +761,8 @@ export default function PaymentsPage() {
                 )}
             </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => { setAdvanceModal(false); setAdvanceForm({ client_name: '', amount: '', mop: 'Cash', reference: '' }) }}
+                style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
               <button onClick={recordAdvance} disabled={saving || !advanceForm.amount || ((advanceForm.mop === 'BDO' || advanceForm.mop === 'Union Bank') && !advanceForm.reference)} style={{
                 padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500',
                 opacity: (saving || !advanceForm.amount || ((advanceForm.mop === 'BDO' || advanceForm.mop === 'Union Bank') && !advanceForm.reference)) ? 0.5 : 1
