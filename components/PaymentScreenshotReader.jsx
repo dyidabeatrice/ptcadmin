@@ -18,38 +18,49 @@ export default function PaymentScreenshotReader({ onExtract }) {
       console.log('OCR text:', text)
 
       // Detect bank by destination account number or bank name
+      // BDO account: 012220028786 or 0122 2002 8786 or 0122 20002 8786
       let mop = null
-      if (text.match(/012220028786|BDO\s*Unibank|012220028786/i)) {
+      if (text.match(/0122\s*2\s*0+\s*2\s*8786|BDO\s*Unibank|012220028786/i)) {
         mop = 'BDO'
-      } else if (text.match(/00231000\s*9113|0023\s*1000\s*9113|UnionBank|Union Bank/i)) {
+      } else if (text.match(/00231000\s*9113|0023\s*1000\s*9113|UnionBank|Union Bank of the Philippines/i)) {
         mop = 'Union Bank'
       }
 
       // Extract transfer amount (not total which includes fees)
       let amount = null
-      const transferAmountMatch = text.match(/Transfer\s*[Aa]mount[\s\S]*?PHP\s*([\d,]+\.?\d*)/i) ||
-                                  text.match(/Transfer\s*[Aa]mount\s+([\d,]+\.?\d*)/i)
+      // Try "Transfer amount" or "Transfer Amount" label first
+      const transferAmountMatch = 
+        text.match(/Transfer\s*[Aa]mount[\s\S]{0,20}?PHP\s*([\d,]+\.?\d*)/i) ||
+        text.match(/Transfer\s*[Aa]mount[\s\n\r]+PHP\s*([\d,]+\.?\d*)/i) ||
+        text.match(/Transfer\s*[Aa]mount[\s\n\r]+([\d,]+\.?\d*)/i) ||
+        text.match(/^Amount[\s\n\r]+PHP\s*([\d,]+\.?\d*)/im) ||
+        text.match(/Amount[\s\n\r]+PHP\s*([\d,]+\.?\d*)/i)
       if (transferAmountMatch) {
         amount = parseFloat(transferAmountMatch[1].replace(/,/g, ''))
       } else {
-        // Fallback to any PHP amount
+        // Fallback to first PHP amount found
         const amountMatch = text.match(/PHP\s*([\d,]+\.?\d*)/i)
         if (amountMatch) amount = parseFloat(amountMatch[1].replace(/,/g, ''))
       }
 
-      // Extract reference number — try multiple field names
-        const refPatterns = [
-        /Transaction\s*Ref\.?\s*[Nn]o\.?\s*\n?\s*([A-Z0-9\-]+)/,  // ← move to top
-        /Ref(?:erence)?\s*[Nn]o\.?\s*\n?\s*([A-Z0-9\-]+)/,
-        /Reference\s*[Nn]umber\s*\n?\s*([A-Z0-9\-]+)/,
-        /Confirmation\s*[Nn]o\.?\s*\n?\s*([0-9]+)/,               // ← move to bottom
-        /InstaPay\s*Invoice\s*[Nn]o\.?\s*\n?\s*([0-9]+)/,
-        /Ref\s*[Nn]o\.\s+([0-9]{10,})/,
-        /Reference\s*Number\s+([0-9]+)/,
-        /Transaction\s*Ref\.\s*No\.\s+([0-9]+)/,
-        /(UB[0-9]{6,})/,
-        /(PC-[A-Z0-9\-]+)/,
-        ]
+      // Extract reference number — ordered by priority
+      const refPatterns = [
+        // Inline formats (reference on same line)
+        /Reference\s*No\.?\s+([A-Z0-9\-]+)/i,
+        /Ref:\s*([A-Z0-9\-]+)/i,
+        /Ref\s*No\.?\s+([A-Z0-9\-]+)/i,
+        // Multiline formats (reference on next line)
+        /Transaction\s*Ref\.?\s*[Nn]o\.?\s*[\n\r]+\s*([A-Z0-9\-]+)/i,
+        /Reference\s*[Nn]umber\s*[\n\r]+\s*([A-Z0-9\-]+)/i,
+        /Instapay\s*Reference\s*[Nn]umber\s*[\n\r]+\s*([A-Z0-9\-]+)/i,
+        /IPS\s*Reference\s*[Nn]o\.?\s+[*]+([0-9]+)/i,
+        /Confirmation\s*[Nn]o\.?\s+([0-9]+)/i,
+        // Specific formats
+        /(IPX-[A-Z0-9\-]+)/i,
+        /(ENT[0-9]+)/i,
+        /(PC-[A-Z0-9\-]+)/i,
+        /(UB[0-9]{4,})/i,
+      ]
       let reference = null
       for (const pattern of refPatterns) {
         const match = text.match(pattern)
@@ -65,7 +76,7 @@ export default function PaymentScreenshotReader({ onExtract }) {
       }
 
       if (confidence === 'medium') {
-        setError('Partially read — please verify and fill in any missing fields.')
+        setError('Partially read — amount and bank detected. Please enter reference number manually.')
       }
 
       onExtract({ amount, reference, mop })
