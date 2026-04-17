@@ -571,7 +571,8 @@ export default function PaymentsPage() {
   const nowPH = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
 
   const todayPayments = payments.filter(p => {
-    if (!p.date || ['refund', 'attendance', 'cancellation'].includes(p.payment_type)) return false
+    if (!p.date || ['refund', 'attendance', 'cancellation', 'credit_transfer'].includes(p.payment_type)) return false
+    if (p.mop === 'Credit') return false  // ← add this
     const pDate = parsePaymentDate(p.date)
     if (!pDate) return false
     return pDate.getFullYear() === nowPH.getFullYear() &&
@@ -595,6 +596,7 @@ export default function PaymentsPage() {
     if (!selectedWeek) return false
     if (!p.date) return false
     if (['attendance', 'cancellation'].includes(p.payment_type)) return false
+    if (p.mop === 'Credit') return false 
     const parts = selectedWeek.key.replace('week_', '').split('_')
     const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
     monday.setDate(monday.getDate() - 1)
