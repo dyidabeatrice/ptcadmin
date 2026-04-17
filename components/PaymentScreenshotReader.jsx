@@ -33,8 +33,8 @@ export default function PaymentScreenshotReader({ onExtract }) {
         text.match(/Transfer\s*[Aa]mount[\s\n\r]+([\d,]+\.?\d*)/i) ||
         text.match(/^Amount[\s\n\r]+PHP\s*([\d,]+\.?\d*)/im) ||
         text.match(/Amount[\s\n\r]+PHP\s*([\d,]+\.?\d*)/i) ||
-        text.match(/[-−]\s*[₱P]\s*([\d,]+\.?\d*)/) ||
-        text.match(/[₱P]\s*([\d,]+\.?\d*)/)
+        text.match(/[-−]\s*[$₱£P]\s*([\d,]+\.?\d*)/) ||
+        text.match(/[$₱£P]\s*([\d,]+\.?\d*)/)
       if (transferAmountMatch) {
         amount = parseFloat(transferAmountMatch[1].replace(/,/g, ''))
       } else {
@@ -45,7 +45,7 @@ export default function PaymentScreenshotReader({ onExtract }) {
       // Extract reference number — ordered by priority
       const refPatterns = [
         // Highest priority — specific reference fields
-        /Reference\s*ID\s+([A-Z0-9]+(?:\s+[A-Z0-9]+)*)/i,           // Maya: AE81 A78D D1D9
+        /Reference\s*ID\s+([A-Z0-9]+(?:\s+[A-Z0-9]+){0,3})/i,          // Maya: AE81 A78D D1D9
         /Reference\s*No\.?\s+([A-Z0-9\-]+)/i,                        // CIMB: ENT2026...
         /Ref:\s*([A-Z0-9\-]+)/i,                                      // Security Bank: IPX-...
         /Transaction\s*Ref\.?\s*[Nn]o\.?\s*[\n\r]+\s*([A-Z0-9\-]+)/i,
