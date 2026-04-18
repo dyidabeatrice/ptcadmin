@@ -5,6 +5,8 @@ import Link from 'next/link'
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false)
   const [showJoinUs, setShowJoinUs] = useState(false)
+  const [stepIndex, setStepIndex] = useState(0)
+  const [mobOpen, setMobOpen] = useState(0)
   const slideState = useRef<Record<string, number>>({ clinic: 1, staff: 1 })
   const updateSlideshow = (id: string, index: number) => {
     slideState.current[id] = index
@@ -44,6 +46,15 @@ export default function HomePage() {
     { icon: '✋', name: 'Sensory Integration', desc: 'Processing and responding to sensory information' },
     { icon: '🍽️', name: 'Pediatric Dysphagia', desc: 'Feeding therapy and swallowing difficulties' },
     { icon: '🌈', name: '..and more!', desc: 'All tailored to your child’s unique developmental needs'}
+  ]
+
+  const steps = [
+    { title: 'Get a Referral', content: 'Obtain a referral from a developmental pediatrician. Your child may be recommended for Physical Therapy, Occupational Therapy, Speech Therapy, or Playschool Services.' },
+    { title: 'Initial Contact', content: 'Call or visit Potentials Therapy Center to check service availability, enrollment steps, new client acceptance, and cost of services.' },
+    { title: 'Assessment & Evaluation', content: 'Schedule the initial assessment to determine needs and create a therapy plan. Bring relevant records and referral letters.' },
+    { title: 'Enroll in Services', content: 'Fill out registration forms with personal and medical details. Schedule therapy sessions right after registration.' },
+    { title: 'Attend Sessions', content: 'Attend sessions as recommended. Complete home exercises provided by therapists to support progress.' },
+    { title: 'Monitor Progress', content: 'Communicate regularly with your child\'s therapists about goals, progress, and any concerns.' },
   ]
 
   return (
@@ -422,32 +433,103 @@ export default function HomePage() {
         </div>
       </section>
 
-     {/* How to Avail Services */}
+      {/* How to Avail Services */}
       <section id="how-to-avail" style={{ padding: '6rem 2rem', background: '#e9ebee' }}>
+        <style>{`
+          .stepper-row { display: flex; align-items: flex-start; }
+          .step { flex: 1; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+          .step-top { display: flex; align-items: center; width: 100%; }
+          .step-circle { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #e8edf5; background: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 800; color: #ccc; flex-shrink: 0; transition: all 0.25s; z-index: 1; }
+          .step.active .step-circle { background: #0f4c81; border-color: #0f4c81; color: #fff; transform: scale(1.1); }
+          .step.done .step-circle { background: #fcc200; border-color: #fcc200; color: #0f4c81; }
+          .step-line { flex: 1; height: 2px; background: #e0e0e0; transition: background 0.25s; }
+          .step-line.done { background: #fcc200; }
+          .step-label { font-size: 11px; color: #aaa; margin-top: 8px; text-align: center; max-width: 90px; line-height: 1.4; font-weight: 500; }
+          .step.active .step-label { color: #0f4c81; font-weight: 700; }
+          .step.done .step-label { color: #b89a00; }
+          .step-content-box { background: #fff; border-radius: 14px; border: 2px solid #0f4c81; padding: 1.5rem; margin-top: 1.5rem; }
+          .step-nav-btn { padding: 9px 22px; border-radius: 40px; font-size: 13px; font-weight: 700; font-family: 'Nunito', sans-serif; cursor: pointer; border: none; transition: all 0.2s; }
+          .step-nav-btn:hover { opacity: 0.85; }
+          .mob-item { background: #fff; border-radius: 12px; border: 1px solid #e8edf5; margin-bottom: 8px; overflow: hidden; transition: border-color 0.2s; }
+          .mob-item.active { border-color: #0f4c81; }
+          .mob-header { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; }
+          .mob-num { width: 34px; height: 34px; border-radius: 50%; background: #f0f4fa; display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 800; color: #0f4c81; flex-shrink: 0; transition: all 0.2s; }
+          .mob-item.active .mob-num { background: #0f4c81; color: #fff; }
+          .mob-title { font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700; color: #0f4c81; flex: 1; }
+          .mob-chevron { font-size: 11px; color: #ccc; transition: transform 0.2s; }
+          .mob-item.active .mob-chevron { transform: rotate(180deg); color: #0f4c81; }
+          .mob-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
+          .mob-item.active .mob-body { max-height: 150px; }
+          .mob-body-inner { padding: 0 16px 14px 62px; font-size: 13px; color: #888; line-height: 1.65; }
+          @media (max-width: 768px) {
+            .stepper-desktop { display: none !important; }
+            .stepper-mobile { display: block !important; }
+          }
+          @media (min-width: 769px) {
+            .stepper-desktop { display: block !important; }
+            .stepper-mobile { display: none !important; }
+          }
+        `}</style>
+
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <div style={{ fontSize: '12px', letterSpacing: '0.15em', color: '#fcc200', fontWeight: '700', marginBottom: '12px', textTransform: 'uppercase' }}>How to Avail Our Services</div>
-            <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: 0, fontWeight: '700' }}>Get Started With Us</h2>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <div style={{ fontSize: '11px', letterSpacing: '0.18em', color: '#fcc200', fontWeight: '600', marginBottom: '10px', textTransform: 'uppercase' }}>
+              How to Avail Our Services
+            </div>
+            <h2 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: 0, fontWeight: '800' }}>
+              Get Started With Us
+            </h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '25px' }}>
-            {[
-              { num: '01', title: 'Get a Referral', content: 'Obtain a referral from a developmental pediatrician. Your child may be recommended for Physical Therapy, Occupational Therapy, Speech Therapy, or Playschool Services.' },
-              { num: '02', title: 'Initial Contact', content: 'Call or visit Potentials Therapy Center to check service availability, enrollment steps, new client acceptance, and cost of services.' },
-              { num: '03', title: 'Assessment & Evaluation', content: 'Schedule the initial assessment to determine needs and create a therapy plan. Bring relevant records and referral letters.' },
-              { num: '04', title: 'Enroll in Services', content: 'Fill out registration forms with personal and medical details. Schedule therapy sessions right after registration.' },
-              { num: '05', title: 'Attend Therapy Sessions', content: 'Attend sessions as recommended. Complete home exercises provided by therapists to support progress.' },
-              { num: '06', title: 'Monitor Progress', content: 'Communicate regularly with your child\'s therapists about goals, progress, and any concerns.' },
-            ].map((step, i) => (
-              <div key={i} style={{
-                background: 'white', padding: '25px', borderRadius: '14px',
-                border: '2px solid #fcc200', boxShadow: '0 4px 10px rgba(0,0,0,0.05)'
-              }}>
-                <h3 style={{ color: '#0f4c81', marginTop: 0 }}>{step.num} • {step.title}</h3>
-                <p style={{ color: '#666', lineHeight: '1.6', margin: 0 }}>{step.content}</p>
+
+          {/* Desktop Stepper */}
+          <div className="stepper-desktop">
+            <div className="stepper-row" id="stepper">
+              {steps.map((s, i) => (
+                <div key={i} className={`step${i < stepIndex ? ' done' : i === stepIndex ? ' active' : ''}`} onClick={() => setStepIndex(i)}>
+                  <div className="step-top">
+                    <div className="step-circle">{i + 1}</div>
+                    {i < steps.length - 1 && <div className={`step-line${i < stepIndex ? ' done' : ''}`} />}
+                  </div>
+                  <div className="step-label">{s.title}</div>
+                </div>
+              ))}
+            </div>
+            <div className="step-content-box">
+              <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '11px', fontWeight: '800', color: '#fcc200', letterSpacing: '0.1em', marginBottom: '6px' }}>
+                STEP 0{stepIndex + 1}
+              </div>
+              <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '20px', fontWeight: '800', color: '#0f4c81', marginBottom: '8px' }}>
+                {steps[stepIndex].title}
+              </div>
+              <div style={{ fontSize: '14px', color: '#777', lineHeight: '1.7' }}>
+                {steps[stepIndex].content}
+              </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '1.25rem' }}>
+                <button className="step-nav-btn" style={{ background: '#f0f4fa', color: '#0f4c81' }}
+                  onClick={() => setStepIndex(Math.max(0, stepIndex - 1))}>← Back</button>
+                <button className="step-nav-btn" style={{ background: '#0f4c81', color: '#fff' }}
+                  onClick={() => setStepIndex(Math.min(steps.length - 1, stepIndex + 1))}>Next →</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile Accordion */}
+          <div className="stepper-mobile">
+            {steps.map((s, i) => (
+              <div key={i} className={`mob-item${mobOpen === i ? ' active' : ''}`} onClick={() => setMobOpen(mobOpen === i ? -1 : i)}>
+                <div className="mob-header">
+                  <div className="mob-num">{i + 1}</div>
+                  <div className="mob-title">{s.title}</div>
+                  <div className="mob-chevron">▼</div>
+                </div>
+                <div className="mob-body">
+                  <div className="mob-body-inner">{s.content}</div>
+                </div>
               </div>
             ))}
           </div>
-          <h3 style={{ textAlign: 'center', marginTop: '50px', color: '#0f4c81', fontWeight: '600' }}>
+
+          <h3 style={{ textAlign: 'center', marginTop: '3rem', color: '#0f4c81', fontWeight: '700', fontFamily: "'Nunito', sans-serif" }}>
             Work with us to unlock the best in your child! 💙💛
           </h3>
         </div>
