@@ -284,6 +284,17 @@ export default function HelpPage() {
             <p>Shows all unpaid Present and Cancelled sessions, arranged <strong>by date then alphabetically</strong>. Click <strong>Settle</strong> to record payment for any session directly from here.</p>
           </SubSection>
 
+          <SubSection title="Recording pending payment screenshots">
+            <p>When a client's parent sends a payment screenshot via Messenger, it automatically appears here under the <strong>Pending Payments</strong> tab on the Payments page.</p>
+            <Step num={1}>Go to <strong>Payments → Pending Payments tab</strong>.</Step>
+            <Step num={2}>Each card shows the client's name, sender's name, timestamp, and a thumbnail of the screenshot.</Step>
+            <Note type="info">The sender's Facebook name is shown on the card — useful when a different parent or guardian sends the screenshot. Make sure to select the correct client manually in that case.</Note>
+            <Step num={3}>Click <strong>Process</strong> to open the payment modal — the amount, reference number, and bank are auto-read from the screenshot. If the screenshot is not payment-related, click <strong>Dismiss</strong> to remove it from the list.</Step>
+            <Step num={4}>Verify the details and select the correct client if not auto-matched.</Step>
+            <Step num={5}>Click <strong>Record as credit</strong> — the amount is added to the client's credit balance and can be applied to any session.</Step>
+            <Note type="warning">If one payment is made for <strong>multiple clients</strong>, it is best to record via <strong>+ Advance / Partial Payment</strong> — this ensures each client's credit is updated correctly.</Note>
+          </SubSection>
+
           <SubSection title="How to export payments">
             <Step num={1}>Select the month using the month picker in the Export section.</Step>
             <Step num={2}>Click <strong>⬇ Export Excel</strong>.</Step>
