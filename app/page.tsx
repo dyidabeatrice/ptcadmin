@@ -213,87 +213,69 @@ export default function HomePage() {
 
       {/* Intro & Pictures */}
       <section id="intro" style={{ padding: '6rem 2rem', background: '#e9ebee' }}>
-          <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <div style={{ fontSize: '12px', letterSpacing: '0.15em', color: '#fcc200', fontWeight: '700', marginBottom: '12px', textTransform: 'uppercase' }}>Who are We</div>
-            <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: 0, fontWeight: '700' }}>Get to Know Us</h2>
-            <p style={{ color: '#666', marginTop: '12px', fontSize: '16px', maxWidth: '500px', margin: '12px auto 0' }}>
-              Potentials Therapy Center is a special needs therapy center built to become partners with families that are committed to unlocking their child's best through individualized programs created, executed, and managed by our excellent roster of clinicians and teachers.
-            </p>
+        <style>{`
+          .ab-strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; scrollbar-width: none; cursor: grab; }
+          .ab-strip::-webkit-scrollbar { display: none; }
+          .ab-photo { flex-shrink: 0; width: 260px; height: 180px; border-radius: 12px; overflow: hidden; scroll-snap-align: start; transition: width 0.4s ease; }
+          @media (hover: hover) { .ab-photo:hover { width: 360px; } }
+          .ab-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+          @media (hover: hover) { .ab-photo:hover img { transform: scale(1.05); } }
+        `}</style>
+
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <div style={{ fontSize: '11px', letterSpacing: '0.18em', color: '#fcc200', fontWeight: '600', marginBottom: '10px', textTransform: 'uppercase' }}>
+            Who are we
           </div>
-      {/* Facility Photo Strip */}
-            <div style={{ display: 'flex', gap: '5px', justifyContent: 'center', alignItems: 'center', marginBottom: '1.5rem'}}>
-            {['/clinic1.jpg', '/clinic2.jpg', '/clinic3.jpg'].map((src, i) => (
-                <div
-                key={i}
-                style={{
-                    width: '300px',               // square preview
-                    height: '220px',
-                    overflow: 'hidden',
-                    transition: 'width 0.5s ease, transform 0.3s ease',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
-                    cursor: 'pointer'
-                }}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.width = '440px';   // expand horizontally (accordion)
-                    e.currentTarget.style.transform = 'scale(1.02)';
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.width = '300px';   // return to square
-                    e.currentTarget.style.transform = 'scale(1)';
-                }}
-                >
-                <img
-                    src={src}
-                    alt="Clinic Facility"
-                    style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    transition: 'transform 0.5s ease',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.1)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                />
-                </div>
-            ))}
-            </div> 
-         {/* Therapists Photo Strip */}
-            <div style={{ display: 'flex', gap: '5px', justifyContent: 'center', alignItems: 'center', marginBottom: '1.5rem'}}>
-            {['/staff1.jpg', '/staff2.jpg', '/staff3.jpg'].map((src, i) => (
-                <div
-                key={i}
-                style={{
-                    width: '300px',               // square preview
-                    height: '220px',
-                    overflow: 'hidden',
-                    transition: 'width 0.5s ease, transform 0.3s ease',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.10)',
-                    cursor: 'pointer'
-                }}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.width = '440px';   // expand horizontally (accordion)
-                    e.currentTarget.style.transform = 'scale(1.02)';
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.width = '300px';   // return to square
-                    e.currentTarget.style.transform = 'scale(1)';
-                }}
-                >
-                <img
-                    src={src}
-                    alt="PTC Therapists"
-                    style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    transition: 'transform 0.5s ease',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.1)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-                />
-                </div>
-            ))}
-            </div>   
+          <h2 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 14px', fontWeight: '800' }}>
+            Get to Know Us
+          </h2>
+          <p style={{ color: '#666', fontSize: '15px', maxWidth: '540px', margin: '0 auto', lineHeight: '1.75', fontWeight: '300' }}>
+            Potentials Therapy Center is a special needs therapy center built to become partners with families that are committed to unlocking their child's best through individualized programs created, executed, and managed by our excellent roster of clinicians and teachers.
+          </p>
+        </div>
+
+        {/* Facility Strip */}
+        {[
+          { label: 'Our Facility', photos: ['/clinic1.jpg', '/clinic2.jpg', '/clinic3.jpg'] },
+          { label: 'Our Team', photos: ['/staff1.jpg', '/staff2.jpg', '/staff3.jpg'] },
+        ].map((strip) => (
+          <div key={strip.label} style={{ marginBottom: '2.5rem' }}>
+
+            {/* Strip Label */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '14px' }}>
+              <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
+              <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>
+                {strip.label}
+              </div>
+              <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
+            </div>
+
+            {/* Scroll Strip */}
+            <div style={{ position: 'relative' }}>
+              <div className="ab-strip">
+                {strip.photos.map((src, i) => (
+                  <div key={i} className="ab-photo">
+                    <img src={src} alt={strip.label} />
+                  </div>
+                ))}
+              </div>
+              {/* Fade hint */}
+              <div style={{ position: 'absolute', top: 0, right: 0, width: '60px', height: 'calc(100% - 6px)', background: 'linear-gradient(to right, transparent, #e9ebee)', pointerEvents: 'none' }} />
+            </div>
+
+            {/* Swipe hint */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {strip.photos.map((_, i) => (
+                  <div key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#0f4c81', opacity: i === 0 ? 1 : 0.2 }} />
+                ))}
+              </div>
+              <span style={{ fontSize: '11px', color: '#bbb' }}>swipe to see more</span>
+            </div>
+
+          </div>
+        ))}
       </section>
 
       {/* Services */}
