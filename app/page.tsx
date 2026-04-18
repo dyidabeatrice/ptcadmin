@@ -252,7 +252,7 @@ export default function HomePage() {
             </div>
 
             {/* Scroll Strip */}
-            <div style={{ position: 'relative' }}>
+            <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative' }}>
               <div className="ab-strip">
                 {strip.photos.map((src, i) => (
                   <div key={i} className="ab-photo">
@@ -280,23 +280,67 @@ export default function HomePage() {
 
       {/* Services */}
       <section id="services" style={{ padding: '6rem 2rem', background: '#f8f9fb' }}>
+        <style>{`
+          .service-card {
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid #e8edf5;
+            cursor: pointer;
+            overflow: hidden;
+            height: 130px;
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease, height 0.3s ease;
+          }
+          @media (hover: hover) {
+            .service-card:hover {
+              transform: translateY(-5px);
+              box-shadow: 0 16px 32px rgba(252,194,0,0.18);
+              border-color: #fcc200;
+              background: #fffbec;
+              height: 175px;
+            }
+            .service-card:hover .service-card-icon { background: #fef3c7; }
+            .service-card:hover .service-card-desc { opacity: 1; transform: translateY(0); }
+          }
+          @media (max-width: 768px) {
+            .service-card { height: auto !important; }
+            .service-card-desc { opacity: 1 !important; transform: none !important; }
+          }
+          .service-card-icon {
+            width: 46px; height: 46px; border-radius: 12px;
+            background: #f0f4fa; display: flex; align-items: center;
+            justify-content: center; font-size: 22px; margin-bottom: 12px;
+            flex-shrink: 0; transition: background 0.25s ease;
+          }
+          .service-card-desc {
+            font-size: 13px; color: #888; line-height: 1.6; margin-top: 8px;
+            opacity: 0; transform: translateY(6px);
+            transition: opacity 0.25s ease 0.05s, transform 0.25s ease 0.05s;
+          }
+        `}</style>
+
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <div style={{ fontSize: '12px', letterSpacing: '0.15em', color: '#fcc200', fontWeight: '700', marginBottom: '12px', textTransform: 'uppercase' }}>What We Offer</div>
-            <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: 0, fontWeight: '700' }}>Our Therapy Services</h2>
-            <p style={{ color: '#666', marginTop: '12px', fontSize: '16px', maxWidth: '500px', margin: '12px auto 0' }}>
+            <div style={{ fontSize: '11px', letterSpacing: '0.18em', color: '#fcc200', fontWeight: '600', marginBottom: '10px', textTransform: 'uppercase' }}>
+              What We Offer
+            </div>
+            <h2 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 14px', fontWeight: '800' }}>
+              Our Therapy Services
+            </h2>
+            <p style={{ color: '#666', fontSize: '15px', maxWidth: '500px', margin: '0 auto', lineHeight: '1.75', fontWeight: '300' }}>
               Comprehensive, evidence-based therapies tailored to each child's unique needs.
             </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
             {services.map((s, i) => (
-              <div key={i} style={{
-                background: '#fff', borderRadius: '12px', padding: '1.5rem',
-                border: '1px solid #e8edf5',
-              }}>
-                <div style={{ fontSize: '28px', marginBottom: '10px' }}>{s.icon}</div>
-                <div style={{ fontSize: '15px', fontWeight: '600', color: '#0f4c81', marginBottom: '6px' }}>{s.name}</div>
-                <div style={{ fontSize: '13px', color: '#888', lineHeight: '1.6' }}>{s.desc}</div>
+              <div key={i} className="service-card">
+                <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column' }}>
+                  <div className="service-card-icon">{s.icon}</div>
+                  <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '14px', fontWeight: '700', color: '#0f4c81', lineHeight: '1.3' }}>
+                    {s.name}
+                  </div>
+                  <div className="service-card-desc">{s.desc}</div>
+                </div>
               </div>
             ))}
           </div>
