@@ -360,7 +360,7 @@ export default function HomePage() {
             border: 1px solid #e8edf5;
             cursor: pointer;
             overflow: hidden;
-            height: 130px;
+            height: 80px;
             transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease, height 0.3s ease;
           }
           @media (hover: hover) {
@@ -369,7 +369,7 @@ export default function HomePage() {
               box-shadow: 0 16px 32px rgba(252,194,0,0.18);
               border-color: #fcc200;
               background: #fffbec;
-              height: 175px;
+              height: 130px;
             }
             .service-card:hover .service-card-icon { background: #fef3c7; }
             .service-card:hover .service-card-desc { opacity: 1; transform: translateY(0); }
@@ -408,9 +408,11 @@ export default function HomePage() {
             {services.map((s, i) => (
               <div key={i} className="service-card">
                 <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column' }}>
-                  <div className="service-card-icon">{s.icon}</div>
-                  <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '14px', fontWeight: '700', color: '#0f4c81', lineHeight: '1.3' }}>
-                    {s.name}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+                    <div className="service-card-icon">{s.icon}</div>
+                    <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '14px', fontWeight: '700', color: '#0f4c81', lineHeight: '1.3' }}>
+                      {s.name}
+                    </div>
                   </div>
                   <div className="service-card-desc">{s.desc}</div>
                 </div>
