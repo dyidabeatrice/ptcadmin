@@ -508,10 +508,14 @@ export default function HomePage() {
                 {steps[stepIndex].content}
               </div>
               <div style={{ display: 'flex', gap: '10px', marginTop: '1.25rem' }}>
-                <button className="step-nav-btn" style={{ background: '#f0f4fa', color: '#0f4c81' }}
-                  onClick={() => setStepIndex(Math.max(0, stepIndex - 1))}>← Back</button>
-                <button className="step-nav-btn" style={{ background: '#0f4c81', color: '#fff' }}
-                  onClick={() => setStepIndex(Math.min(steps.length - 1, stepIndex + 1))}>Next →</button>
+                {stepIndex > 0 && (
+                  <button className="step-nav-btn" style={{ background: '#f0f4fa', color: '#0f4c81' }}
+                    onClick={() => setStepIndex(stepIndex - 1)}>← Back</button>
+                )}
+                {stepIndex < steps.length - 1 && (
+                  <button className="step-nav-btn" style={{ background: '#0f4c81', color: '#fff' }}
+                    onClick={() => setStepIndex(stepIndex + 1)}>Next →</button>
+                )}
               </div>
             </div>
           </div>
