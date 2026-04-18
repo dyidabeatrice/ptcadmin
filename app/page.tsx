@@ -647,15 +647,15 @@ export default function HomePage() {
       )}
 
       {/* Footer */}
-      <footer style={{ background: '#0f4c81', color: 'rgba(255,255,255,0.7)', padding: '2rem', textAlign: 'center' }}>
-        <div style={{ fontSize: '13px', marginBottom: '8px' }}>
+      <footer style={{ background: '#0f4c81', color: 'rgba(255,255,255,0.7)', padding: '2rem', textAlign: 'center', borderTop: '3px solid #fcc200' }}>
+        <div style={{ fontSize: '13px', marginBottom: '8px', fontFamily: "'Nunito', sans-serif", fontWeight: '600', color: 'rgba(255,255,255,0.8)' }}>
           © {new Date().getFullYear()} Potentials Therapy Center · Quezon City, Philippines
         </div>
-        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', fontSize: '13px' }}>
-          <a href="/privacy" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Privacy Policy</a>
-          <a target="_blank" rel="noopener noreferrer"href="mailto:potentialstherapycenter@gmail.com" style={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none' }}>Contact</a>
-          <Link href="/login" style={{ color: '#fcc200', textDecoration: 'none', fontWeight: '500' }}>Staff Login</Link>
-          <Link href="/therapist/login" style={{ color: '#fcc200', textDecoration: 'none', fontWeight: '500' }}>Therapist Login</Link>
+        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', fontSize: '13px', fontFamily: "'Nunito', sans-serif", flexWrap: 'wrap' }}>
+          <a href="/privacy" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Privacy Policy</a>
+          <a target="_blank" rel="noopener noreferrer" href="mailto:potentialstherapycenter@gmail.com" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Contact</a>
+          <Link href="/login" style={{ color: '#fcc200', textDecoration: 'none', fontWeight: '700' }}>Staff Login</Link>
+          <Link href="/therapist/login" style={{ color: '#fcc200', textDecoration: 'none', fontWeight: '700' }}>Therapist Login</Link>
         </div>
       </footer>
     </div>
