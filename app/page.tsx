@@ -233,7 +233,7 @@ export default function HomePage() {
       {/* Intro & Pictures */}
       <section id="intro" style={{ padding: '6rem 2rem', background: '#e9ebee' }}>
         <style>{`
-          .slideshow { position: relative; border-radius: 14px; overflow: hidden; height: 340px; }
+          .slideshow { position: relative; border-radius: 14px; overflow: hidden; aspect-ratio: 16/9; max-height: 380px; }
           .slides { display: flex; transition: transform 0.4s cubic-bezier(0.4,0,0.2,1); height: 100%; }
           .slide { flex-shrink: 0; width: 100%; height: 100%; }
           .slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -244,6 +244,38 @@ export default function HomePage() {
           .slide-dots { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 12px; }
           .slide-dot { width: 7px; height: 7px; border-radius: 50%; background: #0f4c81; opacity: 0.2; cursor: pointer; border: none; padding: 0; transition: opacity 0.2s, transform 0.2s; }
           .slide-dot.active { opacity: 1; transform: scale(1.2); }
+          .ab-strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; scrollbar-width: none; cursor: grab; }
+          .ab-strip::-webkit-scrollbar { display: none; }
+          .ab-photo { flex-shrink: 0; width: 260px; height: 180px; border-radius: 12px; overflow: hidden; scroll-snap-align: start; transition: width 0.4s ease; }
+          @media (hover: hover) { .ab-photo:hover { width: 360px; } }
+          .ab-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+          @media (hover: hover) { .ab-photo:hover img { transform: scale(1.05); } }
+          .team-track {
+            display: flex;
+            gap: 10px;
+            width: max-content;
+            animation: teamScroll 18s linear infinite;
+          }
+          .team-track:hover {
+            animation-play-state: paused;
+          }
+          .team-photo {
+            flex-shrink: 0;
+            width: 280px;
+            height: 200px;
+            border-radius: 12px;
+            overflow: hidden;
+          }
+          .team-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+          }
+          @keyframes teamScroll {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
         `}</style>
 
         {/* Header */}
@@ -259,51 +291,53 @@ export default function HomePage() {
           </p>
         </div>
 
-        {[
-          { id: 'clinic', label: 'Our Facility', photos: ['/clinic2.jpg', '/clinic1.jpg', '/clinic3.jpg'] },
-          { id: 'staff',  label: 'Our Team',     photos: ['/staff1.jpg',  '/staff2.jpg',  '/staff3.jpg']  },
-        ].map((strip) => (
-          <div key={strip.id} style={{ maxWidth: '1100px', margin: '0 auto 2.5rem' }}>
-
-            {/* Label */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '14px' }}>
-              <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
-              <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>
-                {strip.label}
-              </div>
-              <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
-            </div>
-
-            {/* Slideshow */}
-            <div className="slideshow" id={`${strip.id}-show`}>
-              <div
-                className="slides"
-                id={`${strip.id}-slides`}
-                style={{ transform: 'translateX(-100%)' }}
-              >
-                {strip.photos.map((src, i) => (
-                  <div key={i} className="slide">
-                    <img src={src} alt={strip.label} />
-                  </div>
-                ))}
-              </div>
-              <button className="slide-arrow slide-arrow-left" onClick={() => slideShow(strip.id, -1, strip.photos.length)}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0f4c81" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-              </button>
-              <button className="slide-arrow slide-arrow-right" onClick={() => slideShow(strip.id, 1, strip.photos.length)}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0f4c81" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-              </button>
-            </div>
-
-            {/* Dots */}
-            <div className="slide-dots" id={`${strip.id}-dots`}>
-              {strip.photos.map((_, i) => (
-                <button key={i} className={`slide-dot${i === 1 ? ' active' : ''}`} onClick={() => goToSlide(strip.id, i)} />
+        {/* Our Facility — Slideshow */}
+        <div style={{ maxWidth: '1100px', margin: '0 auto 2.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '14px' }}>
+            <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
+            <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>Our Facility</div>
+            <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
+          </div>
+          <div className="slideshow" id="clinic-show">
+            <div className="slides" id="clinic-slides" style={{ transform: 'translateX(-100%)' }}>
+              {['/clinic1.jpg', '/clinic2.jpg', '/clinic3.jpg'].map((src, i) => (
+                <div key={i} className="slide"><img src={src} alt="Our Facility" /></div>
               ))}
             </div>
-
+            <button className="slide-arrow slide-arrow-left" onClick={() => slideShow('clinic', -1, 3)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0f4c81" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <button className="slide-arrow slide-arrow-right" onClick={() => slideShow('clinic', 1, 3)}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0f4c81" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
           </div>
-        ))}
+          <div className="slide-dots" id="clinic-dots">
+            {[0, 1, 2].map(i => (
+              <button key={i} className={`slide-dot${i === 1 ? ' active' : ''}`} onClick={() => goToSlide('clinic', i)} />
+            ))}
+          </div>
+        </div>
+
+      {/* Our Team — Auto Scroll Strip */}
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '14px' }}>
+          <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
+          <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>Our Team</div>
+          <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
+        </div>
+        <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '12px' }}>
+          <div className="team-track">
+            {/* Duplicate photos for seamless loop */}
+            {['/staff1.jpg', '/staff2.jpg', '/staff3.jpg', '/staff1.jpg', '/staff2.jpg', '/staff3.jpg'].map((src, i) => (
+              <div key={i} className="team-photo">
+                <img src={src} alt="Our Team" />
+              </div>
+            ))}
+          </div>
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '60px', height: '100%', background: 'linear-gradient(to right, #e9ebee, transparent)', pointerEvents: 'none', zIndex: 1 }} />
+          <div style={{ position: 'absolute', top: 0, right: 0, width: '60px', height: '100%', background: 'linear-gradient(to left, #e9ebee, transparent)', pointerEvents: 'none', zIndex: 1 }} />
+        </div>
+      </div>
       </section>
 
       {/* Services */}
