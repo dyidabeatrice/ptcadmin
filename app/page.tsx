@@ -65,6 +65,9 @@ export default function HomePage() {
         @media (max-width: 768px) {
           .desktop-links { display: none !important; }
           .hamburger-btn { display: flex !important; }
+          #location > div {
+            grid-template-columns: 1fr !important;
+            gap: 2rem !important;
         }
       `}</style>
 
@@ -538,50 +541,78 @@ export default function HomePage() {
       {/* Location */}
       <section id="location" style={{ padding: '6rem 2rem', background: '#fff' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }}>
+          
           <div>
-            <div style={{ fontSize: '12px', letterSpacing: '0.15em', color: '#fcc200', fontWeight: '700', marginBottom: '12px', textTransform: 'uppercase' }}>Where To Find Us</div>
-            <h2 style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 1.5rem', fontWeight: '700' }}>Visit Our Clinic</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ fontSize: '11px', letterSpacing: '0.18em', color: '#fcc200', fontWeight: '600', marginBottom: '10px', textTransform: 'uppercase' }}>
+              Where to find us
+            </div>
+            <h2 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 2rem', fontWeight: '800' }}>
+              Visit Our Clinic
+            </h2>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+              {/* Address */}
               <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '20px', flexShrink: 0 }}>📍</span>
+                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#f0f4fa', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0f4c81" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                </div>
                 <div>
-                  <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>Address</div>
-                  <div style={{ color: '#666', fontSize: '14px', lineHeight: '1.6' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '600', color: '#333', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Address</div>
+                  <div style={{ fontSize: '14px', color: '#666', lineHeight: '1.65' }}>
                     Unit 2A, #72, MIC Building, Bukidnon Street<br />
                     Brgy. Ramon Magsaysay, Bago Bantay<br />
-                    Quezon City, Philippines 1105<br />
-                    <span style={{ color: '#999', fontSize: '13px' }}>Near Grass Residences, SM North Edsa Annex</span>
+                    Quezon City, Philippines 1105
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#bbb', marginTop: '3px' }}>Near Grass Residences, SM North Edsa Annex</div>
+                </div>
+              </div>
+
+              {/* Email */}
+              <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#f0f4fa', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0f4c81" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </div>
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: '600', color: '#333', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Email</div>
+                  <div style={{ fontSize: '14px', color: '#666' }}>
+                    <a target="_blank" rel="noopener noreferrer" href="mailto:potentialstherapycenter@gmail.com" style={{ color: '#0f4c81', textDecoration: 'none' }}>
+                      potentialstherapycenter@gmail.com
+                    </a>
                   </div>
                 </div>
               </div>
+
+              {/* Follow Us */}
               <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '20px', flexShrink: 0 }}>✉️</span>
-                <div>
-                  <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>Email</div>
-                  <a target="_blank" rel="noopener noreferrer" href="mailto:potentialstherapycenter@gmail.com" style={{ color: '#0f4c81', fontSize: '14px', textDecoration: 'none' }}>
-                    potentialstherapycenter@gmail.com
-                  </a>
+                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: '#f0f4fa', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0f4c81" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                  </svg>
                 </div>
-              </div>
-              <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
-                <span style={{ fontSize: '20px', flexShrink: 0 }}>📱</span>
                 <div>
-                  <div style={{ fontWeight: '600', color: '#333', marginBottom: '8px' }}>Follow Us</div>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <a target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/potentialstherapycenter" style={{
-                      padding: '8px 16px', borderRadius: '6px', background: '#1877f2', color: '#fff',
-                      textDecoration: 'none', fontSize: '13px', fontWeight: '500'
-                    }}>Facebook</a>
-                    <a target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/potentialstherapycenter/" style={{
-                      padding: '8px 16px', borderRadius: '6px', background: '#e1306c', color: '#fff',
-                      textDecoration: 'none', fontSize: '13px', fontWeight: '500'
-                    }}>Instagram</a>
+                  <div style={{ fontSize: '12px', fontWeight: '600', color: '#333', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Follow Us</div>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <a target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/potentialstherapycenter"
+                      style={{ padding: '8px 20px', borderRadius: '40px', background: '#0f4c81', color: '#fff', textDecoration: 'none', fontSize: '12px', fontWeight: '700', fontFamily: "'Nunito', sans-serif", display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                      Facebook
+                    </a>
+                    <a target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/potentialstherapycenter/"
+                      style={{ padding: '8px 20px', borderRadius: '40px', background: 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)', color: '#fff', textDecoration: 'none', fontSize: '12px', fontWeight: '700', fontFamily: "'Nunito', sans-serif", display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="white" stroke="none"/></svg>
+                      Instagram
+                    </a>
                   </div>
                 </div>
               </div>
+
             </div>
           </div>
-          <div style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', height: '380px' }}>
+
+          {/* Map */}
+          <div style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(15,76,129,0.1)', border: '1px solid #e8edf5', height: '380px' }}>
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3859.9362508724644!2d121.02258107404421!3d14.65955918583378!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397b7d948f8a53d%3A0xbeb6658438477430!2sPotentials%20Therapy%20Center!5e0!3m2!1sfr!2sfr!4v1775319508687!5m2!1sfr!2sfr"
               width="100%" height="100%"
@@ -590,6 +621,7 @@ export default function HomePage() {
               loading="lazy"
             />
           </div>
+
         </div>
       </section>
 
