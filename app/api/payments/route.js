@@ -54,7 +54,8 @@ export async function GET(request) {
         .map(row => ({
           id: row[0], psid: row[1], client_name: row[2],
           drive_file_id: row[3], image_url: row[4],
-          received_at: row[5], status: row[6]
+          received_at: row[5], status: row[6],
+          sender_name: row[7] || ''
         }))
       return Response.json({ success: true, data: pending })
     }

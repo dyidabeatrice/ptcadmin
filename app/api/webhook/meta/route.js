@@ -93,7 +93,7 @@ async function getClientByPsid(psid) {
   return match ? match[1] : ''
 }
 
-async function savePendingPayment(psid, clientName, imageUrl) {
+async function savePendingPayment(psid, clientName, imageUrl, senderName) {
   const sheets = getGoogleSheets()
   const now = new Date().toLocaleDateString('en-US', {
     timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric',
@@ -112,7 +112,8 @@ async function savePendingPayment(psid, clientName, imageUrl) {
         '',
         imageUrl || '',
         now,
-        'pending'
+        'pending',
+        senderName || ''
       ]]
     }
   })
@@ -165,7 +166,7 @@ export async function POST(request) {
             if (!imageUrl) continue
             try {
               const clientName = await getClientByPsid(psid)
-              await savePendingPayment(psid, clientName, imageUrl)
+              await savePendingPayment(psid, clientName, imageUrl, senderName || '')
             } catch (imgError) {
               console.error('Image processing error:', imgError)
             }

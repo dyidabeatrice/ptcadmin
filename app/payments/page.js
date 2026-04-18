@@ -1119,6 +1119,11 @@ export default function PaymentsPage() {
                           <span style={{ fontWeight: '600', color: '#633806', fontSize: '14px' }}>
                             {p.client_name || '❓ Unknown client'}
                           </span>
+                          {p.sender_name && (
+                            <span style={{ marginLeft: '8px', fontSize: '11px', color: '#633806', opacity: 0.7 }}>
+                              sent by {p.sender_name}
+                            </span>
+                          )}
                           <span style={{ marginLeft: '8px', fontSize: '11px', color: '#633806', opacity: 0.7 }}>received {p.received_at}</span>
                         </div>
                         <div style={{ display: 'flex', gap: '8px' }}>
