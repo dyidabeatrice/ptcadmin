@@ -233,10 +233,17 @@ export default function HomePage() {
       {/* Intro & Pictures */}
       <section id="intro" style={{ padding: '6rem 2rem', background: '#e9ebee' }}>
         <style>{`
-          .slideshow { position: relative; border-radius: 14px; overflow: hidden; aspect-ratio: 16/9; max-height: 380px; }
+          .slideshow {
+              position: relative;
+              border-radius: 8px; /* reduced from 14px */
+              overflow: hidden;
+              width: 100%;
+              max-height: 380px;
+              aspect-ratio: 16/9;
+            }
           .slides { display: flex; transition: transform 0.4s cubic-bezier(0.4,0,0.2,1); height: 100%; }
           .slide { flex-shrink: 0; width: 100%; height: 100%; }
-          .slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+          .slide img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 0;}
           .slide-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.9); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.2s; z-index: 2; }
           .slide-arrow:hover { background: #fcc200; transform: translateY(-50%) scale(1.08); }
           .slide-arrow-left { left: 12px; }
@@ -263,7 +270,7 @@ export default function HomePage() {
             flex-shrink: 0;
             width: 280px;
             height: 200px;
-            border-radius: 12px;
+            border-radius: 6px;
             overflow: hidden;
           }
           .team-photo img {
@@ -292,6 +299,8 @@ export default function HomePage() {
         </div>
 
         {/* Our Facility — Slideshow */}
+        <div style={{ maxWidth: '1100px', margin: '0 auto 2.5rem', padding: '0 1rem' }}>
+        <div style={{ width: '100%' }} className="slideshow" id="clinic-show">
         <div style={{ maxWidth: '1100px', margin: '0 auto 2.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '14px' }}>
             <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
@@ -316,6 +325,8 @@ export default function HomePage() {
               <button key={i} className={`slide-dot${i === 1 ? ' active' : ''}`} onClick={() => goToSlide('clinic', i)} />
             ))}
           </div>
+        </div>
+        </div>
         </div>
 
       {/* Our Team — Auto Scroll Strip */}
