@@ -177,8 +177,8 @@ export default function HomePage() {
 
         <h1 style={{
           fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: '#545454',
-          fontWeight: '700', margin: '0 0 1rem', lineHeight: '1.2',
-          maxWidth: '700px'
+          fontWeight: '800', margin: '0 0 1rem', lineHeight: '1.2',
+          maxWidth: '700px', fontFamily: "'Nunito', sans-serif"
         }}>Potentials Therapy Center</h1>
 
         <p style={{
@@ -189,23 +189,25 @@ export default function HomePage() {
         </p>
 
         <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <a target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/potentialstherapycenter" style={{
-            padding: '14px 32px', borderRadius: '8px',
-            background: '#fcc200', color: '#0f4c81',
-            textDecoration: 'none', fontSize: '15px', fontWeight: '700'
-          }}>Book an Appointment</a>
-          <a href="#services" style={{
-            padding: '14px 32px', borderRadius: '8px',
-            background: '#efefef', color: '#545454',
-            textDecoration: 'none', fontSize: '15px', fontWeight: '500',
-            border: '1px solid #545454'
-          }}>Our Services</a>
-          <a href="#location" style={{
-            padding: '14px 32px', borderRadius: '8px',
-            background: '#efefef', color: '#545454',
-            textDecoration: 'none', fontSize: '15px', fontWeight: '500',
-            border: '1px solid #545454'
-          }}>Find Us</a>
+        <a target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/potentialstherapycenter" style={{
+          padding: '14px 32px', borderRadius: '40px',
+          background: '#fcc200', color: '#0f4c81',
+          textDecoration: 'none', fontSize: '15px', fontWeight: '700',
+          fontFamily: "'Nunito', sans-serif"
+        }}>Book an Appointment</a>
+        <a href="#services" style={{
+          padding: '14px 32px', borderRadius: '40px',
+          background: '#0f4c81', color: '#fff',
+          textDecoration: 'none', fontSize: '15px', fontWeight: '600',
+          fontFamily: "'Nunito', sans-serif"
+        }}>Our Services</a>
+        <a href="#location" style={{
+          padding: '14px 32px', borderRadius: '40px',
+          background: 'transparent', color: '#545454',
+          textDecoration: 'none', fontSize: '15px', fontWeight: '600',
+          border: '1.5px solid #545454',
+          fontFamily: "'Nunito', sans-serif"
+        }}>Find Us</a>
         </div>
       </section>
 
