@@ -1,10 +1,29 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false)
   const [showJoinUs, setShowJoinUs] = useState(false)
+  const slideState = useRef<Record<string, number>>({ clinic: 1, staff: 1 })
+  const updateSlideshow = (id: string, index: number) => {
+    slideState.current[id] = index
+    const slidesEl = document.getElementById(`${id}-slides`)
+    if (slidesEl) slidesEl.style.transform = `translateX(-${index * 100}%)`
+    document.querySelectorAll(`#${id}-dots .slide-dot`).forEach((d, i) => {
+      d.classList.toggle('active', i === index)
+    })
+  }
+
+  const slideShow = (id: string, dir: number, total: number) => {
+    const current = slideState.current[id]
+    const next = (current + dir + total) % total
+    updateSlideshow(id, next)
+  }
+
+  const goToSlide = (id: string, index: number) => {
+    updateSlideshow(id, index)
+  }
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40)
@@ -214,12 +233,17 @@ export default function HomePage() {
       {/* Intro & Pictures */}
       <section id="intro" style={{ padding: '6rem 2rem', background: '#e9ebee' }}>
         <style>{`
-          .ab-strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; scrollbar-width: none; cursor: grab; }
-          .ab-strip::-webkit-scrollbar { display: none; }
-          .ab-photo { flex-shrink: 0; width: 260px; height: 180px; border-radius: 12px; overflow: hidden; scroll-snap-align: start; transition: width 0.4s ease; }
-          @media (hover: hover) { .ab-photo:hover { width: 360px; } }
-          .ab-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
-          @media (hover: hover) { .ab-photo:hover img { transform: scale(1.05); } }
+          .slideshow { position: relative; border-radius: 14px; overflow: hidden; height: 340px; }
+          .slides { display: flex; transition: transform 0.4s cubic-bezier(0.4,0,0.2,1); height: 100%; }
+          .slide { flex-shrink: 0; width: 100%; height: 100%; }
+          .slide img { width: 100%; height: 100%; object-fit: cover; display: block; }
+          .slide-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.9); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.2s; z-index: 2; }
+          .slide-arrow:hover { background: #fcc200; transform: translateY(-50%) scale(1.08); }
+          .slide-arrow-left { left: 12px; }
+          .slide-arrow-right { right: 12px; }
+          .slide-dots { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 12px; }
+          .slide-dot { width: 7px; height: 7px; border-radius: 50%; background: #0f4c81; opacity: 0.2; cursor: pointer; border: none; padding: 0; transition: opacity 0.2s, transform 0.2s; }
+          .slide-dot.active { opacity: 1; transform: scale(1.2); }
         `}</style>
 
         {/* Header */}
@@ -235,14 +259,13 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Facility Strip */}
         {[
-          { label: 'Our Facility', photos: ['/clinic1.jpg', '/clinic2.jpg', '/clinic3.jpg'] },
-          { label: 'Our Team', photos: ['/staff1.jpg', '/staff2.jpg', '/staff3.jpg'] },
+          { id: 'clinic', label: 'Our Facility', photos: ['/clinic2.jpg', '/clinic1.jpg', '/clinic3.jpg'] },
+          { id: 'staff',  label: 'Our Team',     photos: ['/staff1.jpg',  '/staff2.jpg',  '/staff3.jpg']  },
         ].map((strip) => (
-          <div key={strip.label} style={{ marginBottom: '2.5rem' }}>
+          <div key={strip.id} style={{ maxWidth: '1100px', margin: '0 auto 2.5rem' }}>
 
-            {/* Strip Label */}
+            {/* Label */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '14px' }}>
               <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
               <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>
@@ -251,27 +274,32 @@ export default function HomePage() {
               <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
             </div>
 
-            {/* Scroll Strip */}
-            <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative' }}>
-              <div className="ab-strip">
+            {/* Slideshow */}
+            <div className="slideshow" id={`${strip.id}-show`}>
+              <div
+                className="slides"
+                id={`${strip.id}-slides`}
+                style={{ transform: 'translateX(-100%)' }}
+              >
                 {strip.photos.map((src, i) => (
-                  <div key={i} className="ab-photo">
+                  <div key={i} className="slide">
                     <img src={src} alt={strip.label} />
                   </div>
                 ))}
               </div>
-              {/* Fade hint */}
-              <div style={{ position: 'absolute', top: 0, right: 0, width: '60px', height: 'calc(100% - 6px)', background: 'linear-gradient(to right, transparent, #e9ebee)', pointerEvents: 'none' }} />
+              <button className="slide-arrow slide-arrow-left" onClick={() => slideShow(strip.id, -1, strip.photos.length)}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0f4c81" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <button className="slide-arrow slide-arrow-right" onClick={() => slideShow(strip.id, 1, strip.photos.length)}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0f4c81" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
             </div>
 
-            {/* Swipe hint */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                {strip.photos.map((_, i) => (
-                  <div key={i} style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#0f4c81', opacity: i === 0 ? 1 : 0.2 }} />
-                ))}
-              </div>
-              <span style={{ fontSize: '11px', color: '#bbb' }}>swipe to see more</span>
+            {/* Dots */}
+            <div className="slide-dots" id={`${strip.id}-dots`}>
+              {strip.photos.map((_, i) => (
+                <button key={i} className={`slide-dot${i === 1 ? ' active' : ''}`} onClick={() => goToSlide(strip.id, i)} />
+              ))}
             </div>
 
           </div>
