@@ -369,7 +369,7 @@ export default function HomePage() {
               box-shadow: 0 16px 32px rgba(252,194,0,0.18);
               border-color: #fcc200;
               background: #fffbec;
-              height: 130px;
+              height: 155px;
             }
             .service-card:hover .service-card-icon { background: #fef3c7; }
             .service-card:hover .service-card-desc { opacity: 1; transform: translateY(0); }
@@ -410,7 +410,7 @@ export default function HomePage() {
                 <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
                     <div className="service-card-icon">{s.icon}</div>
-                    <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '14px', fontWeight: '700', color: '#0f4c81', lineHeight: '1.3' }}>
+                    <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '16px', fontWeight: '700', color: '#0f4c81', lineHeight: '1.3' }}>
                       {s.name}
                     </div>
                   </div>
