@@ -868,9 +868,8 @@ export default function PaymentsPage() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'zoom-out'
         }}>
-        <img src={p.image_url} alt="Payment screenshot"
-          style={{ maxWidth: '200px', maxHeight: '150px', objectFit: 'contain', borderRadius: '6px', border: '1px solid #e0e0e0', cursor: 'zoom-in' }}
-          onClick={() => setZoomedImage(p.image_url)} />
+          <img src={zoomedImage} alt="Payment screenshot"
+            style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px' }} />
         </div>
       )}
 
@@ -1161,9 +1160,9 @@ export default function PaymentsPage() {
                       </div>
                       {p.image_url && (
                         <div style={{ padding: '12px 16px' }}>
-                          <img src={p.image_url} alt="Payment screenshot"
-                            style={{ maxWidth: '200px', maxHeight: '150px', objectFit: 'contain', borderRadius: '6px', border: '1px solid #e0e0e0', cursor: 'pointer' }}
-                            onClick={() => window.open(p.image_url, '_blank')} />
+                      <img src={p.image_url} alt="Payment screenshot"
+                        style={{ maxWidth: '200px', maxHeight: '150px', objectFit: 'contain', borderRadius: '6px', border: '1px solid #e0e0e0', cursor: 'zoom-in' }}
+                        onClick={() => setZoomedImage(p.image_url)} />
                         </div>
                       )}
                     </div>
