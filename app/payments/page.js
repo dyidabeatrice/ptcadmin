@@ -340,6 +340,7 @@ export default function PaymentsPage() {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
+  const [zoomedImage, setZoomedImage] = useState(null)
 
   useEffect(() => { fetchAll() }, [])
 
@@ -857,6 +858,19 @@ export default function PaymentsPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {zoomedImage && (
+        <div onClick={() => setZoomedImage(null)} style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.85)', zIndex: 200,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'zoom-out'
+        }}>
+        <img src={p.image_url} alt="Payment screenshot"
+          style={{ maxWidth: '200px', maxHeight: '150px', objectFit: 'contain', borderRadius: '6px', border: '1px solid #e0e0e0', cursor: 'zoom-in' }}
+          onClick={() => setZoomedImage(p.image_url)} />
         </div>
       )}
 
