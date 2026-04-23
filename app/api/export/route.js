@@ -162,7 +162,11 @@ export async function GET(request) {
         ['Level:', info.level],
         [],
         headers,
-        ...payments.map((p, idx) => {
+        ...[...payments].sort((a, b) => {
+          const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
+          const parseDate = (d) => { if (!d) return new Date(0); const p = d.replace(',','').split(' '); return p.length !== 3 ? new Date(0) : new Date(parseInt(p[2]), months[p[0]], parseInt(p[1])) }
+          return parseDate(a.date) - parseDate(b.date)
+        }).map((p, idx) => {
           const row = idx + 5
           return [
             p.date,
@@ -196,7 +200,11 @@ export async function GET(request) {
         [`${specialty} INTERNS — ${monthName} ${year}`],
         [],
         headers,
-        ...payments.map(p => {
+        ...[...payments].sort((a, b) => {
+          const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
+          const parseDate = (d) => { if (!d) return new Date(0); const p = d.replace(',','').split(' '); return p.length !== 3 ? new Date(0) : new Date(parseInt(p[2]), months[p[0]], parseInt(p[1])) }
+          return parseDate(a.date) - parseDate(b.date)
+        }).map(p => {
           const isIE = p.session_type === 'Intern Evaluation'
           const total = isIE ? 800 : (p.amount || 600)
           return [p.date, p.client_name, p.session_type, p.mop, p.reference, total, 0, total, p.comments]
