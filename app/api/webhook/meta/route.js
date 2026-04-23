@@ -86,11 +86,11 @@ async function updateSessionStatus(weekKey, rowIndex, status) {
 }
 
 async function getClientByPsid(psid) {
-  if (!psid) return ''
+  if (!psid) return { clientName: '', senderName: '' }
   const data = await getSheetData('clients')
   const [, ...rows] = data
   const match = rows.find(r => r && r[11] === psid)
-  return match ? match[1] : ''
+  return match ? { clientName: match[1], senderName: match[3] || '' } : { clientName: '', senderName: '' }
 }
 
 async function savePendingPayment(psid, clientName, imageUrl, senderName) {
@@ -165,9 +165,10 @@ export async function POST(request) {
             const imageUrl = attachment.payload?.url
             if (!imageUrl) continue
             try {
-              const clientName = await getClientByPsid(psid)
-              console.log('Saving pending payment:', { psid, clientName, senderName })
-              await savePendingPayment(psid, clientName, imageUrl, senderName || '')
+              const { clientName, senderName: clientFbName } = await getClientByPsid(psid)
+              const finalSenderName = senderName || clientFbName || ''
+              console.log('Saving pending payment:', { psid, clientName, finalSenderName })
+              await savePendingPayment(psid, clientName, imageUrl, finalSenderName)
             } catch (imgError) {
               console.error('Image processing error:', imgError)
             }
