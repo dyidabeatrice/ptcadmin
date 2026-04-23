@@ -281,7 +281,7 @@ if (body.action === 'status') {
       }
 
       // Log to payments sheet FIRST before any credits calls
-      const payDate = new Date().toLocaleDateString('en-PH', {
+      const payDate = body.date || new Date().toLocaleDateString('en-US', {
         timeZone: 'Asia/Manila',
         year: 'numeric', month: 'short', day: 'numeric'
       })
