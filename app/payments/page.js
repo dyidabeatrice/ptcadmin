@@ -6,7 +6,6 @@ const VERIFIERS = ['DUANE', 'KAMYLLE']
 
 function getRowColor(session) {
   if (!session.is_paid) return '#f99c9c'
-  if (session.mop === 'Cash') return '#7bfb7b97'
   if ((session.mop === 'BDO' || session.mop === 'Union Bank') && !session.reference) return '#fbff00'
   return 'white'
 }
@@ -28,17 +27,15 @@ function LedgerRow({ session, onPaid, clients }) {
   const [center, setCenter] = useState(session.center || 0)
   const [saving, setSaving] = useState(false)
   const prevMop = useRef(session.mop || '')
+  const [isPaid, setIsPaid] = useState(session.is_paid)
 
   const client = clients?.find(c => c.name === session.client_name)
   const creditBalance = client?.credit_balance || 0
 
-  const [isPaid, setIsPaid] = useState(session.is_paid)
-
   async function savePayment() {
     if (!mop) return
-    if (session.is_paid && mop === prevMop.current && reference === session.reference && comments === session.comments) return
-    // Only save if MOP changed or newly paying
-    if (!session.is_paid && !mop) return
+    // Skip if nothing changed
+    if (isPaid && mop === prevMop.current && reference === session.reference && comments === session.comments && total === session.total) return
     setSaving(true)
     try {
       await fetch('/api/sessions', {
@@ -65,10 +62,10 @@ function LedgerRow({ session, onPaid, clients }) {
         })
       })
       prevMop.current = mop
-      // Don't call onPaid here — only refresh row color locally
       setIsPaid(true)
-      setSaving(false)
-    } catch (e) { console.error(e); setSaving(false) }
+      onPaid() // ← keep this so data persists
+    } catch (e) { console.error(e) }
+    setSaving(false)
   }
 
   async function sendRemind() {
@@ -88,7 +85,6 @@ function LedgerRow({ session, onPaid, clients }) {
   }
 
   const bg = !isPaid ? '#f99c9c'
-    : mop === 'Cash' ? '#7bfb7b97'
     : (mop === 'BDO' || mop === 'Union Bank') && !reference ? '#fbff00'
     : 'white'
 
