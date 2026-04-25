@@ -34,8 +34,12 @@ function LedgerRow({ session, onPaid, clients }) {
 
   async function savePayment() {
     if (!mop) return
-    // Skip if nothing changed
-    if (isPaid && mop === prevMop.current && reference === session.reference && comments === session.comments && total === session.total) return
+    const unchanged = session.is_paid 
+      && mop === prevMop.current 
+      && reference === session.reference 
+      && comments === session.comments
+      && Number(total) === Number(session.total)
+    if (unchanged) return
     setSaving(true)
     try {
       await fetch('/api/sessions', {
@@ -63,7 +67,6 @@ function LedgerRow({ session, onPaid, clients }) {
       })
       prevMop.current = mop
       setIsPaid(true)
-      onPaid() // ← keep this so data persists
     } catch (e) { console.error(e) }
     setSaving(false)
   }
