@@ -215,9 +215,9 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients }) {
                   </thead>
                   <tbody>
                     {sortedDates.map(([date, sessions]) => {
-                      const dateTotal = sessions.filter(s => s.is_paid).reduce((sum, s) => sum + (s.total || 0), 0)
-                      const dateCut = sessions.filter(s => s.is_paid).reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
-                      const dateCenter = sessions.filter(s => s.is_paid).reduce((sum, s) => sum + (s.center || 0), 0)
+                    const dateTotal = sessions.reduce((sum, s) => sum + (s.total || 0), 0)
+                    const dateCut = sessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
+                    const dateCenter = sessions.reduce((sum, s) => sum + (s.center || 0), 0)
 
                       return [
                         // Date header row
@@ -244,10 +244,9 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients }) {
                     })}
                     {/* Month total row */}
                     {(() => {
-                      const allPaid = allSessions.filter(s => s.is_paid)
-                      const mTotal = allPaid.reduce((sum, s) => sum + (s.total || 0), 0)
-                      const mCut = allPaid.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
-                      const mCenter = allPaid.reduce((sum, s) => sum + (s.center || 0), 0)
+                    const mTotal = allSessions.reduce((sum, s) => sum + (s.total || 0), 0)
+                    const mCut = allSessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
+                    const mCenter = allSessions.reduce((sum, s) => sum + (s.center || 0), 0)
                       return (
                         <tr style={{ background: '#0f4c81' }}>
                           <td colSpan={5} style={{ padding: '8px 10px', fontSize: '12px', fontWeight: '600', color: 'white' }}>
