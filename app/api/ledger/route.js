@@ -160,6 +160,80 @@ export async function GET() {
       })
     }
 
+// Fetch IE reports from payments sheet
+const ieReports = payRows.filter(r => r && r[0] && r[8] === 'ie_report')
+ieReports.forEach(row => {
+  const therapistName = row[2]
+  const therapistInfo = therapistMap[therapistName]
+  const level = therapistInfo?.level || 'JUNIOR 1'
+  const cut = RATES['IE REPORT']?.levels[level] || 800
+  allSessions.push({
+    id: row[0],
+    week_key: null,
+    index: null,
+    client_name: row[1],
+    therapist: therapistName,
+    date: row[7],
+    day: '',
+    time_start: '',
+    time_end: '',
+    session_type: 'IE REPORT',
+    status: 'Present',
+    is_paid: true,
+    mop: row[5] || '',
+    reference: row[9] || '',
+    comments: row[11] || '',
+    payment_id: row[0],
+    total: 0,
+    therapist_cut: cut,
+    center: 0,
+    therapist_level: level,
+    is_intern: false,
+    is_ie_report: true
+  })
+})
+
+    // Fetch paid document requests
+    const reportData = await getSheetData('reports')
+    const [, ...reportRows] = reportData
+    reportRows.filter(r => r && r[0] && r[8] === 'Paid').forEach(row => {
+      const therapistName = row[2]
+      const therapistInfo = therapistMap[therapistName]
+      const level = therapistInfo?.level || 'JUNIOR 1'
+      const amount = parseFloat(row[7] || 0)
+
+      // Find matching payment record for date and mop
+      const paymentRecord = payRows.find(p => p && p[3] === `DOC-${row[0]}`)
+      const payDate = paymentRecord ? paymentRecord[7] : row[4]
+      const mop = paymentRecord ? paymentRecord[5] : ''
+      const reference = paymentRecord ? paymentRecord[9] : ''
+
+      allSessions.push({
+        id: `DOC-${row[0]}`,
+        week_key: null,
+        index: null,
+        client_name: row[1],
+        therapist: therapistName,
+        date: payDate,
+        day: '',
+        time_start: '',
+        time_end: '',
+        session_type: row[6] || 'Document',
+        status: 'Present',
+        is_paid: true,
+        mop,
+        reference,
+        comments: row[9] || '',
+        payment_id: paymentRecord ? paymentRecord[0] : '',
+        total: amount,
+        therapist_cut: 0,
+        center: amount,
+        therapist_level: level,
+        is_intern: false,
+        is_document: true
+      })
+    })
+
     // Group by therapist → month → date
     const ledger = {}
     allSessions.forEach(s => {

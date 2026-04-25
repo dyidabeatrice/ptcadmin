@@ -45,6 +45,7 @@ function LedgerRow({ session, onPaid, clients }) {
 
   async function savePayment() {
     if (!mop) return
+    if (session.is_ie_report || session.is_document) return
     const unchanged = session.is_paid 
       && mop === prevMop.current 
       && reference === session.reference 
