@@ -193,7 +193,14 @@ export async function GET() {
       })
     })
 
-    return Response.json({ success: true, data: ledger, therapists: Object.keys(therapistMap).sort() })
+    const allTherapists = Object.keys(therapistMap).sort()
+    const regular = allTherapists.filter(t => !t.includes('INTERN'))
+    const otInterns = allTherapists.filter(t => t.includes('OT INTERN')).sort()
+    const stInterns = allTherapists.filter(t => t.includes('ST INTERN')).sort()
+    const otherInterns = allTherapists.filter(t => t.includes('INTERN') && !t.includes('OT INTERN') && !t.includes('ST INTERN')).sort()
+    const sorted = [...regular, ...otInterns, ...stInterns, ...otherInterns]
+
+    return Response.json({ success: true, data: ledger, therapists: sorted })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
   }
