@@ -5,9 +5,9 @@ const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
 const VERIFIERS = ['DUANE', 'KAMYLLE']
 
 function getRowColor(session) {
-  if (!session.is_paid) return '#FFE4EF'
-  if (session.mop === 'Cash') return '#F0F0F0'
-  if ((session.mop === 'BDO' || session.mop === 'Union Bank') && !session.reference) return '#FFFDE6'
+  if (!session.is_paid) return '#f99c9c'
+  if (session.mop === 'Cash') return '#7bfb7b97'
+  if ((session.mop === 'BDO' || session.mop === 'Union Bank') && !session.reference) return '#fbff00'
   return 'white'
 }
 
@@ -32,9 +32,13 @@ function LedgerRow({ session, onPaid, clients }) {
   const client = clients?.find(c => c.name === session.client_name)
   const creditBalance = client?.credit_balance || 0
 
+  const [isPaid, setIsPaid] = useState(session.is_paid)
+
   async function savePayment() {
     if (!mop) return
     if (session.is_paid && mop === prevMop.current && reference === session.reference && comments === session.comments) return
+    // Only save if MOP changed or newly paying
+    if (!session.is_paid && !mop) return
     setSaving(true)
     try {
       await fetch('/api/sessions', {
@@ -61,9 +65,10 @@ function LedgerRow({ session, onPaid, clients }) {
         })
       })
       prevMop.current = mop
-      onPaid()
-    } catch (e) { console.error(e) }
-    setSaving(false)
+      // Don't call onPaid here — only refresh row color locally
+      setIsPaid(true)
+      setSaving(false)
+    } catch (e) { console.error(e); setSaving(false) }
   }
 
   async function sendRemind() {
@@ -82,9 +87,9 @@ function LedgerRow({ session, onPaid, clients }) {
     if (json.success) alert('Reminder added to message drafts!')
   }
 
-  const bg = !session.is_paid ? '#FFE4EF'
-    : mop === 'Cash' ? '#F0F0F0'
-    : (mop === 'BDO' || mop === 'Union Bank') && !reference ? '#FFFDE6'
+  const bg = !isPaid ? '#f99c9c'
+    : mop === 'Cash' ? '#7bfb7b97'
+    : (mop === 'BDO' || mop === 'Union Bank') && !reference ? '#fbff00'
     : 'white'
 
   return (

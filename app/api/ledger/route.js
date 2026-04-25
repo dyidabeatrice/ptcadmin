@@ -193,7 +193,17 @@ export async function GET() {
     Object.values(ledger).forEach(months => {
       Object.values(months).forEach(month => {
         Object.values(month.dates).forEach(sessions => {
-          sessions.sort((a, b) => (a.time_start || '').localeCompare(b.time_start || ''))
+        sessions.sort((a, b) => {
+          const toMin = t => {
+            if (!t) return 0
+            const [time, period] = t.split(' ')
+            let [h, m] = time.split(':').map(Number)
+            if (period === 'PM' && h !== 12) h += 12
+            if (period === 'AM' && h === 12) h = 0
+            return h * 60 + m
+          }
+          return toMin(a.time_start) - toMin(b.time_start)
+        })
         })
       })
     })
