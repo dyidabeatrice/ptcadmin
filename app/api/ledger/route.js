@@ -207,7 +207,7 @@ ieReports.forEach(row => {
       const payDate = paymentRecord ? paymentRecord[7] : row[4]
       const mop = paymentRecord ? paymentRecord[5] : ''
       const reference = paymentRecord ? paymentRecord[9] : ''
-      const { total, therapistCut, center } = calcRates(row[6], level, amount, '')
+      const rates = calcRates(row[6], level, amount, '')
 
       allSessions.push({
         id: `DOC-${row[0]}`,
@@ -226,9 +226,9 @@ ieReports.forEach(row => {
         reference,
         comments: row[9] || '',
         payment_id: paymentRecord ? paymentRecord[0] : '',
-        total: calcTotal || amount,
-        therapist_cut: therapistCut || 0,
-        center: center || 0,
+        total: rates.total || amount,
+        therapist_cut: rates.therapistCut || 0,
+        center: rates.center || 0,
         therapist_level: level,
         is_intern: false,
         is_document: true
