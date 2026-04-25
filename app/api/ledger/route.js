@@ -196,7 +196,7 @@ ieReports.forEach(row => {
     // Fetch paid document requests
     const reportData = await getSheetData('reports')
     const [, ...reportRows] = reportData
-    reportRows.filter(r => r && r[0] && r[8] === 'Paid').forEach(row => {
+    reportRows.filter(r => r && r[0] && (r[8] === 'Ready for Release' || r[8] === 'Completed')).forEach(row => {
       const therapistName = row[2]
       const therapistInfo = therapistMap[therapistName]
       const level = therapistInfo?.level || 'JUNIOR 1'
