@@ -439,13 +439,28 @@ function OutstandingTab({ clients, onSettle }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {(() => {
-            const byDate = {}
-            unpaidSessions.forEach(s => { const key = s.date || 'No date'; if (!byDate[key]) byDate[key] = []; byDate[key].push(s) })
-            return Object.entries(byDate).sort(([a], [b]) => parseDate(a) - parseDate(b)).map(([date, dateSessions]) => (
-              <div key={date}>
-                <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f4c81', marginBottom: '8px', padding: '4px 0', borderBottom: '2px solid #E6F1FB' }}>{date}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {dateSessions.sort((a, b) => a.client_name.localeCompare(b.client_name)).map((s, i) => {
+          const byClient = {}
+          unpaidSessions.forEach(s => {
+            const key = s.client_name || 'Unknown'
+            if (!byClient[key]) byClient[key] = []
+            byClient[key].push(s)
+          })
+
+          return Object.entries(byClient)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([clientName, clientSessions]) => {
+              const client = clients.find(c => c.name === clientName)
+              const totalOwed = clientSessions.reduce((sum, s) => sum + Number(s.amount || 0), 0)
+              return (
+                <div key={clientName}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f4c81', marginBottom: '8px', padding: '4px 0', borderBottom: '2px solid #E6F1FB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>
+                      {clientName}
+                    </span>
+                    <span style={{ fontSize: '13px', color: '#E24B4A', fontWeight: '700' }}>₱{totalOwed.toLocaleString()} total</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+                    {clientSessions.sort((a, b) => parseDate(a.date) - parseDate(b.date)).map((s, i) => {
                     const client = clients.find(c => c.name === s.client_name)
                     return (
                       <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', background: 'white', border: '1px solid #F09595' }}>
@@ -461,12 +476,12 @@ function OutstandingTab({ clients, onSettle }) {
                           <button onClick={() => openSettle(s)} style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Settle</button>
                         </div>
                       </div>
-                    )
-                  })}
-                </div>
-              </div>
-            ))
-          })()}
+                  )})}
+            </div>
+            </div>
+            )
+          })
+        })()}
         </div>
       )}
     </div>
