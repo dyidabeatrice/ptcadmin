@@ -29,6 +29,17 @@ function LedgerRow({ session, onPaid, clients }) {
   const prevMop = useRef(session.mop || '')
   const [isPaid, setIsPaid] = useState(session.is_paid)
 
+  useEffect(() => {
+    setMop(session.mop || '')
+    setReference(session.reference || '')
+    setComments(session.comments || '')
+    setTotal(session.total || 0)
+    setCut(session.therapist_cut || 0)
+    setCenter(session.center || 0)
+    setIsPaid(session.is_paid)
+    prevMop.current = session.mop || ''
+  }, [session.id, session.is_paid, session.mop])
+
   const client = clients?.find(c => c.name === session.client_name)
   const creditBalance = client?.credit_balance || 0
 
@@ -110,7 +121,20 @@ function LedgerRow({ session, onPaid, clients }) {
           )}
         </div>
       </td>
-      <td style={{ padding: '8px 10px', fontSize: '12px', color: '#555' }}>{session.session_type}</td>
+      <td style={{ padding: '8px 10px' }}>
+        <select value={session.session_type || ''} onChange={async e => {
+          await fetch('/api/payments', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update_session_type', id: session.payment_id, session_type: e.target.value })
+          })
+        }} style={{ fontSize: '11px', padding: '3px 6px', borderRadius: '6px', border: '1px solid #B5D4F4', cursor: 'pointer', background: '#E6F1FB', color: '#0C447C' }}>
+          <option value="">— type —</option>
+          {['OT SESSION','OT-IE','OT-FE','SPECIALIZED OT TX','ST SESSION','ST-IE','ST-FE','SPECIALIZED ST TX','PT SESSION','PT-IE','PT FE','SPED SESSION','SPED IE','SPED FE','PLAYSCHOOL','PR','PR-RUSHED','IE REPORT','Cancellation Fee','OT INTERN SESSION','OT INTERN IE','ST INTERN SESSION','ST INTERN IE','PR INTERN'].map(t => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+      </td>
       <td style={{ padding: '8px 10px' }}>
         <select value={mop} onChange={e => setMop(e.target.value)} onBlur={savePayment}
           style={{ fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white', minWidth: '90px' }}>
