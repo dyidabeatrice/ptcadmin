@@ -163,9 +163,14 @@ export async function GET() {
     // Group by therapist → month → date
     const ledger = {}
     allSessions.forEach(s => {
-      const therapist = s.therapist
-      if (!therapist) return
-      if (!ledger[therapist]) ledger[therapist] = {}
+    let therapist = s.therapist
+    if (!therapist) return
+
+    // Group all OT interns together, all ST interns together
+    if (therapist.includes('OT INTERN')) therapist = 'OT INTERNS'
+    else if (therapist.includes('ST INTERN')) therapist = 'ST INTERNS'
+
+    if (!ledger[therapist]) ledger[therapist] = {}
 
       const d = parseDate(s.date)
       if (!d) return
@@ -195,10 +200,9 @@ export async function GET() {
 
     const allTherapists = Object.keys(therapistMap).sort()
     const regular = allTherapists.filter(t => !t.includes('INTERN'))
-    const otInterns = allTherapists.filter(t => t.includes('OT INTERN')).sort()
-    const stInterns = allTherapists.filter(t => t.includes('ST INTERN')).sort()
-    const otherInterns = allTherapists.filter(t => t.includes('INTERN') && !t.includes('OT INTERN') && !t.includes('ST INTERN')).sort()
-    const sorted = [...regular, ...otInterns, ...stInterns, ...otherInterns]
+    const sorted = [...regular.sort(), 'OT INTERNS', 'ST INTERNS']
+
+    return Response.json({ success: true, data: ledger, therapists: sorted })
 
     return Response.json({ success: true, data: ledger, therapists: sorted })
   } catch (error) {
