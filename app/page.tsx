@@ -249,7 +249,7 @@ export default function HomePage() {
         <style>{`
           .slideshow {
               position: relative;
-              border-radius: 8px; /* reduced from 14px */
+              border-radius: 0px;
               overflow: hidden;
               width: 100%;
               max-height: 380px;
@@ -284,7 +284,7 @@ export default function HomePage() {
             flex-shrink: 0;
             width: 280px;
             height: 200px;
-            border-radius: 6px;
+            border-radius: 0px;
             overflow: hidden;
           }
           .team-photo img {
@@ -350,7 +350,7 @@ export default function HomePage() {
           <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>Our Team</div>
           <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
         </div>
-        <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '12px' }}>
+        <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '0px' }}>
           <div className="team-track">
             {/* Duplicate photos for seamless loop */}
             {['/staff1.jpg', '/staff2.jpg', '/staff3.jpg', '/staff1.jpg', '/staff2.jpg', '/staff3.jpg'].map((src, i) => (
