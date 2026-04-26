@@ -537,6 +537,11 @@ export default function PaymentsPage() {
 
   useEffect(() => { fetchAll() }, [])
 
+  useEffect(() => {
+  window.addEventListener('focus', fetchLedger)
+  return () => window.removeEventListener('focus', fetchLedger)
+  }, [])
+
   async function fetchAll() {
     setLoading(true)
     const [cRes, wRes] = await Promise.all([fetch('/api/clients'), fetch('/api/weeks')])
