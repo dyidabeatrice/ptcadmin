@@ -11,7 +11,7 @@ export default function TherapistDashboard() {
   const [weeks, setWeeks] = useState([])
   const [selectedWeek, setSelectedWeek] = useState(null)
   const [selectedDay, setSelectedDay] = useState(() => {
-    const day = new Date().toLocaleDateString('en-US', { weekday: 'long' })
+    const day = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', weekday: 'long' })
     return DAYS.includes(day) ? day : 'Monday'
   })
   const [loading, setLoading] = useState(true)
@@ -74,7 +74,17 @@ export default function TherapistDashboard() {
 
   const daySessions = sessions
     .filter(s => s.day === selectedDay)
-    .sort((a, b) => a.time_start?.localeCompare(b.time_start))
+    .sort((a, b) => {
+      const toMin = t => {
+        if (!t) return 0
+        const [time, period] = t.split(' ')
+        let [h, m] = time.split(':').map(Number)
+        if (period === 'PM' && h !== 12) h += 12
+        if (period === 'AM' && h === 12) h = 0
+        return h * 60 + m
+      }
+      return toMin(a.time_start) - toMin(b.time_start)
+    })
 
   const pendingReports = reports.filter(r => r.status !== 'Completed')
   const today = new Date()
