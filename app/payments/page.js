@@ -351,8 +351,6 @@ function OutstandingTab({ clients, onSettle }) {
 
   const isPartial = !payForm.use_credit && !payForm.split && payForm.amount < (payModal?.amount || 0)
 
-  const sessionDetails = clientSessions.map(s => `${s.date} (${s.session_type || 'session'} - ${s.therapist})`).join(', ')
-
   return (
     <div>
       {payModal && (
@@ -471,6 +469,7 @@ function OutstandingTab({ clients, onSettle }) {
                             {s.client_name}
                             {client?.credit_balance > 0 && <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 6px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A' }}>💳 ₱{Number(client.credit_balance).toLocaleString()} credit</span>}
                             <button onClick={async () => {
+                              const sessionDetails = clientSessions.map(s => `${s.date} (${s.session_type || 'session'} - ${s.therapist})`).join(', ')
                               await fetch('/api/messages', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
