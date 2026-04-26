@@ -469,7 +469,7 @@ function OutstandingTab({ clients, onSettle }) {
                             {s.client_name}
                             {client?.credit_balance > 0 && <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 6px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A' }}>💳 ₱{Number(client.credit_balance).toLocaleString()} credit</span>}
                           </div>
-                          <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}>{s.time_start}–{s.time_end} · {s.therapist} · {s.status} · {s.session_type || 'Regular'}</div>
+                          <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}><strong>{s.date}</strong> · {s.time_start}–{s.time_end} · {s.therapist} · {s.status} · {s.session_type || 'Regular'}</div>
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
                           <span style={{ fontSize: '13px', fontWeight: '500', color: '#E24B4A' }}>₱{Number(s.amount || 0).toLocaleString()}</span>
