@@ -263,16 +263,36 @@ export default function HelpPage() {
         {/* PAYMENTS */}
         <div id="payments"><Section title="Payments" emoji="💳">
 
+          <SubSection title="Ledger tab">
+            <p>The main view of the Payments page. Sessions are organized <strong>per therapist</strong> — select a therapist using the tabs at the top. Under each therapist you'll see their sessions grouped by month, then by date.</p>
+            <p style={{ marginBottom: '8px' }}><strong>Color coding:</strong></p>
+            <ColorSwatch bg="#FFE4EF" border="#F09595" color="#791F1F" label="Unpaid — no payment recorded yet" />
+            <ColorSwatch bg="#F0F0F0" border="#ddd" color="#555" label="Paid via Cash" />
+            <ColorSwatch bg="#FFFDE6" border="#FFD666" color="#7C5800" label="Bank transfer selected but no reference number yet" />
+            <ColorSwatch bg="white" border="#e0e0e0" color="#333" label="Paid via bank transfer with reference number" />
+            <Note type="tip">Sessions appear automatically once marked Present or Cancelled on the Schedule page — no manual entry needed!</Note>
+          </SubSection>
+
+          <SubSection title="How to record a payment inline">
+            <Step num={1}>Find the client's session row under their therapist tab.</Step>
+            <Step num={2}>Select the <strong>MOP</strong> (Cash, BDO, Union Bank) from the dropdown — the row color updates immediately.</Step>
+            <Step num={3}>For bank transfers, enter the <strong>reference number</strong> — the row turns white once filled.</Step>
+            <Step num={4}>The <strong>Total, Cut, and Center</strong> columns are auto-calculated from the session type and therapist level — but you can overwrite them if needed.</Step>
+            <Step num={5}>All fields save automatically when you click away (on blur) — no save button needed.</Step>
+            <Note type="info">IE Reports and paid Document Requests also appear inline under the corresponding therapist's tab.</Note>
+          </SubSection>
+
+          <SubSection title="Month grouping and totals">
+            <p>Sessions are grouped by month. The <strong>current month is expanded by default</strong> — older months are collapsed and show an unpaid count badge. Click any month header to expand or collapse it.</p>
+            <p>Each date group shows a <strong>subtotal row</strong> (Total, Therapist Cut, Center) and each month ends with a <strong>month total row</strong> in dark blue. These include both paid and unpaid sessions so the therapist's full record is visible.</p>
+          </SubSection>
+
           <SubSection title="Advance / Partial Payment">
-            <p>Use <strong>+ Advance / Partial Payment</strong> to record a payment that isn't tied to a specific session — like when a parent pays ahead. The amount is stored as <strong>credit</strong> and can be applied when settling a session payment.</p>
+            <p>Use <strong>+ Advance / Partial Payment</strong> to record a payment not tied to a specific session — like when a parent pays ahead. The amount is stored as <strong>credit</strong> and can be applied when settling a session.</p>
           </SubSection>
 
           <SubSection title="Submitted IE Report by Therapist">
-            <p>Use this to record when a therapist submits their IE report. No payment is collected from the parent — this is purely for tracking in the <strong>Excel export</strong> so the therapist's professional fee is computed correctly.</p>
-          </SubSection>
-
-          <SubSection title="Transactions tab">
-            <p>Shows all payments recorded for the selected week. Filter by day, type (Session, Advance, Refund, Document), or by mode of payment. You can also <strong>update the session type</strong> directly from the dropdown in the table, and <strong>verify</strong> each payment by selecting a verifier.</p>
+            <p>Use this to record when a therapist submits their IE report. No payment is collected from the parent — this is purely for tracking so the therapist's professional fee is computed correctly in the ledger and Excel export.</p>
           </SubSection>
 
           <SubSection title="Credits tab">
@@ -281,25 +301,26 @@ export default function HelpPage() {
           </SubSection>
 
           <SubSection title="Outstanding tab">
-            <p>Shows all unpaid Present and Cancelled sessions, arranged <strong>by date then alphabetically</strong>. Click <strong>Settle</strong> to record payment for any session directly from here.</p>
+            <p>Shows all unpaid Present and Cancelled sessions, <strong>grouped by client</strong> with the total balance shown. Click <strong>Settle</strong> on any session to record payment. Use the <strong>Remind</strong> button next to the client's name to send an outstanding balance reminder via Messenger.</p>
           </SubSection>
 
           <SubSection title="Recording pending payment screenshots">
-            <p>When a client's parent sends a payment screenshot via Messenger, it automatically appears here under the <strong>Pending Payments</strong> tab on the Payments page.</p>
+            <p>When a client's parent sends a payment screenshot via Messenger, it automatically appears under the <strong>Pending Payments</strong> tab.</p>
             <Step num={1}>Go to <strong>Payments → Pending Payments tab</strong>.</Step>
-            <Step num={2}>Each card shows the client's name, sender's name, timestamp, and a thumbnail of the screenshot.</Step>
-            <Note type="info">The sender's Facebook name is shown on the card — useful when a different parent or guardian sends the screenshot. Make sure to select the correct client manually in that case.</Note>
-            <Step num={3}>Click <strong>Process</strong> to open the payment modal — the amount, reference number, and bank are auto-read from the screenshot. If the screenshot is not payment-related, click <strong>Dismiss</strong> to remove it from the list.</Step>
+            <Step num={2}>Each card shows the client's name, sender's Facebook name, timestamp, and a thumbnail of the screenshot. Click the thumbnail to zoom in.</Step>
+            <Step num={3}>Click <strong>Process</strong> — the amount, reference number, and bank are auto-read from the screenshot via OCR.</Step>
             <Step num={4}>Verify the details and select the correct client if not auto-matched.</Step>
             <Step num={5}>Click <strong>Record as credit</strong> — the amount is added to the client's credit balance and can be applied to any session.</Step>
-            <Note type="warning">If one payment is made for <strong>multiple clients</strong>, it is best to record via <strong>+ Advance / Partial Payment</strong> — this ensures each client's credit is updated correctly.</Note>
+            <Step num={6}>If the screenshot is not payment-related, click <strong>Dismiss</strong> to remove it from the list.</Step>
+            <Note type="warning">If one payment covers <strong>multiple sessions</strong>, record it as credit — the secretary can then apply it to each session individually when settling.</Note>
+            <Note type="info">The sender's Facebook name is shown on the card — useful when a different parent or guardian sends the screenshot. Select the correct client manually in that case.</Note>
           </SubSection>
 
           <SubSection title="How to export payments">
             <Step num={1}>Select the month using the month picker in the Export section.</Step>
             <Step num={2}>Click <strong>⬇ Export Excel</strong>.</Step>
             <Step num={3}>The file downloads with a separate sheet per therapist showing session details, therapist cut, and center share — all calculated automatically.</Step>
-            <Note type="info">Both paid and unpaid Present sessions are included in the export so the therapist's record is complete.</Note>
+            <Note type="info">Both paid and unpaid Present sessions are included in the export so the therapist's full record is complete.</Note>
           </SubSection>
 
         </Section></div>
@@ -372,7 +393,7 @@ export default function HelpPage() {
               { tip: 'Drag and drop to reschedule', detail: 'Grab any session block and drag it to a new time slot on the same day. The slot turns green when you\'re hovering over a valid position.' },
               { tip: 'Click any empty time slot', detail: 'Clicking an empty (or occupied) slot on the grid opens the Add session modal pre-filled with that therapist and time — no need to use the button!' },
               { tip: 'Color = status at a glance', detail: 'Yellow = Pencil, Blue = Confirmed, Green = Paid, Red = Absent, Orange = Unpaid Present/Cancelled. ⚠️ means the client has an outstanding balance.' },
-              { tip: 'Outstanding tab is sorted by date', detail: 'Sessions are grouped by date (earliest first) then alphabetically — making it easy to settle balances in order.' },
+              { tip: 'Outstanding tab is grouped by client', detail: 'Sessions are grouped per client with their total balance shown at a glance — making it easy to see who owes the most and settle everything at once.' },
               { tip: 'Credits carry over', detail: 'Any overpayment or advance payment is stored as credit and automatically offered when recording the next payment for that client.' },
             ].map((t, i) => (
               <div key={i} style={{ background: 'white', borderRadius: '10px', border: '1px solid #e8edf5', padding: '14px 16px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
