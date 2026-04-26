@@ -456,6 +456,24 @@ function OutstandingTab({ clients, onSettle }) {
                   <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f4c81', marginBottom: '8px', padding: '4px 0', borderBottom: '2px solid #E6F1FB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>
                       {clientName}
+                      <button onClick={async () => {
+                        const sessionDetails = clientSessions.map(s => `${s.date} (${s.session_type || 'session'} - ${s.therapist})`).join(', ')
+                        await fetch('/api/messages', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            action: 'create_draft',
+                            client_name: clientName,
+                            psid: client?.psid || '',
+                            type: 'outstanding',
+                            message: `Hi! This is a friendly reminder that ${clientName} has an outstanding balance of ₱${totalOwed.toLocaleString()} for the following: ${sessionDetails}. Please settle at your earliest convenience. Thank you!`
+                            })
+                          })
+                            alert('Reminder added to message drafts!')
+                          }} style={{
+                            padding: '2px 8px', borderRadius: '4px', border: '1px solid #EF9F27',
+                            background: '#FAEEDA', color: '#633806', cursor: 'pointer', fontSize: '11px'
+                          }}>Remind</button>  
                     </span>
                     <span style={{ fontSize: '13px', color: '#E24B4A', fontWeight: '700' }}>₱{totalOwed.toLocaleString()} total</span>
                   </div>
@@ -467,25 +485,7 @@ function OutstandingTab({ clients, onSettle }) {
                         <div>
                           <div style={{ fontSize: '13px', fontWeight: '500', color: '#791F1F' }}>
                             {s.client_name}
-                            {client?.credit_balance > 0 && <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 6px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A' }}>💳 ₱{Number(client.credit_balance).toLocaleString()} credit</span>}
-                            <button onClick={async () => {
-                              const sessionDetails = clientSessions.map(s => `${s.date} (${s.session_type || 'session'} - ${s.therapist})`).join(', ')
-                              await fetch('/api/messages', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                  action: 'create_draft',
-                                  client_name: clientName,
-                                  psid: client?.psid || '',
-                                  type: 'outstanding',
-                                  message: `Hi! This is a friendly reminder that ${clientName} has an outstanding balance of ₱${totalOwed.toLocaleString()} for the following: ${sessionDetails}. Please settle at your earliest convenience. Thank you!`
-                                })
-                              })
-                              alert('Reminder added to message drafts!')
-                            }} style={{
-                              padding: '2px 8px', borderRadius: '4px', border: '1px solid #EF9F27',
-                              background: '#FAEEDA', color: '#633806', cursor: 'pointer', fontSize: '11px'
-                            }}>Remind</button>                          
+                            {client?.credit_balance > 0 && <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 6px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A' }}>💳 ₱{Number(client.credit_balance).toLocaleString()} credit</span>}                        
                           </div>
                           <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}><strong>{s.date}</strong> · {s.time_start}–{s.time_end} · {s.therapist} · {s.status} · {s.session_type || 'Regular'}</div>
                         </div>
