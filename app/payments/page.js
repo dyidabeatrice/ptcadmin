@@ -29,6 +29,9 @@ function LedgerRow({ session, onPaid, clients }) {
   const prevMop = useRef(session.mop || '')
   const [isPaid, setIsPaid] = useState(session.is_paid)
 
+  const [deleted, setDeleted] = useState(false)
+  if (deleted) return null
+
   useEffect(() => {
     setMop(session.mop || '')
     setReference(session.reference || '')
@@ -175,45 +178,41 @@ function LedgerRow({ session, onPaid, clients }) {
       </td>
       <td style={{ padding: '8px 4px' }}>
         <button onClick={async () => {
-          const msg = isPaid 
-            ? 'This session is paid — reversing will delete the payment record. Continue?' 
-            : 'Mark this session as Pencil (remove from ledger)?'
-          if (!confirm(msg)) return
-          setSaving(true)
-          try {
-            // If paid, reverse payment first
-            if (isPaid && session.payment_id) {
+            const msg = isPaid 
+              ? 'This session is paid — reversing will delete the payment record. Continue?' 
+              : 'Mark this session as Pencil (remove from ledger)?'
+            if (!confirm(msg)) return
+            setSaving(true)
+            try {
+              console.log('Deleting session:', session.week_key, session.index, session.id)
+              if (isPaid && session.payment_id) {
+                await fetch('/api/sessions', {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    action: 'unpay',
+                    week_key: session.week_key,
+                    rowIndex: session.index,
+                    session_id: session.id,
+                    client_name: session.client_name,
+                    amount: session.total
+                  })
+                })
+              }
               await fetch('/api/sessions', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  action: 'reverse',
+                  action: 'status',
                   week_key: session.week_key,
                   rowIndex: session.index,
-                  session_id: session.id,
-                  payment_id: session.payment_id,
-                  client_name: session.client_name,
-                  therapist: session.therapist,
-                  amount: session.total,
-                  use_credit: false
+                  status: 'Pencil'
                 })
               })
-            }
-            // Mark as Pencil
-            await fetch('/api/sessions', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                action: 'update_status',
-                week_key: session.week_key,
-                rowIndex: session.index,
-                status: 'Pencil'
-              })
-            })
-            onPaid()
-          } catch (e) { console.error(e) }
-          setSaving(false)
-        }} style={{
+              setDeleted(true)
+            } catch (e) { console.error(e) }
+            setSaving(false)
+          }} style={{
           padding: '2px 6px', borderRadius: '4px', border: '1px solid #fcc',
           background: '#fff5f5', color: '#c00', cursor: 'pointer', fontSize: '11px',
           fontWeight: '600', lineHeight: 1
