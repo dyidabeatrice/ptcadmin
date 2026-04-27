@@ -170,8 +170,54 @@ function LedgerRow({ session, onPaid, clients }) {
         <input value={comments} onChange={e => setComments(e.target.value)} onBlur={savePayment}
           placeholder="Notes..." style={{ fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd', width: '100px', boxSizing: 'border-box' }} />
       </td>
-      <td style={{ padding: '8px 10px', fontSize: '11px', color: saving ? '#999' : session.is_paid ? '#1D9E75' : '#E24B4A', fontWeight: '500' }}>
-        {saving ? '...' : session.is_paid ? '✓ Paid' : 'Unpaid'}
+      <td style={{ padding: '8px 10px', fontSize: '11px', color: saving ? '#999' : isPaid ? '#1D9E75' : '#E24B4A', fontWeight: '500' }}>
+        {saving ? '...' : isPaid ? '✓ Paid' : 'Unpaid'}
+      </td>
+      <td style={{ padding: '8px 4px' }}>
+        <button onClick={async () => {
+          const msg = isPaid 
+            ? 'This session is paid — reversing will delete the payment record. Continue?' 
+            : 'Mark this session as Pencil (remove from ledger)?'
+          if (!confirm(msg)) return
+          setSaving(true)
+          try {
+            // If paid, reverse payment first
+            if (isPaid && session.payment_id) {
+              await fetch('/api/sessions', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'reverse',
+                  week_key: session.week_key,
+                  rowIndex: session.index,
+                  session_id: session.id,
+                  payment_id: session.payment_id,
+                  client_name: session.client_name,
+                  therapist: session.therapist,
+                  amount: session.total,
+                  use_credit: false
+                })
+              })
+            }
+            // Mark as Pencil
+            await fetch('/api/sessions', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'update_status',
+                week_key: session.week_key,
+                rowIndex: session.index,
+                status: 'Pencil'
+              })
+            })
+            onPaid()
+          } catch (e) { console.error(e) }
+          setSaving(false)
+        }} style={{
+          padding: '2px 6px', borderRadius: '4px', border: '1px solid #fcc',
+          background: '#fff5f5', color: '#c00', cursor: 'pointer', fontSize: '11px',
+          fontWeight: '600', lineHeight: 1
+        }}>✕</button>
       </td>
     </tr>
   )
@@ -236,7 +282,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients }) {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ background: '#f0f4f8' }}>
-                      {['Time', 'Client', 'Type of Service', 'MOP', 'Ref No.', 'Total', 'Cut', 'Center', 'Comments', 'Status'].map(h => (
+                        {['Time', 'Client', 'Type of Service', 'MOP', 'Ref No.', 'Total', 'Cut', 'Center', 'Comments', 'Status', ''].map(h => (
                         <th key={h} style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0', whiteSpace: 'nowrap', fontSize: '12px' }}>{h}</th>
                       ))}
                     </tr>
