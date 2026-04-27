@@ -537,11 +537,6 @@ export default function PaymentsPage() {
 
   useEffect(() => { fetchAll() }, [])
 
-  useEffect(() => {
-  window.addEventListener('focus', fetchLedger)
-  return () => window.removeEventListener('focus', fetchLedger)
-  }, [])
-
   async function fetchAll() {
     setLoading(true)
     const [cRes, wRes] = await Promise.all([fetch('/api/clients'), fetch('/api/weeks')])
@@ -890,12 +885,12 @@ export default function PaymentsPage() {
               {ledgerLoading ? (
                 <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading ledger...</div>
               ) : (
-                <LedgerTab
-                  therapistData={ledger[activeTherapist]}
-                  therapistName={activeTherapist}
-                  onPaid={fetchLedger}
-                  clients={clients}
-                />
+              <LedgerTab
+                therapistData={ledger[activeTherapist]}
+                therapistName={activeTherapist}
+                onPaid={() => {}}
+                clients={clients}
+              />
               )}
             </div>
           )}
