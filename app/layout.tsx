@@ -47,6 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
            <div className="desktop-links" style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, marginLeft: '1rem' }}>
               {[
                 { href: '/dashboard', label: 'Dashboard' },
+                { href: '/tasks', label: 'To-do' },
                 { href: '/clients', label: 'Clients' },
                 { href: '/master', label: 'Master' },
                 { href: '/sessions', label: 'Schedule' },
@@ -105,6 +106,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           }}>
             {[
               { href: '/dashboard', label: 'Dashboard' },
+              { href: '/tasks', label: 'To-do' },
               { href: '/clients', label: 'Clients' },
               { href: '/master', label: 'Master' },
               { href: '/sessions', label: 'Schedule' },
