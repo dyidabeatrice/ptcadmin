@@ -394,12 +394,6 @@ export default function DocumentsPage() {
                   ))}
                 </div>
 
-                {form.doc_type !== 'Initial Evaluation' && (
-                  <div style={{ marginBottom: '1.5rem', padding: '10px 12px', background: '#E6F1FB', borderRadius: '8px', fontSize: '13px', color: '#0C447C' }}>
-                    📧 An email will be sent to {form.therapist} at {getTherapistEmail(form.therapist) || 'no email on file'}
-                  </div>
-                )}
-
                 <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                   <button onClick={() => setShowSummary(false)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>← Edit</button>
                   <button onClick={submitRequest} disabled={saving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
@@ -513,7 +507,7 @@ export default function DocumentsPage() {
                           color: r.email_sent ? '#27500A' : '#0C447C',
                           cursor: r.email_sent ? 'default' : 'pointer',
                           fontSize: '11px', fontWeight: '500'
-                        }}>{r.email_sent ? '✓ Email sent' : 'Send email'}</button>
+                        }}>{r.email_sent ? '✓ Email sent' : 'Email therapist'}</button>
                       )}
                       <button onClick={async () => {
                         if (r.status === 'Outstanding') {
