@@ -17,7 +17,7 @@ async function syncClientSchedule(clientName, sheets) {
   
   await sheets.spreadsheets.values.update({
     spreadsheetId: SPREADSHEET_ID,
-    range: `clients!G${clientIndex + 2}`,
+    range: `clients!H${clientIndex + 2}`,
     valueInputOption: 'RAW',
     requestBody: { values: [[scheduleString]] }
   })
@@ -59,9 +59,18 @@ export async function POST(request) {
           range: 'clients',
           valueInputOption: 'RAW',
           requestBody: { values: [[
-            Date.now().toString(),
-            body.client_name,
-            '', '', '', '', '', '', '', '', '', '', ''
+            Date.now().toString(), // A: id
+            body.client_name,      // B: name
+            '',                    // C: birthdate
+            '',                    // D: fb_account
+            '',                    // E: phone
+            '',                    // F: address
+            '',                    // G: notes
+            '',                    // H: schedule
+            'active',              // I: status
+            0,                     // J: credit_balance
+            0,                     // K: outstanding_balance
+            '',                    // L: psid
           ]]}
         })
       }

@@ -283,16 +283,8 @@ function ClientForm({ data, setData, onSave, onClose, title, saving, therapistDa
           </div>
         </div>
 
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-            Therapist schedule
-            <span style={{ fontWeight: '400', marginLeft: '6px', color: '#aaa' }}>— updates master schedule automatically</span>
-          </label>
-          <TherapistRows
-            therapists={data.therapists}
-            setTherapists={updated => setData({ ...data, therapists: updated })}
-            therapistData={therapistData}
-          />
+        <div style={{ padding: '12px 14px', background: '#EAF3DE', border: '1px solid #97C459', borderRadius: '8px', fontSize: '13px', color: '#27500A' }}>
+          📋 Schedule is managed via the <strong>Master Template</strong> on the Schedule page — edit it there to update this client's recurring schedule.
         </div>
 
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
