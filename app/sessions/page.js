@@ -1294,11 +1294,6 @@ export default function SchedulePage() {
               </div>
             )}
 
-            <div style={{ padding: '10px 16px', background: '#EAF3DE', border: '1px solid #97C459', borderRadius: '8px', fontSize: '13px', color: '#27500A', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>✏️ Editing master template — changes apply to future generated weeks only</span>
-              {savingMaster && <span style={{ fontSize: '12px', opacity: 0.7 }}>Saving...</span>}
-            </div>
-
             {DAYS.map(day => {
               const dayMasterSessions = master.filter(s => s.day === day)
               const isExpanded = expandedDays.has(day)

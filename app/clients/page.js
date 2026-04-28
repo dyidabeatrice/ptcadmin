@@ -283,8 +283,24 @@ function ClientForm({ data, setData, onSave, onClose, title, saving, therapistDa
           </div>
         </div>
 
-        <div style={{ padding: '12px 14px', background: '#EAF3DE', border: '1px solid #97C459', borderRadius: '8px', fontSize: '13px', color: '#27500A' }}>
-          📋 Schedule is managed via the <strong>Master Template</strong> on the Schedule page — edit it there to update this client's recurring schedule.
+        <div style={{ marginBottom: '1.5rem' }}>
+          <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+            Therapy Schedule
+            <span style={{ fontWeight: '400', marginLeft: '6px', color: '#aaa' }}>— edit via Master Template on Schedule page</span>
+          </label>
+          {data.therapists.filter(t => t.therapist).length === 0 ? (
+            <div style={{ fontSize: '13px', color: '#999', padding: '10px 12px', background: '#f8f9fa', borderRadius: '8px' }}>
+              No schedule yet — add via Master Template on the Schedule page.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {data.therapists.filter(t => t.therapist).map((s, i) => (
+                <div key={i} style={{ padding: '8px 12px', borderRadius: '8px', background: '#E6F1FB', border: '1px solid #B5D4F4', fontSize: '12px', color: '#0C447C' }}>
+                  {s.therapist} · {s.day} · {s.time_start}–{s.time_end}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
