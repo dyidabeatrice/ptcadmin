@@ -1,4 +1,4 @@
-import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../../lib/sheets'
+import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
 
 async function syncClientSchedule(clientName, sheets) {
   const masterData = await getSheetData('masterschedule')
