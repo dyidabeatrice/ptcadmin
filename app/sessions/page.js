@@ -134,6 +134,12 @@ export default function SchedulePage() {
   const [dragSession, setDragSession] = useState(null)
   const [dragOver, setDragOver] = useState(null)
   const [contextMenu, setContextMenu] = useState(null)
+  const [master, setMaster] = useState([])
+  const [masterLoading, setMasterLoading] = useState(false)
+  const [addMasterModal, setAddMasterModal] = useState(null)
+  const [addMasterForm, setAddMasterForm] = useState({ client_name: '', is_new_client: false, time_end: '' })
+  const [masterDragSession, setMasterDragSession] = useState(null)
+  const [savingMaster, setSavingMaster] = useState(false)
 
   function toggleDay(day) {
     setExpandedDays(prev => {
@@ -194,6 +200,7 @@ export default function SchedulePage() {
       const current = weeksJson.data.find(w => w.key === currentKey) || weeksJson.data[weeksJson.data.length - 1]
       setSelectedWeek(current)
       await fetchSessions(current.key)
+      await fetchMaster()
     }
     setLoading(false)
   }
@@ -216,6 +223,14 @@ export default function SchedulePage() {
     const res = await fetch(`/api/sessions?week=${weekKey}`)
     const json = await res.json()
     if (json.success) setSessions(json.data)
+  }
+
+  async function fetchMaster() {
+    setMasterLoading(true)
+    const res = await fetch('/api/master')
+    const json = await res.json()
+    if (json.success) setMaster(json.data)
+    setMasterLoading(false)
   }
 
   async function switchWeek(week) {
@@ -647,6 +662,202 @@ export default function SchedulePage() {
     )
   }
 
+  function renderMasterGrid(day) {
+    const dayMaster = master.filter(s => s.day === day)
+
+    const therapistsByStartTime = ['8:00 AM', '8:15 AM', '8:30 AM', '8:45 AM'].flatMap(startTime =>
+      [...new Set(therapistData.filter(t => t.day === day && t.time_start === startTime).map(t => t.name))].sort()
+    )
+    const oneOffTherapists = [...new Set(dayMaster.map(s => s.therapist))].filter(t => !therapistsByStartTime.includes(t)).sort()
+    const therapists = therapistsByStartTime.length > 0
+      ? [...therapistsByStartTime, ...oneOffTherapists]
+      : [...new Set(therapistData.filter(t => t.day === day).map(t => t.name))].sort()
+
+    const gridStartMins = 8 * 60
+    const gridEndMins = therapists.reduce((max, t) => {
+      const entry = therapistData.find(x => x.name === t && x.day === day)
+      if (!entry) return max
+      return Math.max(max, parseTime(entry.time_end))
+    }, 18 * 60 + 45)
+
+    const totalMins = gridEndMins - gridStartMins
+    const totalRows = Math.ceil(totalMins / 15)
+    const timeSlots = []
+    for (let i = 0; i <= totalRows; i++) timeSlots.push(formatTime(gridStartMins + i * 15))
+
+    const SPECIALTY_COLORS = {
+      OT:   { bg: '#E6F1FB', border: '#B5D4F4', color: '#0C447C' },
+      ST:   { bg: '#EAF3DE', border: '#C0DD97', color: '#27500A' },
+      PT:   { bg: '#FAEEDA', border: '#FAC775', color: '#633806' },
+      SPED: { bg: '#EEEDFE', border: '#CECBF6', color: '#3C3489' },
+    }
+
+    if (therapists.length === 0) {
+      return <div style={{ padding: '2rem', textAlign: 'center', color: '#999', fontSize: '13px' }}>No therapists scheduled for {day}</div>
+    }
+
+    return (
+      <div style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', minWidth: 'fit-content' }}>
+          <div style={{ flexShrink: 0, width: '70px', position: 'sticky', left: 0, zIndex: 10, background: 'white' }}>
+            <div style={{ height: '60px', background: '#1D9E75', borderBottom: '2px solid #fcc200', position: 'sticky', top: 0, zIndex: 11 }} />
+            {timeSlots.map((slot, i) => (
+              <div key={slot} style={{
+                height: `${ROW_HEIGHT}px`, display: 'flex', alignItems: 'center', paddingLeft: '8px',
+                fontSize: i % 4 === 0 ? '10px' : '9px', color: i % 4 === 0 ? '#999' : '#bbb',
+                fontWeight: i % 4 === 0 ? '500' : '400',
+                borderBottom: `1px solid ${i % 4 === 0 ? '#e0e0e0' : '#f5f5f5'}`,
+                background: i % 4 === 0 ? '#fafafa' : 'white', whiteSpace: 'nowrap', boxSizing: 'border-box'
+              }}>{slot}</div>
+            ))}
+          </div>
+
+          {therapists.map((therapist, therapistIndex) => {
+            const therapistEntry = therapistData.find(t => t.name === therapist && t.day === day)
+            const specialty = therapistEntry?.specialty || 'OT'
+            const therapistSessions = dayMaster.filter(s => s.therapist === therapist)
+            const prevTherapist = therapists[therapistIndex - 1]
+            const prevEntry = prevTherapist ? therapistData.find(t => t.name === prevTherapist && t.day === day) : null
+            const isNewGroup = therapistIndex > 0 && therapistEntry?.time_start !== prevEntry?.time_start
+            const sc = SPECIALTY_COLORS[specialty] || SPECIALTY_COLORS.OT
+
+            return (
+              <div key={therapist} style={{ flexShrink: 0, width: '155px', borderLeft: isNewGroup ? '3px solid #1D9E75' : '1px solid #e0e0e0' }}>
+                <div style={{
+                  height: '60px', background: '#1D9E75', color: 'white',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  borderBottom: '2px solid #fcc200', padding: '4px', gap: '3px',
+                  position: 'sticky', top: 0, zIndex: 5
+                }}>
+                  <div style={{ fontSize: '11px', fontWeight: '500', textAlign: 'center' }}>{therapist}</div>
+                  <div style={{ fontSize: '10px', opacity: 0.7 }}>{specialty}{therapistEntry?.is_intern ? ' · Intern' : ''}</div>
+                </div>
+
+                <div style={{ position: 'relative', height: `${totalRows * ROW_HEIGHT}px` }}>
+                  {timeSlots.map((slot, i) => {
+                    const slotMins = gridStartMins + i * 15
+                    return (
+                      <div key={slot} style={{
+                        position: 'absolute', top: `${i * ROW_HEIGHT}px`,
+                        width: '100%', height: `${ROW_HEIGHT}px`,
+                        borderBottom: `${i % 4 === 3 ? '2px solid #ccc' : `1px solid ${i % 4 === 0 ? '#e8e8e8' : '#f5f5f5'}`}`,
+                        background: i % 4 === 0 ? '#fafafa' : 'white',
+                        boxSizing: 'border-box', cursor: 'pointer'
+                      }}
+                        onClick={() => {
+                          if (masterDragSession) return
+                          setAddMasterModal({ therapist, day, time_start: formatTime(slotMins) })
+                          setAddMasterForm({ client_name: '', is_new_client: false, time_end: formatTime(slotMins + 60) })
+                        }}
+                        onDragOver={e => e.preventDefault()}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(29,158,117,0.1)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = i % 4 === 0 ? '#fafafa' : 'white' }}
+                        onDrop={async e => {
+                          e.preventDefault()
+                          if (!masterDragSession) return
+                          const newTimeStart = formatTime(slotMins)
+                          const duration = parseTime(masterDragSession.time_end) - parseTime(masterDragSession.time_start)
+                          const newTimeEnd = formatTime(slotMins + duration)
+                          if (newTimeStart === masterDragSession.time_start && therapist === masterDragSession.therapist) return
+                          setSavingMaster(true)
+                          await fetch('/api/master', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              index: masterDragSession.index,
+                              client_name: masterDragSession.client_name,
+                              therapist,
+                              day,
+                              time_start: newTimeStart,
+                              time_end: newTimeEnd,
+                              old_client_name: masterDragSession.client_name
+                            })
+                          })
+                          setMasterDragSession(null)
+                          fetchMaster()
+                          setSavingMaster(false)
+                        }}
+                      />
+                    )
+                  })}
+
+                  {blockedSlots.filter(b => b.therapist === therapist && b.day === day && b.type !== 'absent').map((b, bi) => {
+                    const bStartMins = parseTime(b.time_start)
+                    const bEndMins = parseTime(b.time_end)
+                    const topOffset = ((bStartMins - gridStartMins) / 15) * ROW_HEIGHT
+                    const height = ((bEndMins - bStartMins) / 15) * ROW_HEIGHT - 2
+                    const isAdmin = b.type === 'admin'
+                    return (
+                      <div key={bi} style={{
+                        position: 'absolute', top: `${topOffset + 1}px`, left: '2%', width: '96%',
+                        height: `${height}px`, background: isAdmin ? '#d0d0d0' : '#555',
+                        borderRadius: '4px', boxSizing: 'border-box', zIndex: 1,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
+                      }}>
+                        {isAdmin && b.label && <div style={{ fontSize: '9px', color: '#444', fontWeight: '500', textAlign: 'center', padding: '0 4px' }}>{b.label}</div>}
+                      </div>
+                    )
+                  })}
+
+                  {therapistSessions.map((s, si) => {
+                    const startMins = parseTime(s.time_start)
+                    const endMins = parseTime(s.time_end)
+                    const topOffset = ((startMins - gridStartMins) / 15) * ROW_HEIGHT
+                    const height = Math.max(((endMins - startMins) / 15) * ROW_HEIGHT - 2, ROW_HEIGHT - 2)
+                    const sameStart = therapistSessions.filter(x => x.time_start === s.time_start)
+                    const stackIndex = sameStart.indexOf(s)
+                    const stackCount = sameStart.length
+                    const stackedTop = topOffset + 1 + (stackIndex * (height / stackCount))
+                    const stackedHeight = Math.max((height / stackCount) - 2, 14)
+
+                    return (
+                      <div key={si}
+                        draggable
+                        onDragStart={() => setMasterDragSession(s)}
+                        onDragEnd={() => setMasterDragSession(null)}
+                        style={{
+                          position: 'absolute',
+                          top: `${stackCount > 1 ? stackedTop : topOffset + 1}px`,
+                          left: '8%', width: '85%',
+                          height: `${stackCount > 1 ? stackedHeight : height}px`,
+                          background: sc.bg, border: `1px solid ${sc.border}`,
+                          borderRadius: '4px', padding: '3px 5px',
+                          overflow: 'hidden', boxSizing: 'border-box', zIndex: 2, cursor: 'grab'
+                        }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div style={{ fontSize: '10px', fontWeight: '600', color: sc.color, lineHeight: '1.3', flex: 1 }}>{s.client_name}</div>
+                          <button onClick={async e => {
+                            e.stopPropagation()
+                            if (!confirm(`Remove ${s.client_name} from master schedule?`)) return
+                            await fetch('/api/master', {
+                              method: 'DELETE',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ index: s.index })
+                            })
+                            fetchMaster()
+                          }} style={{
+                            fontSize: '8px', padding: '0 2px', borderRadius: '2px',
+                            border: 'none', background: 'rgba(0,0,0,0.1)',
+                            color: sc.color, cursor: 'pointer', flexShrink: 0, lineHeight: 1
+                          }}>✕</button>
+                        </div>
+                        {height > 30 && (
+                          <div style={{ fontSize: '9px', color: sc.color, opacity: 0.7, marginTop: '1px' }}>
+                            {s.time_start}–{s.time_end}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }  
+
   // Week dates map
   const weekDatesMap = {}
   if (selectedWeek) {
@@ -712,8 +923,8 @@ export default function SchedulePage() {
 
       {/* View toggle */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', padding: '4px', background: '#f0f0f0', borderRadius: '10px', width: 'fit-content' }}>
-        {[{ key: 'master', label: 'Master Template' }, { key: 'week', label: 'This Week' }].map(v => (
-          <button key={v.key} onClick={() => setViewMode(v.key)} style={{
+          {[{ key: 'master', label: 'Master Template' }, { key: 'week', label: 'This Week' }].map(v => (
+            <button key={v.key} onClick={() => { setViewMode(v.key); if (v.key === 'master') fetchMaster() }} style={{
             padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer',
             fontSize: '13px', fontWeight: '500',
             background: viewMode === v.key ? 'white' : 'transparent',
@@ -1016,9 +1227,102 @@ export default function SchedulePage() {
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading...</div>
 
       ) : viewMode === 'master' ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#999', background: '#f8f9fa', borderRadius: '12px' }}>
-          Master Template editing coming soon — for now, edit schedules via the Clients page.
-        </div>
+        masterLoading ? (
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading master template...</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {addMasterModal && (
+              <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
+                  <h3 style={{ margin: '0 0 0.5rem', color: '#1D9E75' }}>Add to master template</h3>
+                  <p style={{ margin: '0 0 1.25rem', fontSize: '13px', color: '#999' }}>{addMasterModal.therapist} · {addMasterModal.day} · {addMasterModal.time_start}</p>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Client</label>
+                    <input value={addMasterForm.client_name} onChange={e => setAddMasterForm({ ...addMasterForm, client_name: e.target.value })}
+                      list="master-client-list" placeholder="Type name or select existing..."
+                      style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+                    <datalist id="master-client-list">{clients.sort((a, b) => a.name.localeCompare(b.name)).map(c => <option key={c.id} value={c.name} />)}</datalist>
+                    <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <input type="checkbox" id="is-new-client" checked={addMasterForm.is_new_client}
+                        onChange={e => setAddMasterForm({ ...addMasterForm, is_new_client: e.target.checked })} />
+                      <label htmlFor="is-new-client" style={{ fontSize: '12px', color: '#666' }}>New client — create record automatically</label>
+                    </div>
+                  </div>
+                  <div style={{ marginBottom: '1.5rem' }}>
+                    <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>End time</label>
+                    <select value={addMasterForm.time_end} onChange={e => setAddMasterForm({ ...addMasterForm, time_end: e.target.value })}
+                      style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
+                      {[60, 90, 120].map(mins => {
+                        const endMins = parseTime(addMasterModal.time_start) + mins
+                        const endTime = formatTime(endMins)
+                        return <option key={mins} value={endTime}>{mins === 60 ? '1 hr' : mins === 90 ? '1.5 hrs' : '2 hrs'} ({endTime})</option>
+                      })}
+                    </select>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                    <button onClick={() => setAddMasterModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+                    <button onClick={async () => {
+                      if (!addMasterForm.client_name) return alert('Please enter a client name')
+                      setSavingMaster(true)
+                      await fetch('/api/master', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          client_name: addMasterForm.client_name,
+                          therapist: addMasterModal.therapist,
+                          day: addMasterModal.day,
+                          time_start: addMasterModal.time_start,
+                          time_end: addMasterForm.time_end,
+                          is_new_client: addMasterForm.is_new_client
+                        })
+                      })
+                      setAddMasterModal(null)
+                      fetchMaster()
+                      if (addMasterForm.is_new_client) {
+                        const cRes = await fetch('/api/clients')
+                        const cJson = await cRes.json()
+                        if (cJson.success) setClients(cJson.data.filter(c => c.status !== 'inactive'))
+                      }
+                      setSavingMaster(false)
+                    }} disabled={savingMaster} style={{
+                      padding: '8px 20px', borderRadius: '6px', border: 'none',
+                      background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500',
+                      opacity: savingMaster ? 0.6 : 1
+                    }}>{savingMaster ? 'Saving...' : 'Add to master'}</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div style={{ padding: '10px 16px', background: '#EAF3DE', border: '1px solid #97C459', borderRadius: '8px', fontSize: '13px', color: '#27500A', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>✏️ Editing master template — changes apply to future generated weeks only</span>
+              {savingMaster && <span style={{ fontSize: '12px', opacity: 0.7 }}>Saving...</span>}
+            </div>
+
+            {DAYS.map(day => {
+              const dayMasterSessions = master.filter(s => s.day === day)
+              const isExpanded = expandedDays.has(day)
+              const therapistCount = [...new Set(therapistData.filter(t => t.day === day).map(t => t.name))].length
+              return (
+                <div key={day} style={{ background: 'white', borderRadius: '12px', border: '1px solid #97C459', overflow: 'hidden' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', cursor: 'pointer', background: '#EAF3DE', borderBottom: isExpanded ? '1px solid #97C459' : 'none' }}
+                    onClick={() => toggleDay(day)}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontWeight: '600', color: '#27500A', fontSize: '14px' }}>{day}</span>
+                      <span style={{ fontSize: '12px', color: '#27500A', opacity: 0.7 }}>{therapistCount} therapists · {dayMasterSessions.length} slots</span>
+                    </div>
+                    <span style={{ color: '#27500A', fontSize: '12px' }}>{isExpanded ? '▼' : '▶'}</span>
+                  </div>
+                  {isExpanded && (
+                    <div style={{ maxHeight: 'calc(100vh - 200px)', overflowY: 'auto', overflowX: 'auto' }}>
+                      {renderMasterGrid(day)}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )
 
       ) : sessions.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999', background: '#f8f9fa', borderRadius: '12px' }}>
