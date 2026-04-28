@@ -491,6 +491,30 @@ export default function DocumentsPage() {
                           background: '#E6F1FB', color: '#0C447C', cursor: 'pointer', fontSize: '11px', fontWeight: '500'
                         }}>Remind</button>
                       )}
+                      {r.status === 'Ready for Release' && (
+                        <button onClick={async () => {
+                          if (r.email_sent) return
+                          const t = therapists.find(x => x.name === r.therapist)
+                          if (!t?.email) return alert(`No email on file for ${r.therapist}`)
+                          await fetch('/api/documents', {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              action: 'send_email',
+                              index: r.index,
+                              therapist_email: t.email
+                            })
+                          })
+                          fetchAll()
+                        }} style={{
+                          padding: '4px 10px', borderRadius: '6px',
+                          border: r.email_sent ? '1px solid #97C459' : '1px solid #B5D4F4',
+                          background: r.email_sent ? '#EAF3DE' : '#E6F1FB',
+                          color: r.email_sent ? '#27500A' : '#0C447C',
+                          cursor: r.email_sent ? 'default' : 'pointer',
+                          fontSize: '11px', fontWeight: '500'
+                        }}>{r.email_sent ? '✓ Email sent' : 'Send email'}</button>
+                      )}
                       <button onClick={async () => {
                         if (r.status === 'Outstanding') {
                         if (r.amount > 0) {

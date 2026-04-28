@@ -65,7 +65,7 @@ export async function GET(request) {
       email: row[3] || '', request_date: row[4] || '',
       deadline: row[5] || '', doc_type: row[6] || '',
       amount: parseFloat(row[7] || 0), status: row[8] || 'Outstanding',
-      notes: row[9] || ''
+      notes: row[9] || '', email_sent: row[10] === 'true'
     }))
     return Response.json({ success: true, data: reports })
   } catch (error) {
@@ -94,19 +94,6 @@ export async function POST(request) {
           'Outstanding', body.notes || ''
         ]]}
       })
-
-      // Send email to therapist
-      if (body.therapist_email && body.doc_type !== 'Initial Evaluation') {
-        try {
-          await sendTherapistEmail(
-            body.therapist_email, body.therapist,
-            body.client_name, body.doc_type,
-            body.deadline, body.notes
-          )
-        } catch (emailError) {
-          console.error('Email failed:', emailError)
-        }
-      }
 
       // Add to outstanding if has fee
       if (body.amount > 0) {
@@ -165,6 +152,33 @@ export async function PATCH(request) {
         })
       }
       return Response.json({ success: true })
+    }
+
+    if (body.action === 'send_email') {
+      const data = await getSheetData('reports')
+      const [, ...rows] = data
+      const row = rows[body.index]
+      if (!row) return Response.json({ success: false, error: 'Row not found' })
+
+      try {
+        await sendTherapistEmail(
+          body.therapist_email,
+          row[2],
+          row[1],
+          row[6],
+          row[5],
+          row[9]
+        )
+        await sheets.spreadsheets.values.update({
+          spreadsheetId: SPREADSHEET_ID,
+          range: `reports!K${sheetRow}`,
+          valueInputOption: 'RAW',
+          requestBody: { values: [['true']] }
+        })
+        return Response.json({ success: true })
+      } catch (err) {
+        return Response.json({ success: false, error: err.message })
+      }
     }
 
     return Response.json({ success: false, error: 'Unknown action' })
