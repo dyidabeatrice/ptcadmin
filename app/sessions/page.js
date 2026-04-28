@@ -115,7 +115,7 @@ export default function SchedulePage() {
   })
   const [viewMode, setViewMode] = useState('week') // 'week' | 'master'
   const [notification, setNotification] = useState(null)
-  const [absentTherapists, setAbsentTherapists] = useState(new Set())
+  const [absentTherapists, setAbsentTherapists] = useState({}) // { 'Monday': Set, 'Tuesday': Set }
   const [holidayDays, setHolidayDays] = useState(new Set())
   const [blockedSlots, setBlockedSlots] = useState([])
   const [freeSlotMode, setFreeSlotMode] = useState(false)
@@ -239,12 +239,15 @@ export default function SchedulePage() {
     const bJson = await bRes.json()
     if (bJson.success) {
       setBlockedSlots(bJson.data)
-      const absentFromBlocked = new Set(
-        (bJson.data || [])
-          .filter(b => b.type === 'absent' && b.label?.includes(week.key))
-          .map(b => b.therapist)
-      )
-      setAbsentTherapists(absentFromBlocked)
+        const absentByDay = {}
+        DAYS.forEach(d => {
+          absentByDay[d] = new Set(
+            (bJson.data || [])
+              .filter(b => b.type === 'absent' && b.day === d && b.label?.includes(week.key))
+              .map(b => b.therapist)
+          )
+        })
+        setAbsentTherapists(absentByDay)
     } else {
       setAbsentTherapists(new Set())
     }
@@ -376,13 +379,22 @@ export default function SchedulePage() {
   }
 
   async function toggleTherapistAbsent(therapist, day) {
-    const isAbsent = absentTherapists.has(therapist)
+    const daySet = absentTherapists[day] || new Set()
+    const isAbsent = daySet.has(therapist)
     if (isAbsent) {
-      setAbsentTherapists(prev => { const n = new Set(prev); n.delete(therapist); return n })
+      setAbsentTherapists(prev => {
+        const n = new Set(prev[day] || new Set())
+        n.delete(therapist)
+        return { ...prev, [day]: n }
+      })
       await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'therapist_undo_absent', week_key: selectedWeek.key, therapist, day }) })
     } else {
       if (!confirm(`Mark ${therapist} as absent for ${day}?`)) return
-      setAbsentTherapists(prev => new Set([...prev, therapist]))
+      setAbsentTherapists(prev => {
+        const n = new Set(prev[day] || new Set())
+        n.add(therapist)
+        return { ...prev, [day]: n }
+      })
       await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'therapist_absent', week_key: selectedWeek.key, therapist, day }) })
       const affectedSessions = sessions.filter(s => s.therapist === therapist && s.day === day && s.status !== 'Cancelled')
       const uniqueClients = [...new Set(affectedSessions.map(s => s.client_name))]
@@ -469,7 +481,7 @@ export default function SchedulePage() {
 
           {/* Therapist columns */}
           {therapists.map((therapist, therapistIndex) => {
-            const isAbsent = absentTherapists.has(therapist)
+            const isAbsent = (absentTherapists[day] || new Set()).has(therapist)
             const therapistEntry = therapistData.find(t => t.name === therapist && t.day === day)
             const specialty = therapistEntry?.specialty || 'OT'
             const therapistSessions = getSessionsForTherapist(therapist)
