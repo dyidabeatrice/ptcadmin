@@ -199,6 +199,15 @@ export default function SchedulePage() {
       const currentKey = getWeekKey(monday)
       const current = weeksJson.data.find(w => w.key === currentKey) || weeksJson.data[weeksJson.data.length - 1]
       setSelectedWeek(current)
+      const absentByDay = {}
+      DAYS.forEach(d => {
+        absentByDay[d] = new Set(
+          (bJson.data || [])
+            .filter(b => b.type === 'absent' && b.day === d && b.label?.includes(current.key))
+            .map(b => b.therapist)
+        )
+      })
+      setAbsentTherapists(absentByDay)
       await fetchSessions(current.key)
       await fetchMaster()
     }
