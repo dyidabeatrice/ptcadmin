@@ -436,7 +436,7 @@ export default function SchedulePage() {
     }
 
     return (
-      <div style={{ overflowX: 'auto', position: 'relative' }}>
+      <div style={{ position: 'relative' }}>
         <div style={{ display: 'flex', minWidth: 'fit-content' }}>
           {/* Time column */}
           <div style={{ flexShrink: 0, width: '70px', position: 'sticky', left: 0, zIndex: 10, background: 'white' }}>
@@ -712,7 +712,7 @@ export default function SchedulePage() {
 
       {/* View toggle */}
       <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', padding: '4px', background: '#f0f0f0', borderRadius: '10px', width: 'fit-content' }}>
-        {[{ key: 'week', label: 'This Week' }, { key: 'master', label: 'Master Template' }].map(v => (
+        {[{ key: 'master', label: 'Master Template' }, { key: 'week', label: 'This Week' }].map(v => (
           <button key={v.key} onClick={() => setViewMode(v.key)} style={{
             padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer',
             fontSize: '13px', fontWeight: '500',
@@ -1066,7 +1066,7 @@ export default function SchedulePage() {
 
                 {/* Day grid */}
                 {isExpanded && (
-                  <div style={{ maxHeight: 'calc(100vh - 200px)', overflowY: 'auto' }}>
+                  <div style={{ maxHeight: 'calc(100vh - 200px)', overflowY: 'auto', overflowX: 'auto' }}>
                     {renderDayGrid(day)}
                   </div>
                 )}
