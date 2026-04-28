@@ -1329,7 +1329,18 @@ export default function SchedulePage() {
           {DAYS.map(day => {
             const daySessions = sessions.filter(s => s.day === day)
             const isExpanded = expandedDays.has(day)
-            const isToday = day === todayName
+            const isToday = day === todayName && (() => {
+              if (!selectedWeek) return false
+              const parts = selectedWeek.key.replace('week_', '').split('_')
+              const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
+              const dayIndex = DAYS.indexOf(day)
+              const dayDate = new Date(monday)
+              dayDate.setDate(monday.getDate() + dayIndex)
+              const nowPH = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
+              return dayDate.getFullYear() === nowPH.getFullYear() &&
+                dayDate.getMonth() === nowPH.getMonth() &&
+                dayDate.getDate() === nowPH.getDate()
+            })()
             const isHoliday = holidayDays.has(day)
             const presentCount = daySessions.filter(s => s.status === 'Present').length
             const unpaidCount = daySessions.filter(s => s.payment === 'Unpaid' && (s.status === 'Present' || s.status === 'Cancelled')).length
