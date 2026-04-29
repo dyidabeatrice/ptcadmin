@@ -963,7 +963,11 @@ export default function PaymentsPage() {
           )}
 
           {/* Outstanding tab */}
-          {activeTab === 'outstanding' && <OutstandingTab clients={clients} onSettle={fetchAll} />}
+          {activeTab === 'outstanding' && <OutstandingTab clients={clients} onSettle={() => {
+              const cRes = fetch('/api/clients').then(r => r.json()).then(j => {
+                if (j.success) setClients(j.data)
+              })
+            }} />}
 
           {/* Pending Payments tab */}
           {activeTab === 'pending' && (

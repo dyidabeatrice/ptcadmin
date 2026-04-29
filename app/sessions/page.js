@@ -209,7 +209,7 @@ export default function SchedulePage() {
       })
       setAbsentTherapists(absentByDay)
       await fetchSessions(current.key)
-      await fetchMaster()
+      await fetchMaster(true)
     }
     setLoading(false)
   }
@@ -234,8 +234,8 @@ export default function SchedulePage() {
     if (json.success) setSessions(json.data)
   }
 
-  async function fetchMaster() {
-    setMasterLoading(true)
+  async function fetchMaster(showLoading = false) {
+    if (showLoading) setMasterLoading(true)
     const res = await fetch('/api/master')
     const json = await res.json()
     if (json.success) setMaster(json.data)
