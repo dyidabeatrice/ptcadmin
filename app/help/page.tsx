@@ -4,7 +4,6 @@ import { useState } from 'react'
 const sections = [
   { id: 'dashboard', label: '📊 Dashboard', emoji: '📊' },
   { id: 'clients', label: '👥 Clients', emoji: '👥' },
-  { id: 'master', label: '📋 Master Schedule', emoji: '📋' },
   { id: 'schedule', label: '🗓️ Schedule', emoji: '🗓️' },
   { id: 'payments', label: '💳 Payments', emoji: '💳' },
   { id: 'reports', label: '📄 Reports', emoji: '📄' },
@@ -166,25 +165,25 @@ export default function HelpPage() {
           </SubSection>
         </Section></div>
 
-        {/* MASTER */}
-        <div id="master"><Section title="Master Schedule" emoji="📋">
-          <p style={{ fontSize: '13px', color: '#555', marginTop: 0 }}>The Master Schedule is the <strong>permanent recurring schedule</strong> of all active clients. This is the template used to auto-generate each week's sessions.</p>
-          <Note type="warning">The Master Schedule <strong>cannot be edited directly</strong>. It is automatically updated when you add or edit clients on the Clients page. The only exception is <strong>blocking time slots</strong> — you can block specific slots directly on the Master page (e.g. for admin time or recurring blocked hours).</Note>
-          <Note type="info">If a client's schedule changes, update it on the <strong>Clients page</strong>. Keep in mind that already-generated week sheets won't update automatically — you'll need to adjust those manually on the Schedule page.</Note>
-        </Section></div>
-
         {/* SCHEDULE */}
         <div id="schedule"><Section title="Schedule" emoji="🗓️">
 
+          <SubSection title="Page layout">
+            <p>The Schedule page shows all 6 days of the week in one scrollable view. Each day is an <strong>accordion section</strong> — click the day header to expand or collapse it. The current day is auto-expanded when you open the page.</p>
+            <p>At the top is a toggle between <strong>This Week</strong> and <strong>Master Template</strong> views.</p>
+            <Note type="tip">The day header shows the date, total session count, how many are present, and how many are unpaid — so you can see the status of each day at a glance without expanding it.</Note>
+          </SubSection>
+
           <SubSection title="How to generate a new week">
-            <p>Week sheets are <strong>automatically generated every Saturday or Sunday</strong> when someone opens the Schedule page. The system always keeps the current week and next week available.</p>
-            <Note type="tip">Just make sure someone opens the Schedule page over the weekend and the next week will be ready by Monday!</Note>
+            <p>Week sheets are <strong>automatically generated</strong> when someone opens the Schedule page — the system always keeps the current week available.</p>
+            <p>To manually generate the next week, click <strong>+ Generate next week</strong> in the header. This is useful if you want to prepare next week's schedule ahead of time.</p>
+            <Note type="tip">Auto-generation still happens on page load — the button is just for generating on demand!</Note>
           </SubSection>
 
           <SubSection title="How to mark a therapist absent">
-            <Step num={1}>Go to the day the therapist is absent.</Step>
+            <Step num={1}>Expand the day the therapist is absent.</Step>
             <Step num={2}>Click <strong>Mark absent</strong> on their column header.</Step>
-            <Step num={3}>Confirm the prompt.</Step>
+            <Step num={3}>Confirm the prompt and edit the message if needed.</Step>
             <p>The column header will turn gray. A message draft will be automatically created for each of the therapist's clients that day — go to the <strong>Messages page</strong> to review and send them.</p>
           </SubSection>
 
@@ -213,23 +212,21 @@ export default function HelpPage() {
           </SubSection>
 
           <SubSection title="How to change a session type (right-click)">
-            <Step num={1}><strong>Right-click</strong> on any session block.</Step>
+            <Step num={1}><strong>Right-click</strong> on any session block in the This Week view.</Step>
             <Step num={2}>A menu appears with session types for that therapist's specialty.</Step>
             <Step num={3}>Select the correct type (e.g. OT-IE, SPECIALIZED ST TX, PLAYSCHOOL, etc.).</Step>
             <p>The session type and amount update automatically. If the session is unpaid and marked Present or Cancelled, the <strong>outstanding balance also updates</strong> to match the new amount.</p>
-            <Note type="tip">Look for the hint under the page name and week dates of the schedule page as a reminder!</Note>
           </SubSection>
 
           <SubSection title="How to move a session">
-            <p>Two ways to move a session:</p>
-            <p><strong>Same day, different time (possibly same or different therapist):</strong> Drag the session block up or down the grid to the new time slot. The column highlights green when you're hovering over a valid slot.</p>
-            <p><strong>Different day and/or therapist:</strong> Click the <strong>Move</strong> button on the session block → select new day, therapist, and time → confirm.</p>
+            <p><strong>Same day, different time or therapist:</strong> Drag the session block to the new time slot in the same day grid.</p>
+            <p><strong>Different day:</strong> Click the <strong>Move</strong> button on the session block → select new day, therapist, and time → confirm.</p>
           </SubSection>
 
           <SubSection title="How to add a one-off or make-up session">
-            <p><strong>Option 1 — Click on the grid:</strong> Click any empty (or occupied) time slot in a therapist's column. The Add session modal opens pre-filled with that therapist and time.</p>
+            <p><strong>Option 1 — Click on the grid:</strong> Click any empty time slot in a therapist's column. The Add session modal opens pre-filled with that therapist and time.</p>
             <p><strong>Option 2 — Use the button:</strong> Click <strong>+ Add one-off session</strong> at the top. You can type a new client name (for walk-ins or IE clients not yet in the system) or select an existing client.</p>
-            <Note type="tip">To add a make-up session for a therapist on a day they don't normally work — use the <strong>+ Add one-off session</strong> button and select that therapist. They'll appear as a new column for that day on the grid.</Note>
+            <Note type="tip">To add a session for a therapist on a day they don't normally work — use the button and select that therapist. They'll appear as a new column for that day.</Note>
           </SubSection>
 
           <SubSection title="How to record a payment">
@@ -241,21 +238,31 @@ export default function HelpPage() {
             <Note type="tip">If the client has a credit balance, you'll see options to use full credit, split payment, or pay normally.</Note>
           </SubSection>
 
-          <SubSection title="How to reverse a payment / issue a refund / add to credit via Schedule page">
-            <p>If a client has the status of 'Confirmed' or 'Present,' payments may be reversed directly by clicking the green <strong>Paid ✓</strong> button on a session block. You'll be prompted to confirm — the payment will be reversed and the record will be completely <strong>deleted</strong>.</p>
-            <p>If a client wishes to request their payment be credited for a session they paid for in advance but could not attend, make sure they are marked as <strong>Paid ✓ before marking them Absent</strong> which will automatically add to their credit which can be used in future sessions.</p>
+          <SubSection title="How to reverse a payment">
+            <p>Click the green <strong>Paid ✓</strong> button on a session block. You'll be prompted to confirm — the payment will be reversed and the record deleted.</p>
+            <p>If a client paid in advance but could not attend, mark them as <strong>Paid ✓ before marking Absent</strong> — this automatically moves the payment to their credit balance for future sessions.</p>
           </SubSection>
 
           <SubSection title="How to send a reminder to a client">
             <Step num={1}>Click the <strong>Remind</strong> button on a session block.</Step>
-            <Step num={2}>Choose the type of message: IE Appointment Reminder, Outstanding Balance, or Re-schedule / Make-up Request.</Step>
-            <Step num={3}>A draft is automatically created on the <strong>Messages page</strong>.</Step>
-            <Step num={4}>Go to Messages to review, edit, and send.</Step>
+            <Step num={2}>Choose the type: IE Appointment Reminder, Outstanding Balance, or Re-schedule / Make-up Request.</Step>
+            <Step num={3}>A draft is created on the <strong>Messages page</strong> — go there to review and send.</Step>
           </SubSection>
 
           <SubSection title="How to mark a holiday">
-            <p>Click <strong>Mark holiday</strong> on the day tab. All sessions for that day will be cancelled and a message draft will be created for every affected client. You can edit the message before it's sent.</p>
-            <Note type="warning">This action cannot be undone easily — all sessions for that day will be marked Cancelled.</Note>
+            <p>Click <strong>Mark holiday</strong> on the day header. All sessions for that day will be cancelled and a message draft created for every affected client.</p>
+            <Note type="warning">This cannot be easily undone — all sessions for that day will be marked Cancelled.</Note>
+          </SubSection>
+
+          <SubSection title="Master Template view">
+            <p>Toggle to <strong>Master Template</strong> at the top of the Schedule page to view and edit the recurring schedule. This is the template used to auto-generate each week's sessions.</p>
+            <Note type="warning">Changes here only affect future generated weeks — the current week is not affected.</Note>
+            <p style={{ marginBottom: '8px' }}><strong>Actions in Master Template:</strong></p>
+            <Step num={1}><strong>Add a client</strong> — left-click any empty slot to open the add modal. You can select an existing client or type a new name to create a new client record automatically.</Step>
+            <Step num={2}><strong>Move a slot</strong> — drag any session block to a new time or therapist column. The client's schedule string updates automatically.</Step>
+            <Step num={3}><strong>Remove a slot</strong> — click the <strong>✕</strong> button on any session block to remove it from the master template.</Step>
+            <Step num={4}><strong>Block a slot</strong> — right-click any empty slot to mark it as Blocked, Admin/Other, or Open for decking. Click a blocked slot to remove it.</Step>
+            <Note type="info">The client's schedule on the Clients page is automatically updated whenever you add, move, or remove a slot on the Master Template.</Note>
           </SubSection>
 
         </Section></div>
@@ -329,17 +336,31 @@ export default function HelpPage() {
         <div id="reports"><Section title="Reports" emoji="📄">
 
           <SubSection title="How to request a document">
-            <Step num={1}>Go to the <strong>Reports</strong> page.</Step>
+            <Step num={1}>Go to the <strong>Documents</strong> page.</Step>
             <Step num={2}>Click <strong>+ New request</strong>.</Step>
-            <Step num={3}>Select the client, therapist, and document type (IE Report, Progress Report, etc.).</Step>
-            <Step num={4}>The request will appear in the list with an <strong>Outstanding</strong> status and the corresponding balance due.</Step>
+            <Step num={3}>Select the client, therapist, and document type (Progress Report, IE Report, etc.).</Step>
+            <Step num={4}>Set the deadline and any notes, then click <strong>Submit request</strong>.</Step>
+            <Step num={5}>The request appears in the list with an <strong>Outstanding</strong> status and the balance due.</Step>
+            <Note type="info">An email is no longer sent automatically to the therapist when a request is created — it is sent manually once the client has paid.</Note>
           </SubSection>
 
           <SubSection title="How to settle a document balance">
             <Step num={1}>Find the document request in the list.</Step>
             <Step num={2}>Click the <strong>Outstanding</strong> button to record payment.</Step>
-            <Step num={3}>Choose mode of payment and confirm.</Step>
-            <Step num={4}>Once the report has been physically released to the client, click <strong>Ready for release</strong> → then <strong>Complete</strong> to mark it as done.</Step>
+            <Step num={3}>Choose mode of payment and confirm — the status will change to <strong>Ready for Release</strong>.</Step>
+          </SubSection>
+
+          <SubSection title="How to notify the therapist">
+            <p>Once a document is marked <strong>Ready for Release</strong> (meaning the client has paid), a <strong>Send email</strong> button appears on the row.</p>
+            <Step num={1}>Click <strong>Send email</strong> to notify the therapist that the client has paid and the document needs to be prepared.</Step>
+            <Step num={2}>The button changes to <strong>✓ Email sent</strong> after clicking — it cannot be sent again accidentally.</Step>
+            <Note type="warning">Make sure the therapist has an email address on file in the Therapists page — otherwise the button will show an alert and the email won't send.</Note>
+          </SubSection>
+
+          <SubSection title="How to complete a document request">
+            <Step num={1}>Once the report has been physically released to the client, click <strong>Ready for Release</strong> on the row.</Step>
+            <Step num={2}>Click again to mark it as <strong>Completed</strong>.</Step>
+            <Note type="tip">Use the filter tabs at the top to view by status — Outstanding, Ready for Release, or Completed.</Note>
           </SubSection>
 
         </Section></div>
