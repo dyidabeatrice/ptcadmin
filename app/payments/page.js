@@ -390,7 +390,6 @@ function OutstandingTab({ clients, onSettle }) {
     }
     setPayModal(null)
     fetchOutstanding()
-    onSettle()
     setSaving(false)
   }
 
@@ -963,11 +962,7 @@ export default function PaymentsPage() {
           )}
 
           {/* Outstanding tab */}
-          {activeTab === 'outstanding' && <OutstandingTab clients={clients} onSettle={() => {
-              const cRes = fetch('/api/clients').then(r => r.json()).then(j => {
-                if (j.success) setClients(j.data)
-              })
-            }} />}
+          {activeTab === 'outstanding' && <OutstandingTab clients={clients} onSettle={() => {}} />}
 
           {/* Pending Payments tab */}
           {activeTab === 'pending' && (
