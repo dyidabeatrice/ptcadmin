@@ -140,6 +140,12 @@ export default function SchedulePage() {
   const [addMasterForm, setAddMasterForm] = useState({ client_name: '', is_new_client: false, time_end: '' })
   const [masterDragSession, setMasterDragSession] = useState(null)
   const [savingMaster, setSavingMaster] = useState(false)
+  const [blockModal, setBlockModal] = useState(null)
+  const [blockDuration, setBlockDuration] = useState(60)
+  const [blockType, setBlockType] = useState('blocked')
+  const [blockLabel, setBlockLabel] = useState('')
+  const [savingBlock, setSavingBlock] = useState(false)
+
 
   function toggleDay(day) {
     setExpandedDays(prev => {
@@ -232,6 +238,61 @@ export default function SchedulePage() {
     const res = await fetch(`/api/sessions?week=${weekKey}`)
     const json = await res.json()
     if (json.success) setSessions(json.data)
+  }
+
+  async function addBlock() {
+    if (!blockModal) return
+    if (blockType === 'admin' && !blockLabel.trim()) return alert('Please enter a label')
+    setSavingBlock(true)
+    const endMins = parseTime(blockModal.time_start) + blockDuration
+    const time_end = formatTime(endMins)
+    await fetch('/api/blocked', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        therapist: blockModal.therapist,
+        day: blockModal.day,
+        time_start: blockModal.time_start,
+        time_end,
+        type: blockType,
+        label: blockLabel
+      })
+    })
+    setBlockModal(null)
+    setBlockDuration(60)
+    setBlockType('blocked')
+    setBlockLabel('')
+    const bRes = await fetch('/api/blocked')
+    const bJson = await bRes.json()
+    if (bJson.success) setBlockedSlots(bJson.data)
+    setSavingBlock(false)
+  }
+  async function addBlock() {
+    if (!blockModal) return
+    if (blockType === 'admin' && !blockLabel.trim()) return alert('Please enter a label')
+    setSavingBlock(true)
+    const endMins = parseTime(blockModal.time_start) + blockDuration
+    const time_end = formatTime(endMins)
+    await fetch('/api/blocked', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        therapist: blockModal.therapist,
+        day: blockModal.day,
+        time_start: blockModal.time_start,
+        time_end,
+        type: blockType,
+        label: blockLabel
+      })
+    })
+    setBlockModal(null)
+    setBlockDuration(60)
+    setBlockType('blocked')
+    setBlockLabel('')
+    const bRes = await fetch('/api/blocked')
+    const bJson = await bRes.json()
+    if (bJson.success) setBlockedSlots(bJson.data)
+    setSavingBlock(false)
   }
 
   async function fetchMaster(showLoading = false) {
@@ -770,6 +831,13 @@ export default function SchedulePage() {
                           setAddMasterModal({ therapist, day, time_start: formatTime(slotMins) })
                           setAddMasterForm({ client_name: '', is_new_client: false, time_end: formatTime(slotMins + 60) })
                         }}
+                        onContextMenu={e => {
+                          e.preventDefault()
+                          setBlockModal({ therapist, day, time_start: formatTime(slotMins) })
+                          setBlockDuration(60)
+                          setBlockType('blocked')
+                          setBlockLabel('')
+                        }}
                         onDragOver={e => e.preventDefault()}
                         onMouseEnter={e => { e.currentTarget.style.background = 'rgba(29,158,117,0.1)' }}
                         onMouseLeave={e => { e.currentTarget.style.background = i % 4 === 0 ? '#fafafa' : 'white' }}
@@ -809,12 +877,23 @@ export default function SchedulePage() {
                     const height = ((bEndMins - bStartMins) / 15) * ROW_HEIGHT - 2
                     const isAdmin = b.type === 'admin'
                     return (
-                      <div key={bi} style={{
-                        position: 'absolute', top: `${topOffset + 1}px`, left: '2%', width: '96%',
-                        height: `${height}px`, background: isAdmin ? '#d0d0d0' : '#555',
-                        borderRadius: '4px', boxSizing: 'border-box', zIndex: 1,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden'
-                      }}>
+                      <div key={bi}
+                        onClick={() => { if (confirm('Remove this blocked slot?')) {
+                          fetch('/api/blocked', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ rowIndex: b.index })
+                          }).then(() => fetch('/api/blocked').then(r => r.json()).then(j => {
+                            if (j.success) setBlockedSlots(j.data)
+                          }))
+                        }}}
+                        style={{
+                          position: 'absolute', top: `${topOffset + 1}px`, left: '2%', width: '96%',
+                          height: `${height}px`, background: isAdmin ? '#d0d0d0' : '#555',
+                          borderRadius: '4px', boxSizing: 'border-box', zIndex: 1,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                          cursor: 'pointer'
+                        }}>
                         {isAdmin && b.label && <div style={{ fontSize: '9px', color: '#444', fontWeight: '500', textAlign: 'center', padding: '0 4px' }}>{b.label}</div>}
                       </div>
                     )
@@ -967,6 +1046,74 @@ export default function SchedulePage() {
           }}>{v.label}</button>
         ))}
       </div>
+
+      {blockModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '380px', maxWidth: '90vw' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Mark slot</h3>
+            <p style={{ margin: '0 0 1.25rem', fontSize: '13px', color: '#999' }}>{blockModal.therapist} · {blockModal.day} · {blockModal.time_start}</p>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '8px' }}>Type</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {[
+                  { value: 'blocked', label: 'Blocked', sub: 'Therapist not taking a client', color: '#444' },
+                  { value: 'admin', label: 'Admin / Other', sub: 'Meeting, duties, etc — add a label', color: '#666' },
+                  { value: 'open', label: 'Open for decking', sub: 'Available for new client', color: '#085041' },
+                ].map(opt => (
+                  <button key={opt.value} onClick={() => { setBlockType(opt.value); setBlockLabel('') }} style={{
+                    padding: '10px 14px', borderRadius: '8px', cursor: 'pointer', textAlign: 'left',
+                    border: blockType === opt.value ? `2px solid ${opt.color}` : '1px solid #ddd',
+                    background: blockType === opt.value ? (opt.value === 'open' ? '#E1F5EE' : opt.value === 'admin' ? '#f5f5f5' : '#eee') : 'white',
+                  }}>
+                    <div style={{ fontSize: '13px', fontWeight: '500', color: opt.color }}>{opt.label}</div>
+                    <div style={{ fontSize: '11px', color: '#aaa', marginTop: '2px' }}>{opt.sub}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            {blockType === 'admin' && (
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Label</label>
+                <input value={blockLabel} onChange={e => setBlockLabel(e.target.value)}
+                  placeholder="e.g. Admin Duties, Team Meeting..."
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+            )}
+            {blockType === 'open' && (
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Note <span style={{ color: '#aaa', fontWeight: '400' }}>(optional)</span></label>
+                <input value={blockLabel} onChange={e => setBlockLabel(e.target.value)}
+                  placeholder="e.g. CBT only, Morning slot..."
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+              </div>
+            )}
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '8px' }}>Duration</label>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {[30, 60, 90, 120, 150, 180, 210, 240].map(mins => (
+                  <button key={mins} onClick={() => setBlockDuration(mins)} style={{
+                    padding: '6px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px',
+                    border: blockDuration === mins ? '2px solid #0f4c81' : '1px solid #ddd',
+                    background: blockDuration === mins ? '#E6F1FB' : 'white',
+                    color: blockDuration === mins ? '#0f4c81' : '#666',
+                    fontWeight: blockDuration === mins ? '500' : '400'
+                  }}>{mins === 30 ? '30 min' : mins === 60 ? '1 hr' : mins === 90 ? '1.5 hr' : `${mins/60} hr`}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{ background: '#f8f9fa', borderRadius: '8px', padding: '10px 12px', marginBottom: '1.25rem', fontSize: '13px', color: '#666' }}>
+              {blockModal.time_start} – {formatTime(parseTime(blockModal.time_start) + blockDuration)}
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={() => { setBlockModal(null); setBlockType('blocked'); setBlockLabel('') }}
+                style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={addBlock} disabled={savingBlock} style={{ flex: 2, padding: '8px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
+                {savingBlock ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {viewMode === 'master' && (
         <div style={{ marginBottom: '1rem', padding: '10px 16px', background: '#FAEEDA', border: '1px solid #EF9F27', borderRadius: '8px', fontSize: '13px', color: '#633806' }}>

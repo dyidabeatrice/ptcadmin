@@ -208,8 +208,7 @@ export async function POST(request) {
       const currentMonday = getMondayOf(today)
       const created = []
 
-      // Always generate the next 2 weeks from current monday
-      for (let w = 1; w <= 2; w++) {
+      for (let w = 1; w <= 1; w++) {
         const monday = new Date(currentMonday)
         monday.setDate(monday.getDate() + w * 7)
         const weekKey = getWeekKey(monday)
