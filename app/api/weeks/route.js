@@ -201,6 +201,75 @@ export async function POST(request) {
       return Response.json({ success: true, to_archive: toArchive, count: toArchive.length })
     }
 
+    if (body.action === 'generate_next') {
+      const sheets = getGoogleSheets()
+      const existingWeeks = await getWeekSheets()
+      const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
+      const currentMonday = getMondayOf(today)
+      const created = []
+
+      // Always generate the next 2 weeks from current monday
+      for (let w = 1; w <= 2; w++) {
+        const monday = new Date(currentMonday)
+        monday.setDate(monday.getDate() + w * 7)
+        const weekKey = getWeekKey(monday)
+
+        if (existingWeeks.includes(weekKey)) continue
+
+        const masterData = await getSheetData('masterschedule')
+        const [, ...masterRows] = masterData
+        const clientData = await getSheetData('clients')
+        const [, ...clientRows] = clientData
+        const therapistData = await getSheetData('therapists')
+        const [, ...therapistRows] = therapistData
+
+        const inactiveClients = new Set(
+          clientRows.filter(r => r && r[0] && r[9] === 'inactive').map(r => r[1])
+        )
+
+        const master = masterRows
+          .filter(r => r && r[0] && !inactiveClients.has(r[1]))
+          .map(row => ({
+            client_name: row[1], therapist: row[2],
+            day: row[3]?.trim(), time_start: row[4], time_end: row[5]
+          }))
+
+        const weekDates = getWeekDates(monday)
+        const newRows = master
+          .filter(m => weekDates[m.day])
+          .map(m => {
+            const amount = getDefaultAmount(m.therapist, therapistRows)
+            const tRow = therapistRows.find(r => r && r[1] === m.therapist)
+            const specialty = tRow?.[2] || 'OT'
+            const defaultSessionType =
+              specialty === 'ST' ? 'ST SESSION' :
+              specialty === 'PT' ? 'PT SESSION' :
+              specialty === 'SPED' ? 'SPED SESSION' : 'OT SESSION'
+            return [
+              Date.now().toString() + Math.random().toString(36).slice(2),
+              m.client_name, m.therapist, weekDates[m.day],
+              m.day, m.time_start, m.time_end,
+              defaultSessionType, 'Pencil', 'Unpaid', '', amount, ''
+            ]
+          })
+
+        await createWeekSheet(weekKey, getWeekLabel(monday))
+
+        if (newRows.length > 0) {
+          await sheets.spreadsheets.values.append({
+            spreadsheetId: SPREADSHEET_ID,
+            range: weekKey,
+            valueInputOption: 'RAW',
+            requestBody: { values: newRows }
+          })
+        }
+
+        created.push(weekKey)
+      }
+
+      return Response.json({ success: true, created })
+    }
+    
     return Response.json({ success: false, error: 'Unknown action' })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
