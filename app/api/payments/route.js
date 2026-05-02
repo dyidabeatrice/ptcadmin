@@ -153,6 +153,40 @@ export async function PATCH(request) {
       return Response.json({ success: true })
     }
 
+    if (body.action === 'update_amounts') {
+      const payData = await getSheetData('payments')
+      const [, ...payRows] = payData
+      const index = payRows.findIndex(r => r && r[0] === body.id)
+      if (index === -1) return Response.json({ success: false, error: 'Not found' })
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `payments!E${index + 2}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[body.total || 0]] }
+      })
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `payments!M${index + 2}:N${index + 2}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[body.custom_cut || '', body.custom_center || '']] }
+      })
+      return Response.json({ success: true })
+    }
+
+    if (body.action === 'update_comments') {
+      const payData = await getSheetData('payments')
+      const [, ...payRows] = payData
+      const index = payRows.findIndex(r => r && r[0] === body.id)
+      if (index === -1) return Response.json({ success: false, error: 'Not found' })
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `payments!L${index + 2}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[body.comments || '']] }
+      })
+      return Response.json({ success: true })
+    }
+
     return Response.json({ success: false, error: 'Unknown action' })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
