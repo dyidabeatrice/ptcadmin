@@ -103,7 +103,9 @@ export async function GET() {
           payment_type: row[8] || '',
           reference: row[9] || '',
           verified_by: row[10] || '',
-          comments: row[11] || ''
+          comments: row[11] || '',
+          custom_cut: row[12] !== undefined && row[12] !== '' ? parseFloat(row[12]) : null,
+          custom_center: row[13] !== undefined && row[13] !== '' ? parseFloat(row[13]) : null
         }
       }
     })
@@ -126,13 +128,16 @@ export async function GET() {
         const sessionType = payment?.session_type || row[7] || 'Regular'
         const recordedAmount = payment ? payment.amount : parseFloat(row[11] || 0)
         const comments = payment?.comments || ''
-        const { total, therapistCut, center } = calcRates(
+        const rates = calcRates(
           sessionType,
           therapistInfo?.level || 'JUNIOR 1',
           recordedAmount,
           therapistInfo?.is_intern || false,
           comments
         )
+        const total = rates.total
+        const therapistCut = payment?.custom_cut !== null && payment?.custom_cut !== undefined ? payment.custom_cut : rates.therapistCut
+        const center = payment?.custom_center !== null && payment?.custom_center !== undefined ? payment.custom_center : rates.center
 
         allSessions.push({
           id: sessionId,
