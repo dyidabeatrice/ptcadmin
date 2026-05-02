@@ -86,6 +86,40 @@ function LedgerRow({ session, onPaid, clients }) {
     setSaving(false)
   }
 
+  async function saveAmounts() {
+    if (!session.payment_id) return
+    if (
+      Number(total) === Number(session.total) &&
+      Number(cut) === Number(session.therapist_cut) &&
+      Number(center) === Number(session.center)
+    ) return
+    await fetch('/api/payments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_amounts',
+        id: session.payment_id,
+        total: Number(total),
+        custom_cut: Number(cut),
+        custom_center: Number(center)
+      })
+    })
+  }
+
+  async function saveComments() {
+    if (comments === session.comments) return
+    if (!session.payment_id) return
+    await fetch('/api/payments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_comments',
+        id: session.payment_id,
+        comments
+      })
+    })
+  }
+
   async function sendRemind() {
     const res = await fetch('/api/messages', {
       method: 'POST',
