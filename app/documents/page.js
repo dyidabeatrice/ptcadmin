@@ -75,12 +75,11 @@ export default function DocumentsPage() {
 
   function handleClientChange(clientName) {
     const clientTherapists = getClientTherapists(clientName)
-    const firstTherapist = clientTherapists[0] || ''
     setForm({
       ...form,
       client_name: clientName,
-      therapist: firstTherapist,
-      therapist_email: getTherapistEmail(firstTherapist)
+      therapist: '',
+      therapist_email: ''
     })
   }
 
@@ -309,7 +308,12 @@ export default function DocumentsPage() {
                     disabled={!form.client_name}
                     style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', opacity: !form.client_name ? 0.5 : 1 }}>
                     <option value="">Select therapist...</option>
-                    {clientTherapists.map(t => <option key={t} value={t}>{t}</option>)}
+                    {(() => {
+                      const clientTherapists = getClientTherapists(form.client_name)
+                      const allTherapistNames = [...new Set(therapists.map(t => t.name))].sort()
+                      const list = clientTherapists.length > 0 ? clientTherapists : allTherapistNames
+                      return list.map(t => <option key={t} value={t}>{t}</option>)
+                    })()}
                   </select>
                 </div>
 
