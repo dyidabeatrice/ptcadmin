@@ -30,7 +30,7 @@ function LedgerRow({ session, onPaid, clients }) {
   const [isPaid, setIsPaid] = useState(session.is_paid)
 
   const [deleted, setDeleted] = useState(false)
-  if (deleted) return <tr style={{ display: 'none' }} />
+  if (deleted) return <tr style={{ display: 'none' }}><td colSpan={11} /></tr>
 
   useEffect(() => {
     setMop(session.mop || '')
