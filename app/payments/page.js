@@ -574,6 +574,7 @@ export default function PaymentsPage() {
   const [processSaving, setProcessSaving] = useState(false)
   const [ocrLoading, setOcrLoading] = useState(false)
   const [zoomedImage, setZoomedImage] = useState(null)
+  const [pfReleases, setPfReleases] = useState([])
   const [exportMonth, setExportMonth] = useState(() => {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -596,6 +597,9 @@ export default function PaymentsPage() {
       await fetchWeekSessions(current.key)
     }
     await fetchPendingPayments()
+    const pfRes = await fetch('/api/pf-releases')
+    const pfJson = await pfRes.json()
+    if (pfJson.success) setPfReleases(pfJson.data)
     setLoading(false)
     fetchLedger()
   }
