@@ -190,21 +190,21 @@ function LedgerRow({ session, onPaid, clients }) {
       </td>
       <td style={{ padding: '8px 10px' }}>
         <input type="number" value={total} onChange={e => { const v = Number(e.target.value); setTotal(v); setCenter(v - cut) }}
-          onBlur={savePayment}
+          onBlur={saveAmounts}
           style={{ fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd', width: '70px', boxSizing: 'border-box', fontWeight: '500' }} />
       </td>
       <td style={{ padding: '8px 10px' }}>
         <input type="number" value={cut} onChange={e => { const v = Number(e.target.value); setCut(v); setCenter(total - v) }}
-          onBlur={savePayment}
+          onBlur={saveAmounts}
           style={{ fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd', width: '70px', boxSizing: 'border-box' }} />
       </td>
       <td style={{ padding: '8px 10px' }}>
         <input type="number" value={center} onChange={e => setCenter(Number(e.target.value))}
-          onBlur={savePayment}
+          onBlur={saveAmounts}
           style={{ fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd', width: '70px', boxSizing: 'border-box' }} />
       </td>
       <td style={{ padding: '8px 10px' }}>
-        <input value={comments} onChange={e => setComments(e.target.value)} onBlur={savePayment}
+        <input value={comments} onChange={e => setComments(e.target.value)} onBlur={saveComments}
           placeholder="Notes..." style={{ fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd', width: '100px', boxSizing: 'border-box' }} />
       </td>
       <td style={{ padding: '8px 10px', fontSize: '11px', color: saving ? '#999' : isPaid ? '#1D9E75' : '#E24B4A', fontWeight: '500' }}>
