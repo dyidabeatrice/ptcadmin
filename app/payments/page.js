@@ -104,7 +104,6 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
         custom_center: Number(center)
       })
     })
-    onPaid()
   }
 
   async function saveComments() {
