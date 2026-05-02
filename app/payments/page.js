@@ -104,6 +104,7 @@ function LedgerRow({ session, onPaid, clients }) {
         custom_center: Number(center)
       })
     })
+    onPaid()
   }
 
   async function saveComments() {
@@ -1069,7 +1070,7 @@ export default function PaymentsPage() {
               <LedgerTab
                 therapistData={ledger[activeTherapist]}
                 therapistName={activeTherapist}
-                onPaid={() => {}}
+                onPaid={fetchLedger}
                 clients={clients}
                 pfReleases={pfReleases.filter(r => r.therapist === activeTherapist)}
                 onRelease={async (monthKey, period, sentVia, dateSent, notes) => {
