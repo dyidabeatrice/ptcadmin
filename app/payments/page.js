@@ -222,13 +222,30 @@ function LedgerRow({ session, onPaid, clients }) {
   )
 }
 
-function LedgerTab({ therapistData, therapistName, onPaid, clients }) {
+function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases = [], onRelease }) {
   const currentMonthKey = (() => {
     const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })()
 
   const [collapsed, setCollapsed] = useState({})
+  const [releaseModal, setReleaseModal] = useState(null)
+  const [releaseForm, setReleaseForm] = useState({ sent_via: 'Cash', date_sent: '', notes: '' })
+  const [savingRelease, setSavingRelease] = useState(false)
+
+  function getPeriod(dateStr) {
+    if (!dateStr) return 1
+    const day = parseInt(dateStr.split(' ')[1] || dateStr.split('/')[1] || '1')
+    return day <= 15 ? 1 : 2
+  }
+
+  function getPeriodLabel(monthLabel, period) {
+    return `${monthLabel} (${period === 1 ? '1–15' : '16–end'})`
+  }
+
+  function getPeriodSessions(sessions, period) {
+    return sessions.filter(s => getPeriod(s.date) === period)
+  }
 
   const months = Object.entries(therapistData || {})
     .sort(([a], [b]) => b.localeCompare(a))
@@ -251,6 +268,53 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      {releaseModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '380px', maxWidth: '90vw' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Mark as released</h3>
+            <p style={{ margin: '0 0 1.25rem', fontSize: '13px', color: '#999' }}>{releaseModal.label}</p>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Sent via</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {['Cash', 'Bank Transfer'].map(opt => (
+                  <button key={opt} onClick={() => setReleaseForm({ ...releaseForm, sent_via: opt })} style={{
+                    padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
+                    border: releaseForm.sent_via === opt ? '2px solid #0f4c81' : '1px solid #ddd',
+                    background: releaseForm.sent_via === opt ? '#E6F1FB' : 'white',
+                    color: releaseForm.sent_via === opt ? '#0f4c81' : '#666',
+                    fontWeight: releaseForm.sent_via === opt ? '500' : '400'
+                  }}>{opt}</button>
+                ))}
+              </div>
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Date sent</label>
+              <input type="date" value={releaseForm.date_sent} onChange={e => setReleaseForm({ ...releaseForm, date_sent: e.target.value })}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Notes (optional)</label>
+              <input value={releaseForm.notes} onChange={e => setReleaseForm({ ...releaseForm, notes: e.target.value })}
+                placeholder="Any notes..."
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setReleaseModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={async () => {
+                if (!releaseForm.date_sent) return alert('Please enter a date')
+                setSavingRelease(true)
+                await onRelease(releaseModal.monthKey, releaseModal.period, releaseForm.sent_via, releaseForm.date_sent, releaseForm.notes)
+                setReleaseModal(null)
+                setSavingRelease(false)
+              }} disabled={savingRelease} style={{
+                padding: '8px 20px', borderRadius: '6px', border: 'none',
+                background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500',
+                opacity: savingRelease ? 0.5 : 1
+              }}>{savingRelease ? 'Saving...' : 'Confirm release'}</button>
+            </div>
+          </div>
+        </div>
+      )}
       {months.map(([monthKey, monthData]) => {
         const allSessions = Object.values(monthData.dates).flat()
         const unpaidCount = allSessions.filter(s => !s.is_paid).length
@@ -317,19 +381,54 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients }) {
                     })}
                     {/* Month total row */}
                     {(() => {
-                    const mTotal = allSessions.reduce((sum, s) => sum + (s.total || 0), 0)
-                    const mCut = allSessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
-                    const mCenter = allSessions.reduce((sum, s) => sum + (s.center || 0), 0)
+                      const mTotal = allSessions.reduce((sum, s) => sum + (s.total || 0), 0)
+                      const mCut = allSessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
+                      const mCenter = allSessions.reduce((sum, s) => sum + (s.center || 0), 0)
+
                       return (
-                        <tr style={{ background: '#0f4c81' }}>
-                          <td colSpan={5} style={{ padding: '8px 10px', fontSize: '12px', fontWeight: '600', color: 'white' }}>
-                            {monthData.label} TOTAL
-                          </td>
-                          <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: 'white' }}>₱{mTotal.toLocaleString()}</td>
-                          <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: '#97C459' }}>₱{mCut.toLocaleString()}</td>
-                          <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: '#fcc200' }}>₱{mCenter.toLocaleString()}</td>
-                          <td colSpan={2} />
-                        </tr>
+                        <>
+                          <tr style={{ background: '#0f4c81' }}>
+                            <td colSpan={5} style={{ padding: '8px 10px', fontSize: '12px', fontWeight: '600', color: 'white' }}>
+                              {monthData.label} TOTAL
+                            </td>
+                            <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: 'white' }}>₱{mTotal.toLocaleString()}</td>
+                            <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: '#97C459' }}>₱{mCut.toLocaleString()}</td>
+                            <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: '#fcc200' }}>₱{mCenter.toLocaleString()}</td>
+                            <td colSpan={2} />
+                          </tr>
+                          {[1, 2].map(period => {
+                            const periodSessions = getPeriodSessions(allSessions, period)
+                            if (periodSessions.length === 0) return null
+                            const periodCut = periodSessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
+                            const periodLabel = getPeriodLabel(monthData.label, period)
+                            const release = pfReleases.find(r => r.month_key === monthKey && r.period === String(period))
+                            return (
+                              <tr key={period} style={{ background: '#f0f4f8' }}>
+                                <td colSpan={5} style={{ padding: '6px 10px', fontSize: '11px', color: '#666' }}>
+                                  {periodLabel}
+                                </td>
+                                <td colSpan={2} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>
+                                  ₱{periodCut.toLocaleString()} cut
+                                </td>
+                                <td colSpan={3} style={{ padding: '6px 10px' }}>
+                                  {release ? (
+                                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A', fontWeight: '500' }}>
+                                      ✓ Released {release.date_sent} via {release.sent_via}
+                                    </span>
+                                  ) : (
+                                    <button onClick={() => {
+                                      setReleaseModal({ monthKey, period, label: periodLabel })
+                                      setReleaseForm({ sent_via: 'Cash', date_sent: '', notes: '' })
+                                    }} style={{
+                                      padding: '4px 10px', borderRadius: '6px', border: '1px solid #0f4c81',
+                                      background: '#E6F1FB', color: '#0f4c81', cursor: 'pointer', fontSize: '11px', fontWeight: '500'
+                                    }}>Mark as released</button>
+                                  )}
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </>
                       )
                     })()}
                   </tbody>
@@ -938,6 +1037,24 @@ export default function PaymentsPage() {
                 therapistName={activeTherapist}
                 onPaid={() => {}}
                 clients={clients}
+                pfReleases={pfReleases.filter(r => r.therapist === activeTherapist)}
+                onRelease={async (monthKey, period, sentVia, dateSent, notes) => {
+                  await fetch('/api/pf-releases', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      therapist: activeTherapist,
+                      month_key: monthKey,
+                      period,
+                      sent_via: sentVia,
+                      date_sent: dateSent,
+                      notes: notes || ''
+                    })
+                  })
+                  const pfRes = await fetch('/api/pf-releases')
+                  const pfJson = await pfRes.json()
+                  if (pfJson.success) setPfReleases(pfJson.data)
+                }}
               />
               )}
             </div>
