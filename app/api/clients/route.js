@@ -268,7 +268,9 @@ export async function PATCH(request) {
       ]]}
     })
 
-    await syncToMaster(sheets, body.name, body.schedule, body.status === 'inactive')
+    if (body.status === 'inactive') {
+      await syncToMaster(sheets, body.name, '', true)
+    }
     return Response.json({ success: true })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
