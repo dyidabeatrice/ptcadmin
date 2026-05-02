@@ -18,7 +18,7 @@ function parseDate(dateStr) {
   return new Date(parseInt(parts[2]), months[parts[0]], parseInt(parts[1]))
 }
 
-function LedgerRow({ session, onPaid, clients }) {
+function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
   const [mop, setMop] = useState(session.mop || '')
   const [reference, setReference] = useState(session.reference || '')
   const [comments, setComments] = useState(session.comments || '')
@@ -190,17 +190,17 @@ function LedgerRow({ session, onPaid, clients }) {
           }} />
       </td>
       <td style={{ padding: '8px 10px' }}>
-        <input type="number" value={total} onChange={e => { const v = Number(e.target.value); setTotal(v); setCenter(v - cut) }}
+        <input type="number" value={total} onChange={e => { const v = Number(e.target.value); setTotal(v); setCenter(v - cut); onOverride(session.id, v, cut, v - cut) }}
           onBlur={saveAmounts}
           style={{ fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd', width: '70px', boxSizing: 'border-box', fontWeight: '500' }} />
       </td>
       <td style={{ padding: '8px 10px' }}>
-        <input type="number" value={cut} onChange={e => { const v = Number(e.target.value); setCut(v); setCenter(total - v) }}
+        <input type="number" value={cut} onChange={e => { const v = Number(e.target.value); setCut(v); setCenter(total - v); onOverride(session.id, total, v, total - v) }}
           onBlur={saveAmounts}
           style={{ fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd', width: '70px', boxSizing: 'border-box' }} />
       </td>
       <td style={{ padding: '8px 10px' }}>
-        <input type="number" value={center} onChange={e => setCenter(Number(e.target.value))}
+        <input type="number" value={center} onChange={e => { const v = Number(e.target.value); setCenter(v); onOverride(session.id, total, cut, v) }}
           onBlur={saveAmounts}
           style={{ fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd', width: '70px', boxSizing: 'border-box' }} />
       </td>
@@ -267,6 +267,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
   const [releaseModal, setReleaseModal] = useState(null)
   const [releaseForm, setReleaseForm] = useState({ sent_via: 'Cash', date_sent: '', notes: '' })
   const [savingRelease, setSavingRelease] = useState(false)
+  const [overrides, setOverrides] = useState({})
 
   function getPeriod(dateStr) {
     if (!dateStr) return 1
@@ -387,9 +388,9 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                   </thead>
                   <tbody>
                     {sortedDates.map(([date, sessions]) => {
-                    const dateTotal = sessions.reduce((sum, s) => sum + (s.total || 0), 0)
-                    const dateCut = sessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
-                    const dateCenter = sessions.reduce((sum, s) => sum + (s.center || 0), 0)
+                    const dateTotal = sessions.reduce((sum, s) => sum + (overrides[s.id]?.total ?? s.total ?? 0), 0)
+                    const dateCut = sessions.reduce((sum, s) => sum + (overrides[s.id]?.cut ?? s.therapist_cut ?? 0), 0)
+                    const dateCenter = sessions.reduce((sum, s) => sum + (overrides[s.id]?.center ?? s.center ?? 0), 0)
 
                       return [
                         // Date header row
@@ -400,7 +401,13 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                         </tr>,
                         // Session rows
                         ...sessions.map((s, i) => (
-                          <LedgerRow key={s.id} session={s} onPaid={onPaid} clients={clients} />
+                          <LedgerRow 
+                            key={s.id} 
+                            session={s} 
+                            onPaid={onPaid} 
+                            clients={clients}
+                            onOverride={(id, t, c, ce) => setOverrides(prev => ({ ...prev, [id]: { total: t, cut: c, center: ce } }))}
+                          />
                         )),
                         // Date subtotal row
                         <tr key={`subtotal-${date}`} style={{ background: '#f8f9fa', borderTop: '2px solid #e0e0e0' }}>
@@ -416,9 +423,9 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                     })}
                     {/* Month total row */}
                     {(() => {
-                      const mTotal = allSessions.reduce((sum, s) => sum + (s.total || 0), 0)
-                      const mCut = allSessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
-                      const mCenter = allSessions.reduce((sum, s) => sum + (s.center || 0), 0)
+                    const mTotal = allSessions.reduce((sum, s) => sum + (overrides[s.id]?.total ?? s.total ?? 0), 0)
+                    const mCut = allSessions.reduce((sum, s) => sum + (overrides[s.id]?.cut ?? s.therapist_cut ?? 0), 0)
+                    const mCenter = allSessions.reduce((sum, s) => sum + (overrides[s.id]?.center ?? s.center ?? 0), 0)
 
                       return (
                         <>
