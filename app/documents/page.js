@@ -39,7 +39,7 @@ export default function DocumentsPage() {
   const [filterStatus, setFilterStatus] = useState('All')
 
   const [form, setForm] = useState({
-    client_name: '', therapist: '', therapist_email: '',
+    client_name: '', therapists: [], 
     email: '', deadline: '', doc_type: '', amount: 0,
     notes: '', sub_type: ''
   })
@@ -74,13 +74,7 @@ export default function DocumentsPage() {
   }
 
   function handleClientChange(clientName) {
-    const clientTherapists = getClientTherapists(clientName)
-    setForm({
-      ...form,
-      client_name: clientName,
-      therapist: '',
-      therapist_email: ''
-    })
+    setForm({ ...form, client_name: clientName, therapists: [] })
   }
 
   function handleDocTypeChange(docType) {
@@ -90,7 +84,7 @@ export default function DocumentsPage() {
 
   function validateForm() {
     if (!form.client_name) return 'Please select a client'
-    if (!form.therapist) return 'Please select a therapist'
+    if (form.therapists.length === 0) return 'Please select at least one therapist'
     if (!form.doc_type) return 'Please select a document type'
     if (!form.deadline) return 'Please set a deadline date'
     return null
@@ -98,14 +92,21 @@ export default function DocumentsPage() {
 
   async function submitRequest() {
     setSaving(true)
-    await fetch('/api/documents', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'add', ...form })
-    })
+    await Promise.all(form.therapists.map(therapistName =>
+      fetch('/api/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add',
+          ...form,
+          therapist: therapistName,
+          therapist_email: getTherapistEmail(therapistName)
+        })
+      })
+    ))
     setShowForm(false)
     setShowSummary(false)
-    setForm({ client_name: '', therapist: '', therapist_email: '', email: '', deadline: '', doc_type: '', amount: 0, notes: '', sub_type: '' })
+    setForm({ client_name: '', therapists: [], email: '', deadline: '', doc_type: '', amount: 0, notes: '', sub_type: '' })
     fetchAll()
     setSaving(false)
   }
@@ -302,19 +303,33 @@ export default function DocumentsPage() {
                 </div>
 
                 <div style={{ marginBottom: '12px' }}>
-                  <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Therapist <span style={{ color: '#E24B4A' }}>*</span></label>
-                  <select value={form.therapist}
-                    onChange={e => setForm({ ...form, therapist: e.target.value, therapist_email: getTherapistEmail(e.target.value) })}
-                    disabled={!form.client_name}
-                    style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', opacity: !form.client_name ? 0.5 : 1 }}>
-                    <option value="">Select therapist...</option>
+                  <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>
+                    Therapist <span style={{ color: '#E24B4A' }}>*</span>
+                    <span style={{ fontWeight: '400', marginLeft: '6px', color: '#aaa' }}>— select all that apply</span>
+                  </label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto', padding: '4px', border: '1px solid #ddd', borderRadius: '6px', opacity: !form.client_name ? 0.5 : 1 }}>
                     {(() => {
                       const clientTherapists = getClientTherapists(form.client_name)
                       const allTherapistNames = [...new Set(therapists.map(t => t.name))].sort()
                       const list = clientTherapists.length > 0 ? clientTherapists : allTherapistNames
-                      return list.map(t => <option key={t} value={t}>{t}</option>)
+                      return list.map(t => (
+                        <label key={t} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '6px', cursor: 'pointer', background: form.therapists.includes(t) ? '#E6F1FB' : 'white', fontSize: '13px' }}>
+                          <input type="checkbox" checked={form.therapists.includes(t)}
+                            disabled={!form.client_name}
+                            onChange={e => {
+                              if (e.target.checked) setForm({ ...form, therapists: [...form.therapists, t] })
+                              else setForm({ ...form, therapists: form.therapists.filter(x => x !== t) })
+                            }} />
+                          {t}
+                        </label>
+                      ))
                     })()}
-                  </select>
+                  </div>
+                  {form.therapists.length > 0 && (
+                    <div style={{ marginTop: '6px', fontSize: '12px', color: '#0C447C' }}>
+                      {form.therapists.length} therapist{form.therapists.length > 1 ? 's' : ''} selected — will create {form.therapists.length} separate request{form.therapists.length > 1 ? 's' : ''}
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ marginBottom: '12px' }}>
@@ -384,7 +399,7 @@ export default function DocumentsPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1.5rem' }}>
                   {[
                     { label: 'Client', value: form.client_name },
-                    { label: 'Therapist', value: form.therapist },
+                    { label: 'Therapist(s)', value: form.therapists.join(', ') },
                     { label: 'Document type', value: form.doc_type },
                     { label: 'Date needed', value: form.deadline },
                     { label: 'Amount', value: form.amount > 0 ? `₱${Number(form.amount).toLocaleString()}` : 'No fee' },
