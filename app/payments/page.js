@@ -529,11 +529,13 @@ function OutstandingTab({ clients, onSettle }) {
         if (payForm.use_credit || payForm.split) {
           const payData = await fetch('/api/payments').then(r => r.json())
           if (payData.success) {
-            const advances = payData.data.filter(p => p.client_name === payModal.client_name && p.payment_type === 'advance' && p.reference)
-            creditRef = advances.length > 0 ? advances[advances.length - 1].reference : ''
+            const advances = payData.data.filter(p => p.client_name === payModal.client_name && p.payment_type === 'advance')
+            const latestAdvance = advances.length > 0 ? advances[advances.length - 1] : null
+            creditRef = latestAdvance?.reference || ''
+            const creditMop = latestAdvance?.mop || 'Credit'
           }
         }
-          await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pay', week_key: payModal.week_key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payModal.session_type || 'Regular', mop: payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop, amount: Number(payForm.amount) || Number(payModal.amount), use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, credit_balance: clientCredit, reference: payForm.reference || creditRef }) })
+          await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pay', week_key: payModal.week_key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payModal.session_type || 'Regular', mop: payForm.use_credit ? creditMop : payForm.split ? 'Split' : payForm.mop, amount: Number(payForm.amount) || Number(payModal.amount), use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, credit_balance: clientCredit, reference: payForm.reference || creditRef }) })
       }
     }
     setPayModal(null)
