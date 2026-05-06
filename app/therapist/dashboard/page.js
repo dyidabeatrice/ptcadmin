@@ -157,7 +157,7 @@ export default function TherapistDashboard() {
                           {r.file_url ? '✓ Uploaded' : days === null ? 'No deadline' : days < 0 ? 'Overdue' : days === 0 ? 'Due today' : `${days} day${days !== 1 ? 's' : ''} left`}
                         </div>
                         <div style={{ fontSize: '11px', color: '#999' }}>Due {r.deadline}</div>
-                        {!r.file_url && (
+                        {!r.file_url && r.status === 'Ready for Release' && (
                           <label style={{
                             padding: '5px 12px', borderRadius: '6px', border: 'none',
                             background: '#0f4c81', color: 'white', cursor: 'pointer',
