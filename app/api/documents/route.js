@@ -65,7 +65,8 @@ export async function GET(request) {
       email: row[3] || '', request_date: row[4] || '',
       deadline: row[5] || '', doc_type: row[6] || '',
       amount: parseFloat(row[7] || 0), status: row[8] || 'Outstanding',
-      notes: row[9] || '', email_sent: row[10] === 'true', delivery: row[11] || 'soft'
+      notes: row[9] || '', email_sent: row[10] === 'true', delivery: row[11] || 'soft',
+      file_url: row[12] || '', uploaded_at: row[13] || ''
     }))
     return Response.json({ success: true, data: reports })
   } catch (error) {
