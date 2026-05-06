@@ -156,6 +156,20 @@ export default function DocumentsPage() {
       })
     }
 
+    // Auto-email therapist that client has paid
+    const t = therapists.find(x => x.name === payModal.therapist)
+    if (t?.email) {
+      await fetch('/api/documents', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send_email',
+          index: payModal.index,
+          therapist_email: t.email
+        })
+      })
+    }
+
     setPayModal(null)
     setPayForm({ amount: 0, mop: 'Cash', use_credit: false, split: false, split_credit: 0, split_cash: 0, reference: '' })
     fetchAll()
