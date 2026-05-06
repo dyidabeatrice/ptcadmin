@@ -359,9 +359,24 @@ export default function SchedulePage() {
 
   async function confirmPayment() {
     setSaving(true)
+    let creditRef = ''
+    if (payForm.use_credit || payForm.split) {
+      const creditRes = await fetch('/api/credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'apply_credit', 
+          client_name: payModal.client_name, 
+          amount: payForm.split ? payForm.split_credit : payForm.amount, 
+          credit_balance: clientCredit 
+        })
+      })
+      const creditJson = await creditRes.json()
+      creditRef = creditJson.credit_reference || ''
+    }
     await fetch('/api/sessions', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'pay', week_key: selectedWeek.key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payForm.session_type, mop: payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop, amount: payForm.amount, use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, reference: payForm.reference || '', custom_notes: payForm.custom_notes || '' })
+      body: JSON.stringify({ action: 'pay', week_key: selectedWeek.key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payForm.session_type, mop: payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop, amount: payForm.amount, use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, reference: payForm.reference || creditRef, custom_notes: payForm.custom_notes || '' })
     })
     setPayModal(null)
     fetchSessions(selectedWeek.key)
