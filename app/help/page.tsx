@@ -148,7 +148,7 @@ export default function HelpPage() {
             <Step num={1}>Find the client in the list (use the search bar).</Step>
             <Step num={2}>Click the <strong>Edit</strong> button on their row.</Step>
             <Step num={3}>Update any fields as needed and click <strong>Save client</strong>.</Step>
-            <Note type="warning">Editing a client's schedule here updates the Master Schedule automatically — but already-generated week sheets won't update. You may need to manually adjust those sessions on the Schedule page.</Note>
+            <Note type="warning">Client schedules are updated via the Master Template only.</Note>
           </SubSection>
 
           <SubSection title="Merge duplicates">
@@ -284,14 +284,28 @@ export default function HelpPage() {
             <Step num={1}>Find the client's session row under their therapist tab.</Step>
             <Step num={2}>Select the <strong>MOP</strong> (Cash, BDO, Union Bank) from the dropdown — the row color updates immediately.</Step>
             <Step num={3}>For bank transfers, enter the <strong>reference number</strong> — the row turns white once filled.</Step>
-            <Step num={4}>The <strong>Total, Cut, and Center</strong> columns are auto-calculated from the session type and therapist level — but you can overwrite them if needed.</Step>
-            <Step num={5}>All fields save automatically when you click away (on blur) — no save button needed.</Step>
+            <Step num={4}>The <strong>Total, Cut, and Center</strong> columns are auto-calculated from the session type and therapist level — but you can overwrite them if needed by typing directly in the field.</Step>
+            <Step num={5}>All fields save automatically when you click away — no save button needed.</Step>
             <Note type="info">IE Reports and paid Document Requests also appear inline under the corresponding therapist's tab.</Note>
           </SubSection>
 
-          <SubSection title="Month grouping and totals">
+          <SubSection title="Month grouping, totals and PF release">
             <p>Sessions are grouped by month. The <strong>current month is expanded by default</strong> — older months are collapsed and show an unpaid count badge. Click any month header to expand or collapse it.</p>
-            <p>Each date group shows a <strong>subtotal row</strong> (Total, Therapist Cut, Center) and each month ends with a <strong>month total row</strong> in dark blue. These include both paid and unpaid sessions so the therapist's full record is visible.</p>
+            <p>Each date group shows a <strong>subtotal row</strong> and each month ends with a <strong>month total row</strong> in dark blue. These include both paid and unpaid sessions so the therapist's full record is visible.</p>
+            <p>Below the month total are two <strong>period rows</strong>:</p>
+            <div style={{ marginBottom: '8px' }}>
+              {[
+                { period: 'Period 1 (1–15)', desc: 'Sessions from the 1st to the 15th of the month' },
+                { period: 'Period 2 (16–end)', desc: 'Sessions from the 16th to the end of the month' },
+              ].map((p, i) => (
+                <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '6px', fontSize: '12px' }}>
+                  <span style={{ fontWeight: '600', color: '#0f4c81', minWidth: '130px' }}>{p.period}</span>
+                  <span style={{ color: '#666' }}>{p.desc}</span>
+                </div>
+              ))}
+            </div>
+            <p>Click <strong>Mark as released</strong> on a period row to record that the therapist's professional fee has been sent. Fill in the method (Cash or Bank Transfer), date, and any notes. Once released it shows <strong>✓ Released</strong> with the date and method.</p>
+            <Note type="tip">The ✕ button on a session row removes it from the ledger and reverses any payment if needed — useful for correcting attendance errors without going to the Schedule page.</Note>
           </SubSection>
 
           <SubSection title="Advance / Partial Payment">
@@ -336,30 +350,32 @@ export default function HelpPage() {
         <div id="reports"><Section title="Reports" emoji="📄">
 
           <SubSection title="How to request a document">
-            <Step num={1}>Go to the <strong>Documents</strong> page.</Step>
-            <Step num={2}>Click <strong>+ New request</strong>.</Step>
-            <Step num={3}>Select the client, therapist, and document type (Progress Report, IE Report, etc.).</Step>
-            <Step num={4}>Set the deadline and any notes, then click <strong>Submit request</strong>.</Step>
-            <Step num={5}>The request appears in the list with an <strong>Outstanding</strong> status and the balance due.</Step>
-            <Note type="info">An email is no longer sent automatically to the therapist when a request is created — it is sent manually once the client has paid.</Note>
+            <Step num={1}>Go to the <strong>Documents</strong> page and click <strong>+ New request</strong>.</Step>
+            <Step num={2}>Select the client and document type.</Step>
+            <Step num={3}>Select one or more therapists — if multiple therapists are involved, check all that apply. A separate request will be created for each therapist.</Step>
+            <Step num={4}>Choose the <strong>delivery method</strong> — Soft copy (emailed to parent) or Hard copy (sent to secretary for printing).</Step>
+            <Step num={5}>Set the deadline and any notes, then click <strong>Review request →</strong> and confirm.</Step>
+            <Note type="info">The amount is charged per therapist — e.g. two therapists at ₱750 each = ₱1,500 total from the client.</Note>
           </SubSection>
 
           <SubSection title="How to settle a document balance">
             <Step num={1}>Find the document request in the list.</Step>
             <Step num={2}>Click the <strong>Outstanding</strong> button to record payment.</Step>
-            <Step num={3}>Choose mode of payment and confirm — the status will change to <strong>Ready for Release</strong>.</Step>
+            <Step num={3}>Choose mode of payment and confirm — the status changes to <strong>Ready for Release</strong> and the therapist is automatically emailed to prepare the report.</Step>
+            <Note type="warning">Make sure the therapist has an email address on file in the Therapists page — otherwise the notification email won't send.</Note>
           </SubSection>
 
-          <SubSection title="How to notify the therapist">
-            <p>Once a document is marked <strong>Ready for Release</strong> (meaning the client has paid), a <strong>Send email</strong> button appears on the row.</p>
-            <Step num={1}>Click <strong>Send email</strong> to notify the therapist that the client has paid and the document needs to be prepared.</Step>
-            <Step num={2}>The button changes to <strong>✓ Email sent</strong> after clicking — it cannot be sent again accidentally.</Step>
-            <Note type="warning">Make sure the therapist has an email address on file in the Therapists page — otherwise the button will show an alert and the email won't send.</Note>
+          <SubSection title="How the therapist submits the report">
+            <p>Once notified, the therapist logs into their portal and goes to the <strong>Pending Reports</strong> section.</p>
+            <Step num={1}>The therapist sees all their document requests with deadlines.</Step>
+            <Step num={2}>Once the client has paid, an <strong>Upload PDF</strong> button appears on the request.</Step>
+            <Step num={3}>The therapist clicks Upload PDF and selects their prepared report.</Step>
+            <Step num={4}>The system automatically emails the report to the parent (soft copy) or sends it to the secretary for printing (hard copy).</Step>
+            <Note type="tip">The Upload PDF button only appears after payment is confirmed — therapists cannot upload before the client has paid.</Note>
           </SubSection>
 
           <SubSection title="How to complete a document request">
-            <Step num={1}>Once the report has been physically released to the client, click <strong>Ready for Release</strong> on the row.</Step>
-            <Step num={2}>Click again to mark it as <strong>Completed</strong>.</Step>
+            <p>Once the report has been uploaded and sent, the status automatically updates. You can also manually click the status button to mark it as <strong>Completed</strong> if needed.</p>
             <Note type="tip">Use the filter tabs at the top to view by status — Outstanding, Ready for Release, or Completed.</Note>
           </SubSection>
 
