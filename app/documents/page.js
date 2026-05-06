@@ -41,7 +41,7 @@ export default function DocumentsPage() {
   const [form, setForm] = useState({
     client_name: '', therapists: [], 
     email: '', deadline: '', doc_type: '', amount: 0,
-    notes: '', sub_type: ''
+    notes: '', sub_type: '', delivery: 'soft'
   })
   const [showSummary, setShowSummary] = useState(false)
 
@@ -388,6 +388,21 @@ export default function DocumentsPage() {
                   )}
                 </div>
 
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Delivery method</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    {[{ value: 'soft', label: '📧 Soft copy' }, { value: 'hard', label: '🖨️ Hard copy' }].map(opt => (
+                      <button key={opt.value} onClick={() => setForm({ ...form, delivery: opt.value })} style={{
+                        padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
+                        border: form.delivery === opt.value ? '2px solid #0f4c81' : '1px solid #ddd',
+                        background: form.delivery === opt.value ? '#E6F1FB' : 'white',
+                        color: form.delivery === opt.value ? '#0f4c81' : '#666',
+                        fontWeight: form.delivery === opt.value ? '500' : '400'
+                      }}>{opt.label}</button>
+                    ))}
+                  </div>
+                </div>
+
                 <div style={{ marginBottom: '1.5rem' }}>
                   <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Notes (optional)</label>
                   <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
@@ -419,6 +434,7 @@ export default function DocumentsPage() {
                     { label: 'Amount', value: form.amount > 0 ? `₱${Number(form.amount).toLocaleString()}` : 'No fee' },
                     { label: 'Parent email', value: form.email || '—' },
                     { label: 'Notes', value: form.notes || '—' },
+                    { label: 'Delivery', value: form.delivery === 'soft' ? '📧 Soft copy' : '🖨️ Hard copy' },
                   ].map((item, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '6px', background: i % 2 === 0 ? '#f8f9fa' : 'white', border: '1px solid #e0e0e0' }}>
                       <span style={{ fontSize: '13px', color: '#666' }}>{item.label}</span>
@@ -461,7 +477,7 @@ export default function DocumentsPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ background: '#f8f9fa' }}>
-                {['Client', 'Document type', 'Therapist', 'Email', 'Requested', 'Deadline', 'Amount', 'Status', ''].map(h => (
+                {['Client', 'Document type', 'Therapist', 'Email', 'Requested', 'Deadline', 'Amount', 'Delivery', 'Status', ''].map(h => (
                   <th key={h} style={{ padding: '10px 16px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
@@ -491,6 +507,9 @@ export default function DocumentsPage() {
                     </td>
                     <td style={{ padding: '10px 16px', fontWeight: '500', color: r.amount > 0 ? '#1D9E75' : '#999' }}>
                       {r.amount > 0 ? `₱${Number(r.amount).toLocaleString()}` : 'No fee'}
+                    </td>
+                    <td style={{ padding: '10px 16px', fontSize: '12px', color: '#666' }}>
+                      {r.delivery === 'hard' ? '🖨️ Hard' : '📧 Soft'}
                     </td>
                     <td style={{ padding: '10px 16px' }}>
                       {r.amount > 0 && r.status === 'Outstanding' && r.client_name && (

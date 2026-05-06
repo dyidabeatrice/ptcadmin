@@ -65,7 +65,7 @@ export async function GET(request) {
       email: row[3] || '', request_date: row[4] || '',
       deadline: row[5] || '', doc_type: row[6] || '',
       amount: parseFloat(row[7] || 0), status: row[8] || 'Outstanding',
-      notes: row[9] || '', email_sent: row[10] === 'true'
+      notes: row[9] || '', email_sent: row[10] === 'true', delivery: row[11] || 'soft'
     }))
     return Response.json({ success: true, data: reports })
   } catch (error) {
@@ -91,7 +91,7 @@ export async function POST(request) {
           id, body.client_name, body.therapist,
           body.email || '', requestDate, body.deadline,
           body.doc_type, body.amount || 0,
-          'Outstanding', body.notes || ''
+          'Outstanding', body.notes || '', '', body.delivery || 'soft'
         ]]}
       })
 
