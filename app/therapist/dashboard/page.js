@@ -15,6 +15,10 @@ export default function TherapistDashboard() {
     return DAYS.includes(day) ? day : 'Monday'
   })
   const [loading, setLoading] = useState(true)
+  const [fees, setFees] = useState({})
+  const [pfReleases, setPfReleases] = useState([])
+  const [activeTab, setActiveTab] = useState('schedule')
+  const [expandedFeeMonths, setExpandedFeeMonths] = useState(new Set())
   const [uploading, setUploading] = useState(null)
   const router = useRouter()
 
@@ -35,6 +39,14 @@ export default function TherapistDashboard() {
       const [weeksJson, rJson] = await Promise.all([weeksRes.json(), rRes.json()])
 
       if (rJson.success) setReports(rJson.data.filter(r => r.therapist === name))
+
+      const [feesRes, pfRes] = await Promise.all([
+        fetch(`/api/ledger`),
+        fetch(`/api/pf-releases?therapist=${encodeURIComponent(name)}`)
+      ])
+      const [feesJson, pfJson] = await Promise.all([feesRes.json(), pfRes.json()])
+      if (feesJson.success) setFees(feesJson.data[name] || {})
+      if (pfJson.success) setPfReleases(pfJson.data)
 
       if (weeksJson.success && weeksJson.data.length > 0) {
         setWeeks(weeksJson.data)
@@ -201,6 +213,18 @@ export default function TherapistDashboard() {
             )}
 
             <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem' }}>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '1.25rem', padding: '4px', background: '#f0f0f0', borderRadius: '10px', width: 'fit-content' }}>
+              {[{ key: 'schedule', label: 'My Schedule' }, { key: 'fees', label: 'My Fees' }].map(tab => (
+                <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+                  padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                  fontSize: '13px', fontWeight: '500',
+                  background: activeTab === tab.key ? 'white' : 'transparent',
+                  color: activeTab === tab.key ? '#0f4c81' : '#666',
+                  boxShadow: activeTab === tab.key ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+                }}>{tab.label}</button>
+              ))}
+            </div>
+            {activeTab === 'schedule' && (<>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '8px' }}>
                 <h2 style={{ margin: 0, color: '#0f4c81', fontSize: '16px' }}>My schedule</h2>
                 {weeks.length > 0 && (
@@ -264,10 +288,98 @@ export default function TherapistDashboard() {
                   ))}
                 </div>
               )}
+            </>)}
+
+          {activeTab === 'fees' && (
+            <div>
+              <h2 style={{ margin: '0 0 1rem', color: '#0f4c81', fontSize: '16px' }}>My Fees</h2>
+              {Object.keys(fees).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#999', fontSize: '13px' }}>
+                  No fees recorded yet.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {Object.entries(fees).sort(([a], [b]) => b.localeCompare(a)).map(([monthKey, monthData]) => {
+                    const allSessions = Object.values(monthData.dates).flat()
+                    const totalCut = allSessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
+                    const isExpanded = expandedFeeMonths.has(monthKey)
+                    return (
+                      <div key={monthKey} style={{ background: '#f8f9fa', borderRadius: '12px', border: '1px solid #e0e0e0', overflow: 'hidden' }}>
+                        <div onClick={() => setExpandedFeeMonths(prev => {
+                          const next = new Set(prev)
+                          if (next.has(monthKey)) next.delete(monthKey)
+                          else next.add(monthKey)
+                          return next
+                        })} style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+                          <span style={{ fontWeight: '600', color: '#0f4c81', fontSize: '14px' }}>{monthData.label}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                            <span style={{ fontSize: '13px', fontWeight: '600', color: '#1D9E75' }}>₱{totalCut.toLocaleString()}</span>
+                            <span style={{ color: '#999', fontSize: '12px' }}>{isExpanded ? '▼' : '▶'}</span>
+                          </div>
+                        </div>
+                        {isExpanded && (
+                          <div>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', background: 'white' }}>
+                              <thead>
+                                <tr style={{ background: '#f0f4f8' }}>
+                                  {['Date', 'Client', 'Type of Service', 'Cut', 'Comments'].map(h => (
+                                    <th key={h} style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0', fontSize: '11px' }}>{h}</th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {Object.entries(monthData.dates).sort(([a], [b]) => new Date(a) - new Date(b)).map(([date, sessions]) =>
+                                  sessions.map((s, i) => (
+                                    <tr key={`${date}-${i}`} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                                      <td style={{ padding: '8px 10px', color: '#666', whiteSpace: 'nowrap' }}>{s.date}</td>
+                                      <td style={{ padding: '8px 10px', fontWeight: '500', color: '#0f4c81' }}>{s.client_name}</td>
+                                      <td style={{ padding: '8px 10px', color: '#555' }}>{s.session_type}</td>
+                                      <td style={{ padding: '8px 10px', fontWeight: '500', color: '#1D9E75' }}>₱{(s.therapist_cut || 0).toLocaleString()}</td>
+                                      <td style={{ padding: '8px 10px', color: '#999', fontSize: '11px' }}>{s.comments || '—'}</td>
+                                    </tr>
+                                  ))
+                                )}
+                              </tbody>
+                            </table>
+                            {[1, 2].map(period => {
+                              const periodSessions = allSessions.filter(s => {
+                                const day = parseInt((s.date || '').split(' ')[1] || '1')
+                                return period === 1 ? day <= 15 : day > 15
+                              })
+                              if (periodSessions.length === 0) return null
+                              const periodCut = periodSessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
+                              const release = pfReleases.find(r => r.month_key === monthKey && r.period === String(period))
+                              return (
+                                <div key={period} style={{ padding: '8px 14px', background: '#f8f9fa', borderTop: '1px solid #e0e0e0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '12px', color: '#666' }}>
+                                    {monthData.label} ({period === 1 ? '1–15' : '16–end'}) · ₱{periodCut.toLocaleString()}
+                                  </span>
+                                  {release ? (
+                                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A', fontWeight: '500' }}>
+                                      ✓ Released {release.date_sent} via {release.sent_via}
+                                    </span>
+                                  ) : (
+                                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#FAEEDA', color: '#633806' }}>
+                                      ⏳ Not yet released
+                                    </span>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
-          </>
-        )}
-      </div>
-    </div>
+          )}
+
+        </div>
+      </>
+    )}
+  </div>
+</div>
   )
 }
