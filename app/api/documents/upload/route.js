@@ -2,9 +2,11 @@ import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../../lib/shee
 import { google } from 'googleapis'
 
 async function getDriveClient() {
-  const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON || '{}')
   const auth = new google.auth.GoogleAuth({
-    credentials,
+    credentials: {
+      client_email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
+      private_key: process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    },
     scopes: ['https://www.googleapis.com/auth/drive.file']
   })
   return google.drive({ version: 'v3', auth })
