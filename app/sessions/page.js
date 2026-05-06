@@ -361,18 +361,11 @@ export default function SchedulePage() {
     setSaving(true)
     let creditRef = ''
     if (payForm.use_credit || payForm.split) {
-      const creditRes = await fetch('/api/credits', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          action: 'apply_credit', 
-          client_name: payModal.client_name, 
-          amount: payForm.split ? payForm.split_credit : payForm.amount, 
-          credit_balance: clientCredit 
-        })
-      })
-      const creditJson = await creditRes.json()
-      creditRef = creditJson.credit_reference || ''
+      const payData = await fetch('/api/payments').then(r => r.json())
+      if (payData.success) {
+        const advances = payData.data.filter(p => p.client_name === payModal.client_name && p.payment_type === 'advance' && p.reference)
+        creditRef = advances.length > 0 ? advances[advances.length - 1].reference : ''
+      }
     }
     await fetch('/api/sessions', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
