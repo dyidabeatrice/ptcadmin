@@ -363,13 +363,15 @@ export default function SchedulePage() {
     if (payForm.use_credit || payForm.split) {
       const payData = await fetch('/api/payments').then(r => r.json())
       if (payData.success) {
-        const advances = payData.data.filter(p => p.client_name === payModal.client_name && p.payment_type === 'advance' && p.reference)
-        creditRef = advances.length > 0 ? advances[advances.length - 1].reference : ''
+        const advances = payData.data.filter(p => p.client_name === payModal.client_name && p.payment_type === 'advance')
+        const latestAdvance = advances.length > 0 ? advances[advances.length - 1] : null
+        creditRef = latestAdvance?.reference || ''
+        const creditMop = latestAdvance?.mop || 'Credit'
       }
     }
     await fetch('/api/sessions', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'pay', week_key: selectedWeek.key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payForm.session_type, mop: payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop, amount: payForm.amount, use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, reference: payForm.reference || creditRef, custom_notes: payForm.custom_notes || '' })
+      body: JSON.stringify({ action: 'pay', week_key: selectedWeek.key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payForm.session_type, mop: payForm.use_credit ? creditMop : payForm.split ? 'Split' : payForm.mop, amount: payForm.amount, use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, reference: payForm.reference || creditRef, custom_notes: payForm.custom_notes || '' })
     })
     setPayModal(null)
     fetchSessions(selectedWeek.key)
