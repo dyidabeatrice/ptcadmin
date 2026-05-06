@@ -1,100 +1,109 @@
 import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../../lib/sheets'
-import { google } from 'googleapis'
+import nodemailer from 'nodemailer'
 
-async function getDriveClient() {
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
-      private_key: process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    },
-    scopes: ['https://www.googleapis.com/auth/drive.file']
-  })
-  return google.drive({ version: 'v3', auth })
-}
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD
+  }
+})
 
 export async function POST(request) {
   try {
     const formData = await request.formData()
     const file = formData.get('file')
     const reportId = formData.get('report_id')
-    const reportIndex = formData.get('report_index')
 
     if (!file || !reportId) return Response.json({ success: false, error: 'Missing file or report_id' })
     if (file.type !== 'application/pdf') return Response.json({ success: false, error: 'Only PDF files are allowed' })
 
-    const drive = await getDriveClient()
-    const folderId = process.env.GDRIVE_REPORTS_FOLDER_ID
-
-    // Convert file to buffer
-    const buffer = Buffer.from(await file.arrayBuffer())
-    const { Readable } = await import('stream')
-    const stream = Readable.from(buffer)
-
-    // Upload to Google Drive
-    const driveRes = await drive.files.create({
-      requestBody: {
-        name: `${reportId}_${file.name}`,
-        parents: [folderId],
-      },
-      media: {
-        mimeType: 'application/pdf',
-        body: stream
-      },
-      fields: 'id, webViewLink'
-    })
-
-    const fileUrl = driveRes.data.webViewLink
-    const fileId = driveRes.data.id
-
-    // Make file readable by anyone with link
-    await drive.permissions.create({
-      fileId,
-      requestBody: { role: 'reader', type: 'anyone' }
-    })
-
-    // Update reports sheet with file_url and uploaded_at
-    const sheets = getGoogleSheets()
+    // Get report details
     const data = await getSheetData('reports')
     const [, ...rows] = data
     const index = rows.findIndex(r => r && r[0] === reportId)
     if (index === -1) return Response.json({ success: false, error: 'Report not found' })
 
+    const reportRow = rows[index]
+    const clientName = reportRow[1]
+    const therapistName = reportRow[2]
+    const parentEmail = reportRow[3]
+    const docType = reportRow[6]
+    const delivery = reportRow[11] || 'soft'
+
+    // Convert file to buffer for email attachment
+    const buffer = Buffer.from(await file.arrayBuffer())
+
     const now = new Date().toLocaleDateString('en-US', {
       timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric'
     })
 
+    // Mark as uploaded in sheet
+    const sheets = getGoogleSheets()
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: `reports!M${index + 2}:N${index + 2}`,
       valueInputOption: 'RAW',
-      requestBody: { values: [[fileUrl, now]] }
+      requestBody: { values: [['uploaded', now]] }
     })
 
-    // Check if client has paid — if yes, email parent
-    const reportRow = rows[index]
-    const clientName = reportRow[1]
-    const docType = reportRow[6]
-    const parentEmail = reportRow[3]
-    const delivery = reportRow[11] || 'soft'
+    // Update status to Completed
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `reports!I${index + 2}`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [['Completed']] }
+    })
 
     if (delivery === 'soft' && parentEmail) {
-      // Check payment status
-      const payRes = await fetch(`${process.env.NEXT_PUBLIC_URL}/api/payments`)
-      const payJson = await payRes.json()
-      if (payJson.success) {
-        const paid = payJson.data.find(p => p.session_id === `DOC-${reportId}` && p.payment_type === 'document')
-        if (paid) {
-          // Send email to parent with file link
-          await fetch(`${process.env.NEXT_PUBLIC_URL}/api/documents/notify-parent`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reportId, clientName, docType, parentEmail, fileUrl })
-          })
-        }
+      // Send email to parent with PDF attached
+      await transporter.sendMail({
+        from: `Potentials Therapy Center <${process.env.GMAIL_USER}>`,
+        to: parentEmail,
+        subject: `${docType} — ${clientName}`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: #0f4c81; padding: 20px; border-radius: 8px 8px 0 0;">
+              <h2 style="color: white; margin: 0;">Document Ready</h2>
+            </div>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0;">
+              <p>Hello!</p>
+              <p>Please find attached the <strong>${docType}</strong> for <strong>${clientName}</strong> prepared by <strong>${therapistName}</strong>.</p>
+              <p style="color: #666; font-size: 13px; margin-top: 20px;">— Potentials Therapy Center</p>
+            </div>
+          </div>
+        `,
+        attachments: [{
+          filename: `${clientName}_${docType}_${now}.pdf`,
+          content: buffer,
+          contentType: 'application/pdf'
+        }]
+      })
+    } else if (delivery === 'hard') {
+      // Send to secretary for printing
+      const secretaryEmail = process.env.SECRETARY_PRINT_EMAIL
+      if (secretaryEmail) {
+        await transporter.sendMail({
+          from: `Potentials Therapy Center <${process.env.GMAIL_USER}>`,
+          to: secretaryEmail,
+          subject: `[PRINT] ${docType} — ${clientName}`,
+          html: `
+            <div style="font-family: sans-serif;">
+              <p>Please print the attached document for <strong>${clientName}</strong>.</p>
+              <p>Document type: <strong>${docType}</strong></p>
+              <p>Prepared by: <strong>${therapistName}</strong></p>
+            </div>
+          `,
+          attachments: [{
+            filename: `${clientName}_${docType}_${now}.pdf`,
+            content: buffer,
+            contentType: 'application/pdf'
+          }]
+        })
       }
     }
 
-    return Response.json({ success: true, file_url: fileUrl })
+    return Response.json({ success: true })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
   }
