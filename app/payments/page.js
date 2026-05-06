@@ -822,7 +822,18 @@ export default function PaymentsPage() {
     if (!advanceForm.amount || Number(advanceForm.amount) <= 0) return alert('Please enter an amount')
     setSaving(true)
     const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
-    await fetch('/api/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add_credit', client_name: advanceForm.client_name, amount: Number(advanceForm.amount), mop: advanceForm.mop, date: today, reference: advanceForm.reference || '' }) })
+    await fetch('/api/credits', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'add_credit',
+        client_name: advanceForm.client_name,
+        amount: Number(advanceForm.amount),
+        mop: advanceForm.mop,
+        date: today,
+        reference: advanceForm.reference || ''
+      })
+    })
     setAdvanceModal(false)
     setAdvanceForm({ client_name: '', amount: '', mop: 'Cash', reference: '' })
     fetchAll()

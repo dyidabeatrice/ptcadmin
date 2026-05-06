@@ -80,17 +80,24 @@ export async function POST(request) {
           'ADVANCE-' + Date.now(),
           body.amount, body.mop,
           'Advance', body.date || today,
-          'advance'
+          'advance',
+          body.reference || ''
         ]]}
       })
       return Response.json({ success: true, ...result })
     }
 
     if (body.action === 'apply_credit') {
-      // Only deduct the session amount, not the full credit balance
       const amountToDeduct = Math.min(body.amount, body.credit_balance || body.amount)
       const result = await updateClientBalances(body.client_name, -amountToDeduct, 0)
-      return Response.json({ success: true, ...result })
+      
+      // Find most recent advance payment reference for this client
+      const payData = await getSheetData('payments')
+      const [, ...payRows] = payData
+      const advances = payRows.filter(r => r && r[1] === body.client_name && r[8] === 'advance' && r[9])
+      const latestReference = advances.length > 0 ? advances[advances.length - 1][9] : ''
+      
+      return Response.json({ success: true, ...result, credit_reference: latestReference })
     }
 
     if (body.action === 'add_outstanding') {
