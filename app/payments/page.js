@@ -491,10 +491,10 @@ function OutstandingTab({ clients, onSettle }) {
   const [clientCredit, setClientCredit] = useState(0)
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => { fetchOutstanding() }, [])
+  useEffect(() => { fetchOutstanding(true) }, [])
 
-  async function fetchOutstanding() {
-    setLoading(true)
+  async function fetchOutstanding(showLoading = false) {
+    if (showLoading) setLoading(true)
     const res = await fetch('/api/payments?action=outstanding')
     const json = await res.json()
     if (json.success) setUnpaidSessions(json.data)
