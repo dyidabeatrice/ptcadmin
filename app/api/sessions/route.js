@@ -251,7 +251,7 @@ if (body.action === 'status') {
     }
     
     if (body.action === 'pay') {
-      const mop = body.use_credit ? 'Credit' : body.split ? 'Split' : body.mop
+      const mop = body.mop
       const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://potentialstherapycenter.com/'
 
       await sheets.spreadsheets.values.update({
