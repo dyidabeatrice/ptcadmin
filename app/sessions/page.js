@@ -360,13 +360,14 @@ export default function SchedulePage() {
   async function confirmPayment() {
     setSaving(true)
     let creditRef = ''
+    let creditMop = 'Credit'
     if (payForm.use_credit || payForm.split) {
       const payData = await fetch('/api/payments').then(r => r.json())
       if (payData.success) {
         const advances = payData.data.filter(p => p.client_name === payModal.client_name && p.payment_type === 'advance')
         const latestAdvance = advances.length > 0 ? advances[advances.length - 1] : null
         creditRef = latestAdvance?.reference || ''
-        const creditMop = latestAdvance?.mop || 'Credit'
+        creditMop = latestAdvance?.mop || 'Credit'
       }
     }
     await fetch('/api/sessions', {
