@@ -92,8 +92,8 @@ export default function DocumentsPage() {
 
   async function submitRequest() {
     setSaving(true)
-    await Promise.all(form.therapists.map(therapistName =>
-      fetch('/api/documents', {
+    for (const therapistName of form.therapists) {
+      await fetch('/api/documents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -103,7 +103,9 @@ export default function DocumentsPage() {
           therapist_email: getTherapistEmail(therapistName)
         })
       })
-    ))
+      // Small delay to ensure unique timestamps
+      await new Promise(resolve => setTimeout(resolve, 100))
+    }
     setShowForm(false)
     setShowSummary(false)
     setForm({ client_name: '', therapists: [], email: '', deadline: '', doc_type: '', amount: 0, notes: '', sub_type: '' })
