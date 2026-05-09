@@ -475,8 +475,8 @@ export default function DocumentsPage() {
           No document requests yet
         </div>
       ) : (
-        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', overflow: 'hidden' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+        <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', overflow: 'auto' }}>
+          <table style={{ width: '100%', minWidth: '900px', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ background: '#f8f9fa' }}>
                 {['Client', 'Document type', 'Therapist', 'Email', 'Requested', 'Deadline', 'Amount', 'Delivery', 'Status', ''].map(h => (
