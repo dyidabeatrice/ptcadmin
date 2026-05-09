@@ -160,6 +160,7 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
         </div>
       </td>
       <td style={{ padding: '8px 10px' }}>
+        if (!session.payment_id) return
         <select value={session.session_type || ''} onChange={async e => {
           await fetch('/api/payments', {
             method: 'PATCH',
