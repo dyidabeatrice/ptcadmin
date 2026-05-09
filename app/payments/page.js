@@ -22,6 +22,7 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
   const [mop, setMop] = useState(session.mop || '')
   const [reference, setReference] = useState(session.reference || '')
   const [comments, setComments] = useState(session.comments || '')
+  const [sessionType, setSessionType] = useState(session.session_type || '')
   const [total, setTotal] = useState(session.total || 0)
   const [cut, setCut] = useState(session.therapist_cut || 0)
   const [center, setCenter] = useState(session.center || 0)
@@ -160,14 +161,16 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
         </div>
       </td>
       <td style={{ padding: '8px 10px' }}>
-        <select value={session.session_type || ''} onChange={async e => {
-          if (!session.payment_id) return
-          await fetch('/api/payments', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'update_session_type', id: session.payment_id, session_type: e.target.value })
-          })
-        }} style={{ fontSize: '11px', padding: '3px 6px', borderRadius: '6px', border: '1px solid #B5D4F4', cursor: 'pointer', background: '#E6F1FB', color: '#0C447C' }}>
+      <select value={sessionType} onChange={async e => {
+        if (!session.payment_id) return
+        setSessionType(e.target.value)
+        await fetch('/api/payments', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update_session_type', id: session.payment_id, session_type: e.target.value })
+        })
+      }}
+      style={{ fontSize: '11px', padding: '3px 6px', borderRadius: '6px', border: '1px solid #B5D4F4', cursor: 'pointer', background: '#E6F1FB', color: '#0C447C' }}>
           <option value="">— type —</option>
           {['OT SESSION','OT-IE','OT-FE','SPECIALIZED OT TX','ST SESSION','ST-IE','ST-FE','SPECIALIZED ST TX','PT SESSION','PT-IE','PT FE','SPED SESSION','SPED IE','SPED FE','PLAYSCHOOL','PR','PR-RUSHED','IE REPORT','Cancellation Fee','OT INTERN SESSION','OT INTERN IE','ST INTERN SESSION','ST INTERN IE','PR INTERN'].map(t => (
             <option key={t} value={t}>{t}</option>
