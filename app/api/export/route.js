@@ -1,4 +1,3 @@
-import { getSheetData, SPREADSHEET_ID } from '../../lib/sheets'
 import * as XLSX from 'xlsx'
 
 const RATES = {
@@ -13,7 +12,6 @@ const RATES = {
   'ST-IE':          { full: 2800, levels: { 'JUNIOR 1': 800, 'JUNIOR 2': 800, 'JUNIOR 3': 800, 'SENIOR 1': 850, 'SENIOR 2': 850 } },
   'ST-FE':          { full: 1500, levels: { 'JUNIOR 1': 830, 'JUNIOR 2': 850, 'JUNIOR 3': 900, 'SENIOR 1': 850, 'SENIOR 2': 900 } },
   'SPECIALIZED ST TX': { full: 1700, levels: { 'JUNIOR 1': 1300, 'JUNIOR 2': 1300, 'JUNIOR 3': 1300, 'SENIOR 1': 1300, 'SENIOR 2': 1300 } },
-  'IE REPORT':      { full: 0,    levels: { 'JUNIOR 1': 800, 'JUNIOR 2': 800, 'JUNIOR 3': 800, 'SENIOR 1': 850, 'SENIOR 2': 850 } },
   'PT SESSION':     { full: 900,  levels: { 'JUNIOR 1': 525, 'JUNIOR 2': 525, 'JUNIOR 3': 525, 'SENIOR 1': 525, 'SENIOR 2': 525 } },
   'PT-IE':          { full: 2800, levels: { 'JUNIOR 1': 800, 'JUNIOR 2': 800, 'JUNIOR 3': 800, 'SENIOR 1': 850, 'SENIOR 2': 850 } },
   'PT FE':          { full: 1500, levels: { 'JUNIOR 1': 525, 'JUNIOR 2': 525, 'JUNIOR 3': 525, 'SENIOR 1': 525, 'SENIOR 2': 525 } },
@@ -21,87 +19,32 @@ const RATES = {
   'SPED IE':        { full: 1500, levels: { 'JUNIOR 1': 600, 'JUNIOR 2': 600, 'JUNIOR 3': 600, 'SENIOR 1': 600, 'SENIOR 2': 600 } },
   'SPED FE':        { full: 1500, levels: { 'JUNIOR 1': 525, 'JUNIOR 2': 525, 'JUNIOR 3': 525, 'SENIOR 1': 525, 'SENIOR 2': 525 } },
   'PLAYSCHOOL':     { full: 750,  levels: { 'JUNIOR 1': 525, 'JUNIOR 2': 525, 'JUNIOR 3': 525, 'SENIOR 1': 525, 'SENIOR 2': 525 } },
-  'PR-INTERN':      { full: 300,  levels: { 'JUNIOR 1': 0, 'JUNIOR 2': 0, 'JUNIOR 3': 0, 'SENIOR 1': 0, 'SENIOR 2': 0 } }
-}
-
-function parsePaymentDate(dateStr) {
-  if (!dateStr) return null
-  const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
-  const parts = dateStr.replace(',', '').split(' ')
-  if (parts.length !== 3) return null
-  const month = months[parts[0]]
-  const day = parseInt(parts[1])
-  const year = parseInt(parts[2])
-  if (month === undefined || isNaN(day) || isNaN(year)) return null
-  return new Date(year, month, day)
-}
-
-function getTherapistCut(sessionType, level, comments) {
-  const normalizedType = sessionType?.toUpperCase().trim()
-  const rate = RATES[normalizedType]
-  if (!rate) return 0
-  const cut = rate.levels[level] || 0
-  const hasDeduction = comments?.includes('-5%')
-  return hasDeduction ? Math.round(cut * 0.95) : cut
-}
-
-function getTotal(sessionType, recordedAmount) {
-  const normalizedType = sessionType?.toUpperCase().trim()
-  if (normalizedType === 'IE REPORT') return 0
-  return recordedAmount || RATES[normalizedType]?.full || 0
-}
-
-function getCenter(sessionType, total, therapistCut, comments) {
-  const normalizedType = sessionType?.toUpperCase().trim()
-  if (normalizedType === 'IE REPORT') return 0
-  return total - therapistCut
+  'PR-INTERN':      { full: 300,  levels: { 'JUNIOR 1': 0, 'JUNIOR 2': 0, 'JUNIOR 3': 0, 'SENIOR 1': 0, 'SENIOR 2': 0 } },
+  'OT INTERN SESSION': { full: 600, levels: { 'JUNIOR 1': 360, 'JUNIOR 2': 360, 'JUNIOR 3': 360, 'SENIOR 1': 360, 'SENIOR 2': 360 } },
+  'OT INTERN IE':   { full: 800, levels: { 'JUNIOR 1': 460, 'JUNIOR 2': 460, 'JUNIOR 3': 460, 'SENIOR 1': 460, 'SENIOR 2': 460 } },
+  'ST INTERN SESSION': { full: 600, levels: { 'JUNIOR 1': 360, 'JUNIOR 2': 360, 'JUNIOR 3': 360, 'SENIOR 1': 360, 'SENIOR 2': 360 } },
+  'ST INTERN IE':   { full: 800, levels: { 'JUNIOR 1': 460, 'JUNIOR 2': 460, 'JUNIOR 3': 460, 'SENIOR 1': 460, 'SENIOR 2': 460 } },
+  'PR INTERN':      { full: 300, levels: { 'JUNIOR 1': 200, 'JUNIOR 2': 200, 'JUNIOR 3': 200, 'SENIOR 1': 200, 'SENIOR 2': 200 } },
 }
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
-    const month = searchParams.get('month') // format: 2026-04
+    const month = searchParams.get('month')
     if (!month) return Response.json({ success: false, error: 'Month required' })
 
     const [year, monthNum] = month.split('-').map(Number)
+    const monthName = new Date(year, monthNum - 1).toLocaleString('en-PH', { month: 'long' })
 
-    const [paymentData, therapistData] = await Promise.all([
-      getSheetData('payments'),
-      getSheetData('therapists')
-    ])
+    // Fetch ledger data — same as frontend
+    const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://potentialstherapycenter.com'
+    const ledgerRes = await fetch(`${baseUrl}/api/ledger`)
+    const ledgerJson = await ledgerRes.json()
+    if (!ledgerJson.success) return Response.json({ success: false, error: 'Failed to fetch ledger' })
 
-    const [, ...payRows] = paymentData
-    const [, ...therapistRows] = therapistData
+    const ledger = ledgerJson.data
+    const therapists = ledgerJson.therapists
 
-    // Build therapist map with level and intern status
-    const therapistMap = {}
-    therapistRows.filter(r => r && r[0]).forEach(row => {
-      const name = row[1]
-      if (!therapistMap[name]) {
-        therapistMap[name] = {
-          name, specialty: row[2] || 'OT',
-          is_intern: row[3] === 'TRUE',
-          level: row[8] || 'JUNIOR 1',
-          email: row[7] || ''
-        }
-      }
-    })
-
-    // Filter payments for the selected month
-    const monthPayments = payRows.filter(r => {
-      if (!r || !r[0]) return false
-      const d = parsePaymentDate(r[7])
-      if (!d) return false
-      return d.getFullYear() === year && d.getMonth() + 1 === monthNum
-    }).map(row => ({
-      id: row[0], client_name: row[1], therapist: row[2],
-      session_id: row[3], amount: parseFloat(row[4] || 0),
-      mop: row[5] || '', session_type: row[6] || '',
-      date: row[7] || '', payment_type: row[8] || 'session',
-      reference: row[9] || '', comments: row[11] || ''
-    }))
-
-    // Create workbook
     const wb = XLSX.utils.book_new()
 
     // RATES sheet
@@ -117,114 +60,112 @@ export async function GET(request) {
     ratesSheet['!cols'] = [{ wch: 20 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }]
     XLSX.utils.book_append_sheet(wb, ratesSheet, 'RATES')
 
-    // Remove attendance records that have been paid (avoid double counting)
-    const paidSessionIds = new Set(
-      monthPayments.filter(p => p.payment_type === 'session').map(p => p.session_id)
-    )
-    
-    const deduped = monthPayments.filter(p =>
-      !(p.payment_type === 'attendance' && paidSessionIds.has(p.session_id)) &&
-      p.payment_type !== 'refund' &&
-      p.payment_type !== 'credit_transfer'
-    )
+    const headers = ['DATE', 'CLIENT NAME', 'TYPE OF SERVICE', 'MOP', 'REFERENCE NO.', 'TOTAL', 'THERAPIST CUT', 'CENTER', 'COMMENTS']
 
-    const byTherapist = {}
-    deduped.forEach(p => {
-      if (!p.therapist) return
-      if (!byTherapist[p.therapist]) byTherapist[p.therapist] = []
-      byTherapist[p.therapist].push(p)
-    })
+    // Group OT/ST interns
+    const internSessions = { OT: [], ST: [] }
+    const regularTherapists = therapists.filter(t => !t.includes('INTERNS'))
 
-    // Separate regular and intern therapists
-    const regularTherapists = {}
-    const internTherapists = { OT: [], ST: [], PT: [] }
+    for (const therapistName of therapists) {
+      const therapistData = ledger[therapistName]
+      if (!therapistData) continue
 
-    Object.entries(byTherapist).forEach(([name, payments]) => {
-      const t = therapistMap[name]
-      if (!t) return
-      if (t.is_intern) {
-        const specialty = t.specialty || 'OT'
-        if (internTherapists[specialty]) {
-          internTherapists[specialty].push(...payments.map(p => ({ ...p, therapistInfo: t })))
-        }
-      } else {
-        regularTherapists[name] = { payments, info: t }
+      // Filter sessions for the selected month
+      const allSessions = []
+      Object.entries(therapistData).forEach(([monthKey, monthData]) => {
+        const [mYear, mMonth] = monthKey.split('-').map(Number)
+        if (mYear !== year || mMonth !== monthNum) return
+        Object.values(monthData.dates).forEach(sessions => {
+          allSessions.push(...sessions)
+        })
+      })
+
+      if (allSessions.length === 0) continue
+
+      // Sort by date
+      const parseDate = (d) => {
+        if (!d) return new Date(0)
+        const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
+        const p = d.replace(',','').split(' ')
+        return p.length !== 3 ? new Date(0) : new Date(parseInt(p[2]), months[p[0]], parseInt(p[1]))
       }
-    })
+      allSessions.sort((a, b) => parseDate(a.date) - parseDate(b.date))
 
-    const monthName = new Date(year, monthNum - 1).toLocaleString('en-PH', { month: 'long' })
-    const headers = ['DATE', 'CLIENT NAME', 'TYPE OF SERVICE', 'MOP', 'REFERENCE NO.', 'TOTAL', 'THERAPIST', 'CENTER', 'COMMENTS']
+      if (therapistName === 'OT INTERNS') {
+        internSessions.OT.push(...allSessions)
+        continue
+      }
+      if (therapistName === 'ST INTERNS') {
+        internSessions.ST.push(...allSessions)
+        continue
+      }
 
-    // Regular therapist sheets
-    Object.entries(regularTherapists).sort(([a], [b]) => a.localeCompare(b)).forEach(([name, { payments, info }]) => {
+      // Regular therapist sheet
+      const rows = allSessions.map(s => [
+        s.date,
+        s.client_name,
+        s.session_type,
+        s.mop || '',
+        s.reference || '',
+        s.total || 0,
+        s.therapist_cut || 0,
+        s.center || 0,
+        s.comments || ''
+      ])
+
+      const totalRow = allSessions.length + 5
       const sheetData = [
-        [`${name} — ${monthName} ${year}`],
-        ['Level:', info.level],
+        [`${therapistName} — ${monthName} ${year}`],
         [],
         headers,
-        ...[...payments].sort((a, b) => {
-          const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
-          const parseDate = (d) => { if (!d) return new Date(0); const p = d.replace(',','').split(' '); return p.length !== 3 ? new Date(0) : new Date(parseInt(p[2]), months[p[0]], parseInt(p[1])) }
-          return parseDate(a.date) - parseDate(b.date)
-        }).map((p, idx) => {
-          const row = idx + 5
-          return [
-            p.date,
-            p.client_name,
-            p.session_type,
-            p.mop,
-            p.reference,
-            { f: `IF(C${row}="IE REPORT",0,IFERROR(VLOOKUP(C${row},RATES!$A:$B,2,FALSE),${p.amount}))` },
-            { f: `IF(C${row}="Custom Amount","INPUT AMOUNT",IFERROR(VLOOKUP(C${row},RATES!$A:$G,MATCH($B$2,RATES!$C$1:$G$1,0)+2,FALSE),0)*IF(I${row}=-5%,0.95,1))` },
-            { f: `IF(OR(C${row}="OT-IE", C${row}="ST-IE", C${row}="PT-IE", C${row}="SPED IE"),F${row}-(G${row}*2),IF(C${row}="IE REPORT",0,F${row}-G${row}))` },
-            p.comments
-          ]
-        }),
+        ...rows,
         [],
         ['TOTALS', '', '', '', '',
-          { f: `SUM(F5:F${payments.length + 4})` },
-          { f: `SUM(G5:G${payments.length + 4})` },
-          { f: `SUM(H5:H${payments.length + 4})` },
+          allSessions.reduce((sum, s) => sum + (s.total || 0), 0),
+          allSessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0),
+          allSessions.reduce((sum, s) => sum + (s.center || 0), 0),
           ''
         ]
       ]
+
       const ws = XLSX.utils.aoa_to_sheet(sheetData)
-      ws['!cols'] = [{ wch: 14 }, { wch: 24 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 20 }]
-      XLSX.utils.book_append_sheet(wb, ws, name.substring(0, 31))
-    })
+      ws['!cols'] = [{ wch: 14 }, { wch: 24 }, { wch: 20 }, { wch: 12 }, { wch: 16 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 20 }]
+      XLSX.utils.book_append_sheet(wb, ws, therapistName.substring(0, 31))
+    }
 
     // Intern sheets
-    Object.entries(internTherapists).forEach(([specialty, payments]) => {
-      if (payments.length === 0) return
+    for (const [specialty, sessions] of Object.entries(internSessions)) {
+      if (sessions.length === 0) continue
+      const rows = sessions.map(s => [
+        s.date,
+        s.client_name,
+        s.session_type,
+        s.mop || '',
+        s.reference || '',
+        s.total || 0,
+        s.therapist_cut || 0,
+        s.center || 0,
+        s.comments || ''
+      ])
       const sheetData = [
         [`${specialty} INTERNS — ${monthName} ${year}`],
         [],
         headers,
-        ...[...payments].sort((a, b) => {
-          const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
-          const parseDate = (d) => { if (!d) return new Date(0); const p = d.replace(',','').split(' '); return p.length !== 3 ? new Date(0) : new Date(parseInt(p[2]), months[p[0]], parseInt(p[1])) }
-          return parseDate(a.date) - parseDate(b.date)
-        }).map(p => {
-          const isIE = p.session_type === 'Intern Evaluation'
-          const total = isIE ? 800 : (p.amount || 600)
-          return [p.date, p.client_name, p.session_type, p.mop, p.reference, total, 0, total, p.comments]
-        }),
+        ...rows,
         [],
         ['TOTALS', '', '', '', '',
-          { f: `SUM(F4:F${payments.length + 3})` },
-          0,
-          { f: `SUM(H4:H${payments.length + 3})` },
+          sessions.reduce((sum, s) => sum + (s.total || 0), 0),
+          sessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0),
+          sessions.reduce((sum, s) => sum + (s.center || 0), 0),
           ''
         ]
       ]
       const ws = XLSX.utils.aoa_to_sheet(sheetData)
-      ws['!cols'] = [{ wch: 14 }, { wch: 24 }, { wch: 16 }, { wch: 12 }, { wch: 16 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 20 }]
+      ws['!cols'] = [{ wch: 14 }, { wch: 24 }, { wch: 20 }, { wch: 12 }, { wch: 16 }, { wch: 10 }, { wch: 14 }, { wch: 12 }, { wch: 20 }]
       XLSX.utils.book_append_sheet(wb, ws, `${specialty} INTERNS`)
-    })
+    }
 
-    // Generate buffer
     const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
-
     return new Response(buf, {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
