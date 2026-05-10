@@ -212,7 +212,35 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
           placeholder="Notes..." style={{ fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd', width: '100px', boxSizing: 'border-box' }} />
       </td>
       <td style={{ padding: '8px 10px', fontSize: '11px', color: saving ? '#999' : isPaid ? '#1D9E75' : '#E24B4A', fontWeight: '500' }}>
-        {saving ? '...' : isPaid ? '✓ Paid' : 'Unpaid'}
+        {saving ? '...' : isPaid ? (
+          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            ✓ Paid
+            <button onClick={async () => {
+              if (!confirm(`Reverse payment for ${session.client_name}?`)) return
+              setSaving(true)
+              await fetch('/api/sessions', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  action: 'unpay',
+                  week_key: session.week_key,
+                  rowIndex: session.index,
+                  session_id: session.id,
+                  client_name: session.client_name,
+                  amount: session.total
+                })
+              })
+              setIsPaid(false)
+              setMop('')
+              setReference('')
+              setSaving(false)
+            }} style={{
+              fontSize: '9px', padding: '1px 6px', borderRadius: '4px',
+              border: '1px solid #E24B4A', background: '#FCEBEB',
+              color: '#791F1F', cursor: 'pointer'
+            }}>Reverse</button>
+          </span>
+        ) : 'Unpaid'}
       </td>
       <td style={{ padding: '8px 4px' }}>
         <button onClick={async () => {
