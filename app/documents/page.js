@@ -539,27 +539,74 @@ export default function DocumentsPage() {
                           background: '#E6F1FB', color: '#0C447C', cursor: 'pointer', fontSize: '11px', fontWeight: '500'
                         }}>Remind</button>
                       )}
-                      <button onClick={async () => {
-                        if (r.status === 'Outstanding') {
-                        if (r.amount > 0) {
-                          setPayModal(r)
-                          setPayForm({ amount: r.amount, mop: 'Cash', use_credit: false, split: false, split_credit: 0, split_cash: r.amount })
-                          const cRes = await fetch(`/api/credits?client=${encodeURIComponent(r.client_name)}`)
-                          const cJson = await cRes.json()
-                          if (cJson.success) setClientCredit(cJson.credit_balance || 0)
-                        }
-                          else updateStatus(r, 'Ready for Release')
-                        } else if (r.status === 'Ready for Release') {
-                          updateStatus(r, 'Completed')
-                        } else if (r.status === 'Completed') {
-                          updateStatus(r, 'Ready for Release')
-                        }
-                      }} style={{
-                        padding: '4px 12px', borderRadius: '12px', border: `1px solid ${sc.border}`,
-                        background: sc.bg, color: sc.color, cursor: 'pointer', fontSize: '11px', fontWeight: '500', whiteSpace: 'nowrap'
-                      }}>
-                        {r.status === 'Ready for Release' ? '✅ Ready for Release' : r.status}
-                      </button>
+                      {r.status === 'Ready for Release' ? (
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          {!r.file_url ? (
+                            <>
+                              <label style={{
+                                padding: '4px 10px', borderRadius: '6px', border: '1px solid #97C459',
+                                background: '#EAF3DE', color: '#27500A', cursor: 'pointer',
+                                fontSize: '11px', fontWeight: '500'
+                              }}>
+                                Upload PDF
+                                <input type="file" accept=".pdf" style={{ display: 'none' }}
+                                  onChange={async e => {
+                                    const file = e.target.files[0]
+                                    if (!file) return
+                                    if (file.type !== 'application/pdf') return alert('PDF only')
+                                    const formData = new FormData()
+                                    formData.append('file', file)
+                                    formData.append('report_id', r.id)
+                                    formData.append('report_index', r.index)
+                                    const res = await fetch('/api/documents/upload', { method: 'POST', body: formData })
+                                    const json = await res.json()
+                                    if (json.success) fetchAll()
+                                    else alert('Upload failed: ' + json.error)
+                                  }} />
+                              </label>
+                              <button onClick={async () => {
+                                const t = therapists.find(x => x.name === r.therapist)
+                                if (!t?.email) return alert(`No email on file for ${r.therapist}`)
+                                await fetch('/api/documents', {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ action: 'send_email', index: r.index, therapist_email: t.email })
+                                })
+                                alert(`Reminder sent to ${r.therapist}!`)
+                              }} style={{
+                                padding: '4px 10px', borderRadius: '6px', border: '1px solid #B5D4F4',
+                                background: '#E6F1FB', color: '#0C447C', cursor: 'pointer',
+                                fontSize: '11px', fontWeight: '500'
+                              }}>Remind</button>
+                            </>
+                          ) : (
+                            <button onClick={() => updateStatus(r, 'Completed')} style={{
+                              padding: '4px 12px', borderRadius: '12px', border: '1px solid #97C459',
+                              background: '#EAF3DE', color: '#27500A', cursor: 'pointer',
+                              fontSize: '11px', fontWeight: '500'
+                            }}>✓ Uploaded — Mark complete</button>
+                          )}
+                        </div>
+                      ) : (
+                        <button onClick={async () => {
+                          if (r.status === 'Outstanding') {
+                            if (r.amount > 0) {
+                              setPayModal(r)
+                              setPayForm({ amount: r.amount, mop: 'Cash', use_credit: false, split: false, split_credit: 0, split_cash: r.amount })
+                              const cRes = await fetch(`/api/credits?client=${encodeURIComponent(r.client_name)}`)
+                              const cJson = await cRes.json()
+                              if (cJson.success) setClientCredit(cJson.credit_balance || 0)
+                            } else updateStatus(r, 'Ready for Release')
+                          } else if (r.status === 'Completed') {
+                            updateStatus(r, 'Ready for Release')
+                          }
+                        }} style={{
+                          padding: '4px 12px', borderRadius: '12px', border: `1px solid ${sc.border}`,
+                          background: sc.bg, color: sc.color, cursor: 'pointer', fontSize: '11px', fontWeight: '500', whiteSpace: 'nowrap'
+                        }}>
+                          {r.status}
+                        </button>
+                      )}
                     </td>
                     <td style={{ padding: '10px 16px' }}>
                       <button onClick={() => deleteReport(r)} style={{
