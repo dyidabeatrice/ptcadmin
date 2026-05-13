@@ -53,12 +53,13 @@ export default function TherapistLogin() {
 
         <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '2rem' }}>
           <div style={{ marginBottom: '1rem' }}>
-            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Select your name</label>
-            <select value={selectedName} onChange={e => { setSelectedName(e.target.value); setError('') }}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', background: 'white' }}>
-              <option value="">Choose name...</option>
-              {names.map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Enter your name</label>
+            <input
+              value={selectedName}
+              onChange={e => { setSelectedName(e.target.value); setError('') }}
+              placeholder="Type your name..."
+              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }}
+            />
           </div>
 
           <div style={{ marginBottom: '1.5rem' }}>
