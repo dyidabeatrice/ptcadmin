@@ -322,7 +322,7 @@ export default function HomePage() {
           </div>
           <div className="slideshow" id="clinic-show">
             <div className="slides" id="clinic-slides" style={{ transform: 'translateX(-100%)' }}>
-              {['/clinic-new1.jpeg', '/clinic-new2.jpeg', '/clinic-new3.jpeg', '/clinic1.jpg', '/clinic2.jpg', '/clinic3.jpg'].map((src, i) => (
+              {['/clinic1.jpg', '/clinic2.jpg', '/clinic3.jpg'].map((src, i) => (
                 <div key={i} className="slide"><img src={src} alt="Our Facility" /></div>
               ))}
             </div>
