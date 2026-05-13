@@ -80,6 +80,30 @@ export async function POST(request) {
         }]
       })
 
+      // Check if submission is within deadline
+      const deadlineStr = reportRow[5]
+      const isWithinDeadline = deadlineStr ? new Date() <= new Date(deadlineStr) : true
+
+      // Only log payment if within deadline
+      if (isWithinDeadline) {
+        await fetch(`${process.env.NEXT_PUBLIC_URL}/api/payments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'log',
+            client_name: clientName,
+            therapist: therapistName,
+            session_id: `IE-REPORT-${Date.now()}`,
+            amount: 0,
+            mop: 'N/A',
+            session_type: 'IE REPORT',
+            date: now,
+            payment_type: 'ie_report',
+            reference: ''
+          })
+        })
+      }
+
       // Log IE report payment entry for therapist ledger
       await fetch(`${process.env.NEXT_PUBLIC_URL}/api/payments`, {
         method: 'POST',
