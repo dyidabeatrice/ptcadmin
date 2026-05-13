@@ -240,48 +240,6 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
       <td style={{ padding: '8px 10px', fontSize: '11px', color: saving ? '#999' : isPaid ? '#1D9E75' : '#E24B4A', fontWeight: '500' }}>
         {saving ? '...' : isPaid ? '✓ Paid' : 'Unpaid'}
       </td>
-      <td style={{ padding: '8px 4px' }}>
-        <button onClick={async () => {
-            const msg = isPaid 
-              ? 'This session is paid — reversing will delete the payment record. Continue?' 
-              : 'Mark this session as Pencil (remove from ledger)?'
-            if (!confirm(msg)) return
-            setSaving(true)
-            try {
-              console.log('Deleting session:', session.week_key, session.index, session.id)
-              if (isPaid && session.payment_id) {
-                await fetch('/api/sessions', {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    action: 'unpay',
-                    week_key: session.week_key,
-                    rowIndex: session.index,
-                    session_id: session.id,
-                    client_name: session.client_name,
-                    amount: session.total
-                  })
-                })
-              }
-              await fetch('/api/sessions', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  action: 'status',
-                  week_key: session.week_key,
-                  rowIndex: session.index,
-                  status: 'Pencil'
-                })
-              })
-              setDeleted(true)
-            } catch (e) { console.error(e) }
-            setSaving(false)
-          }} style={{
-          padding: '2px 6px', borderRadius: '4px', border: '1px solid #fcc',
-          background: '#fff5f5', color: '#c00', cursor: 'pointer', fontSize: '11px',
-          fontWeight: '600', lineHeight: 1
-        }}>✕</button>
-      </td>
     </tr>
   )
 }

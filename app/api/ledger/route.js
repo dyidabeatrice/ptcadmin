@@ -93,7 +93,7 @@ export async function GET() {
     const paymentMap = {}
     payRows.filter(r => r && r[0]).forEach(row => {
       const sessionId = row[3]
-      if (sessionId && !['attendance','cancellation','credit_transfer'].includes(row[8])) {
+      if (sessionId && !['attendance','cancellation','credit_transfer','advance','refund','ie_report'].includes(row[8])) {
         paymentMap[sessionId] = {
           payment_id: row[0],
           amount: parseFloat(row[4] || 0),

@@ -55,6 +55,52 @@ export async function POST(request) {
       requestBody: { values: [['Completed']] }
     })
 
+    // IE Report — send to clinic Gmail
+    if (docType === 'IE Report') {
+      await transporter.sendMail({
+        from: `Potentials Therapy Center <${process.env.GMAIL_USER}>`,
+        to: process.env.GMAIL_USER,
+        subject: `IE Report Submitted — ${clientName} by ${therapistName}`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+            <div style="background: #0f4c81; padding: 20px; border-radius: 8px 8px 0 0;">
+              <h2 style="color: white; margin: 0;">IE Report Submitted</h2>
+            </div>
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0;">
+              <p><strong>${therapistName}</strong> has submitted the IE Report for <strong>${clientName}</strong>.</p>
+              <p style="color: #666; font-size: 13px;">Uploaded: ${now}</p>
+              <p style="color: #666; font-size: 13px; margin-top: 20px;">— Potentials Therapy Center</p>
+            </div>
+          </div>
+        `,
+        attachments: [{
+          filename: `${clientName}_IE_Report_${now}.pdf`,
+          content: buffer,
+          contentType: 'application/pdf'
+        }]
+      })
+
+      // Log IE report payment entry for therapist ledger
+      await fetch(`${process.env.NEXT_PUBLIC_URL}/api/payments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'log',
+          client_name: clientName,
+          therapist: therapistName,
+          session_id: `IE-REPORT-${Date.now()}`,
+          amount: 0,
+          mop: 'N/A',
+          session_type: 'IE REPORT',
+          date: now,
+          payment_type: 'ie_report',
+          reference: ''
+        })
+      })
+
+      return Response.json({ success: true })
+    }
+
     if (delivery === 'soft' && parentEmail) {
       // Send email to parent with PDF attached
       await transporter.sendMail({

@@ -140,6 +140,65 @@ export async function PATCH(request) {
         })
       }
 
+      // Auto-create IE report entry if session type changed to IE and session is Present
+      const isNewIE = ['OT-IE', 'ST-IE', 'PT-IE', 'SPED IE'].includes(body.session_type)
+      const currentSessions = await getWeekSheet(weekKey)
+      const currentSession = currentSessions.find(s => s.index === body.rowIndex)
+      const isPresent = currentSession?.status === 'Present'
+
+      if (isNewIE && isPresent) {
+        const reportsData = await getSheetData('reports')
+        const [, ...reportRows] = reportsData
+        const exists = reportRows.find(r => r && r[0] === `IE-${currentSession.id}`)
+        if (!exists) {
+          const sessionDate = new Date(currentSession.date || new Date())
+          const deadline = new Date(sessionDate)
+          deadline.setMonth(deadline.getMonth() + 6)
+          const deadlineStr = deadline.toISOString().split('T')[0]
+          const today = new Date().toLocaleDateString('en-PH', {
+            timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric'
+          })
+          await sheets.spreadsheets.values.append({
+            spreadsheetId: SPREADSHEET_ID,
+            range: 'reports',
+            valueInputOption: 'RAW',
+            requestBody: { values: [[
+              `IE-${currentSession.id}`,
+              currentSession.client_name || '',
+              currentSession.therapist || '',
+              '',
+              today,
+              deadlineStr,
+              'IE Report',
+              0,
+              'Pending Submission',
+              '',
+              '',
+              'soft',
+              '',
+              ''
+            ]]}
+          })
+        }
+      }
+
+      // Auto-delete IE report entry if session type changed away from IE
+      const wasIE = ['OT-IE', 'ST-IE', 'PT-IE', 'SPED IE'].includes(currentSession?.session_type)
+      if (wasIE && !isNewIE) {
+        const reportsData = await getSheetData('reports')
+        const [, ...reportRows] = reportsData
+        const ieIndex = reportRows.findIndex(r => r && r[0] === `IE-${currentSession.id}`)
+        if (ieIndex !== -1) {
+          const sheetId = await getSheetId('reports')
+          await sheets.spreadsheets.batchUpdate({
+            spreadsheetId: SPREADSHEET_ID,
+            requestBody: { requests: [{ deleteDimension: {
+              range: { sheetId, dimension: 'ROWS', startIndex: ieIndex + 1, endIndex: ieIndex + 2 }
+            }}]}
+          })
+        }
+      }
+
       return Response.json({ success: true })
     }
 
@@ -174,6 +233,23 @@ if (body.action === 'status') {
           }}]}
         })
       }
+        // Also delete IE report entry if exists
+        const isIEType = ['OT-IE', 'ST-IE', 'PT-IE', 'SPED IE'].includes(session?.session_type)
+        if (isIEType) {
+          const reportsData = await getSheetData('reports')
+          const [, ...reportRows] = reportsData
+          const ieIndex = reportRows.findIndex(r => r && r[0] === `IE-${session.id}`)
+          if (ieIndex !== -1) {
+            const reportsSheetId = await getSheetId('reports')
+            await sheets.spreadsheets.batchUpdate({
+              spreadsheetId: SPREADSHEET_ID,
+              requestBody: { requests: [{ deleteDimension: {
+                range: { reportsSheetId, dimension: 'ROWS', startIndex: ieIndex + 1, endIndex: ieIndex + 2 }
+              }}]}
+            })
+          }
+        }
+
     } 
 
       const nowOwes = !isPaid && (newStatus === 'Present' || newStatus === 'Cancelled')

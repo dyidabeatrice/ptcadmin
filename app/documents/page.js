@@ -191,7 +191,11 @@ export default function DocumentsPage() {
   const clientTherapists = getClientTherapists(form.client_name)
 
   const filtered = reports
-    .filter(r => filterStatus === 'All' || r.status === filterStatus)
+    .filter(r => {
+      if (filterStatus === 'IE Reports') return r.doc_type === 'IE Report'
+      if (filterStatus === 'All') return r.doc_type !== 'IE Report'
+      return r.status === filterStatus && r.doc_type !== 'IE Report'
+    })
     .sort((a, b) => {
       if (!a.deadline) return 1
       if (!b.deadline) return -1
@@ -459,7 +463,7 @@ export default function DocumentsPage() {
 
       {/* Filter tabs */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        {['All', 'Outstanding', 'Ready for Release', 'Completed'].map(s => (
+        {['All', 'Outstanding', 'Ready for Release', 'Completed', 'IE Reports'].map(s => (
           <button key={s} onClick={() => setFilterStatus(s)} style={{
             padding: '7px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '500',
             background: filterStatus === s ? '#0f4c81' : '#f0f0f0',
