@@ -247,14 +247,13 @@ export default function HomePage() {
       {/* Intro & Pictures */}
       <section id="intro" style={{ padding: '6rem 2rem', background: '#e9ebee' }}>
         <style>{`
-          .slideshow {
-              position: relative;
-              border-radius: 0px;
-              overflow: hidden;
-              width: 100%;
-              max-height: 380px;
-              aspect-ratio: 16/9;
-            }
+        .slideshow {
+          position: relative;
+          border-radius: 0px;
+          overflow: hidden;
+          width: 100%;
+          height: 480px;
+        }
           .slides { display: flex; transition: transform 0.4s cubic-bezier(0.4,0,0.2,1); height: 100%; }
           .slide { flex-shrink: 0; width: 100%; height: 100%; }
           .slide img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 0;}
@@ -323,7 +322,7 @@ export default function HomePage() {
           </div>
           <div className="slideshow" id="clinic-show">
             <div className="slides" id="clinic-slides" style={{ transform: 'translateX(-100%)' }}>
-              {['/clinic1.jpg', '/clinic2.jpg', '/clinic3.jpg'].map((src, i) => (
+              {['/clinic-new1.jpeg.', '/clinic-new2.jpeg.', '/clinic-new3.jpeg.', '/clinic1.jpg', '/clinic2.jpg', '/clinic3.jpg'].map((src, i) => (
                 <div key={i} className="slide"><img src={src} alt="Our Facility" /></div>
               ))}
             </div>
