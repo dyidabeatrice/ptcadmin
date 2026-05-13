@@ -17,18 +17,20 @@ export default function TherapistLogin() {
   }, [])
 
   async function handleLogin() {
-    if (!selectedName) return setError('Please select your name')
-    if (!pin) return setError('Please enter your PIN')
-    setLoading(true)
-    setError('')
-    const res = await fetch('/api/therapist/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: selectedName, pin })
-    })
+  if (!selectedName) return setError('Please enter your name')
+  if (!pin) return setError('Please enter your PIN')
+  const match = names.find(n => n.toLowerCase() === selectedName.trim().toLowerCase())
+  if (!match) return setError('Name not found — please check your spelling')
+  setLoading(true)
+  setError('')
+  const res = await fetch('/api/therapist/auth', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: match, pin })
+  })
     const json = await res.json()
     if (json.success) {
-      sessionStorage.setItem('therapist_name', selectedName)
+      sessionStorage.setItem('therapist_name', match)
       router.push('/therapist/dashboard')
     } else {
       setError(json.error || 'Incorrect PIN')

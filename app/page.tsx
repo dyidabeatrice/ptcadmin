@@ -247,13 +247,14 @@ export default function HomePage() {
       {/* Intro & Pictures */}
       <section id="intro" style={{ padding: '6rem 2rem', background: '#e9ebee' }}>
         <style>{`
-        .slideshow {
-          position: relative;
-          border-radius: 0px;
-          overflow: hidden;
-          width: 100%;
-          height: 480px;
-        }
+          .slideshow {
+              position: relative;
+              border-radius: 0px;
+              overflow: hidden;
+              width: 100%;
+              max-height: 380px;
+              aspect-ratio: 16/9;
+            }
           .slides { display: flex; transition: transform 0.4s cubic-bezier(0.4,0,0.2,1); height: 100%; }
           .slide { flex-shrink: 0; width: 100%; height: 100%; }
           .slide img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 0;}
