@@ -68,7 +68,7 @@ export async function GET(request) {
             <div style="background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0;">
               <p>Hi ${therapistName},</p>
               <p>This is a reminder that the <strong>${docType}</strong> for <strong>${clientName}</strong> is due in <strong>${daysLeft} day${daysLeft !== 1 ? 's' : ''}</strong>.</p>
-              <p>The client has already paid — please log in to the therapist portal to upload the report.</p>
+              <p>The client has already paid — please log in to the <a href="${process.env.NEXT_PUBLIC_URL}/therapist/login" style="color: #0f4c81; font-weight: 500;">therapist portal</a> to upload the report.</p>
               <p style="color: #666; font-size: 13px;">Deadline: <strong>${deadline}</strong></p>
               <p style="color: #666; font-size: 13px; margin-top: 20px;">— Potentials Therapy Center</p>
             </div>

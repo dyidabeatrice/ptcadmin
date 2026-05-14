@@ -125,7 +125,9 @@ export async function POST(request) {
       return Response.json({ success: true })
     }
 
-    if (delivery === 'soft' && parentEmail) {
+      const deliveryTypes = (delivery || 'soft').split(',')
+
+      if (deliveryTypes.includes('soft') && parentEmail) {
       // Send email to parent with PDF attached
       await transporter.sendMail({
         from: `Potentials Therapy Center <${process.env.GMAIL_USER}>`,
@@ -148,8 +150,9 @@ export async function POST(request) {
           content: buffer,
           contentType: 'application/pdf'
         }]
-      })
-    } else if (delivery === 'hard') {
+        })      
+      }
+    if (deliveryTypes.includes('hard')) {
       // Send to secretary for printing
       const secretaryEmail = process.env.SECRETARY_PRINT_EMAIL
       if (secretaryEmail) {

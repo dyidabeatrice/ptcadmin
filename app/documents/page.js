@@ -396,17 +396,32 @@ export default function DocumentsPage() {
 
                 <div style={{ marginBottom: '12px' }}>
                   <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Delivery method</label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {[{ value: 'soft', label: '📧 Soft copy' }, { value: 'hard', label: '🖨️ Hard copy' }].map(opt => (
-                      <button key={opt.value} onClick={() => setForm({ ...form, delivery: opt.value })} style={{
-                        padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
-                        border: form.delivery === opt.value ? '2px solid #0f4c81' : '1px solid #ddd',
-                        background: form.delivery === opt.value ? '#E6F1FB' : 'white',
-                        color: form.delivery === opt.value ? '#0f4c81' : '#666',
-                        fontWeight: form.delivery === opt.value ? '500' : '400'
-                      }}>{opt.label}</button>
-                    ))}
-                  </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      {[{ value: 'soft', label: '📧 Soft copy' }, { value: 'hard', label: '🖨️ Hard copy' }].map(opt => (
+                        <label key={opt.value} style={{
+                          display: 'flex', alignItems: 'center', gap: '6px',
+                          padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
+                          border: form.delivery?.includes(opt.value) ? '2px solid #0f4c81' : '1px solid #ddd',
+                          background: form.delivery?.includes(opt.value) ? '#E6F1FB' : 'white',
+                          color: form.delivery?.includes(opt.value) ? '#0f4c81' : '#666',
+                          fontWeight: form.delivery?.includes(opt.value) ? '500' : '400'
+                        }}>
+                          <input type="checkbox" 
+                            checked={form.delivery?.includes(opt.value) || false}
+                            onChange={e => {
+                              const current = form.delivery ? form.delivery.split(',') : []
+                              if (e.target.checked) {
+                                setForm({ ...form, delivery: [...current, opt.value].join(',') })
+                              } else {
+                                setForm({ ...form, delivery: current.filter(d => d !== opt.value).join(',') })
+                              }
+                            }}
+                            style={{ display: 'none' }}
+                          />
+                          {opt.label}
+                        </label>
+                      ))}
+                    </div>
                 </div>
 
                 <div style={{ marginBottom: '1.5rem' }}>
@@ -440,7 +455,7 @@ export default function DocumentsPage() {
                     { label: 'Amount', value: form.amount > 0 ? `₱${Number(form.amount).toLocaleString()}` : 'No fee' },
                     { label: 'Parent email', value: form.email || '—' },
                     { label: 'Notes', value: form.notes || '—' },
-                    { label: 'Delivery', value: form.delivery === 'soft' ? '📧 Soft copy' : '🖨️ Hard copy' },
+                    { label: 'Delivery', value: form.delivery?.split(',').map(d => d === 'soft' ? '📧 Soft copy' : '🖨️ Hard copy').join(' + ') || '📧 Soft copy' },
                   ].map((item, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', borderRadius: '6px', background: i % 2 === 0 ? '#f8f9fa' : 'white', border: '1px solid #e0e0e0' }}>
                       <span style={{ fontSize: '13px', color: '#666' }}>{item.label}</span>
@@ -515,7 +530,7 @@ export default function DocumentsPage() {
                       {r.amount > 0 ? `₱${Number(r.amount).toLocaleString()}` : 'No fee'}
                     </td>
                     <td style={{ padding: '10px 16px', fontSize: '12px', color: '#666' }}>
-                      {r.delivery === 'hard' ? '🖨️ Hard' : '📧 Soft'}
+                      {(r.delivery || 'soft').split(',').map(d => d === 'soft' ? '📧' : '🖨️').join('+')}
                     </td>
                     <td style={{ padding: '10px 16px' }}>
                       {r.amount > 0 && r.status === 'Outstanding' && r.client_name && (
