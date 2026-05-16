@@ -188,13 +188,28 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
       </td>
       <td style={{ padding: '8px 10px' }}>
       <select value={sessionType} onChange={async e => {
-        if (!session.payment_id) return
         setSessionType(e.target.value)
-        await fetch('/api/payments', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'update_session_type', id: session.payment_id, session_type: e.target.value })
-        })
+        if (session.payment_id) {
+          // Paid session — update payments sheet
+          await fetch('/api/payments', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update_session_type', id: session.payment_id, session_type: e.target.value })
+          })
+        } else if (session.week_key && session.index !== undefined) {
+          // Unpaid session — update week sheet
+          await fetch('/api/sessions', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'update_type',
+              week_key: session.week_key,
+              rowIndex: session.index,
+              session_type: e.target.value,
+              amount: session.total
+            })
+          })
+        }
       }}
       style={{ fontSize: '11px', padding: '3px 6px', borderRadius: '6px', border: '1px solid #B5D4F4', cursor: 'pointer', background: '#E6F1FB', color: '#0C447C' }}>
           <option value="">— type —</option>
