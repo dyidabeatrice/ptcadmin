@@ -553,6 +553,16 @@ function OutstandingByDayTab({ clients, onSettle }) {
               <div style={{ fontWeight: '500', color: '#0f4c81' }}>{payModal.client_name}</div>
               <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>{payModal.therapist} · {payModal.date} · {payModal.time_start}</div>
               <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>Status: {payModal.status} · Balance due: ₱{Number(payModal.amount || 0).toLocaleString()}</div>
+              <div style={{ marginTop: '8px' }}>
+                <label style={{ fontSize: '11px', color: '#666', display: 'block', marginBottom: '3px' }}>Session type</label>
+                <select value={payForm.session_type || payModal.session_type || ''} 
+                  onChange={e => setPayForm({ ...payForm, session_type: e.target.value })}
+                  style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
+                  {['OT SESSION','OT-IE','OT-FE','SPECIALIZED OT TX','ST SESSION','ST-IE','ST-FE','SPECIALIZED ST TX','PT SESSION','PT-IE','PT FE','SPED SESSION','SPED IE','SPED FE','PLAYSCHOOL','PR','PR-RUSHED','IE REPORT','Cancellation Fee','OT INTERN SESSION','OT INTERN IE','ST INTERN SESSION','ST INTERN IE','PR INTERN'].map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
               {clientCredit > 0 && <div style={{ marginTop: '6px', fontSize: '12px', color: '#27500A', background: '#EAF3DE', padding: '4px 8px', borderRadius: '6px', display: 'inline-block' }}>💳 Credit available: ₱{clientCredit.toLocaleString()}</div>}
             </div>
             <div style={{ marginBottom: '12px' }}>
@@ -699,7 +709,7 @@ function OutstandingTab({ clients, onSettle }) {
   async function openSettle(session) {
     setPayModal(session)
     const initialAmount = Number(session.amount) || 0
-    setPayForm({ mop: 'Cash', amount: initialAmount, use_credit: false, split: false, split_credit: 0, split_cash: initialAmount })
+    setPayForm({ mop: 'Cash', amount: initialAmount, use_credit: false, split: false, split_credit: 0, split_cash: initialAmount, session_type: session.session_type || ''  })
     const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
     const json = await res.json()
     if (json.success) setClientCredit(json.credit_balance || 0)
@@ -718,7 +728,7 @@ function OutstandingTab({ clients, onSettle }) {
       if (payModal.is_document) {
         const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
         await fetch('/api/documents', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pay', index: payModal.index, client_name: payModal.client_name, amount: payModal.amount, mop: payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop }) })
-        await fetch('/api/payments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'log', client_name: payModal.client_name, therapist: payModal.therapist, session_id: `DOC-${payModal.id}`, amount: payModal.amount, mop: payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop, session_type: payModal.session_type, date: today, payment_type: 'document', reference: payForm.reference || '' }) })
+        await fetch('/api/payments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'log', client_name: payModal.client_name, therapist: payModal.therapist, session_id: `DOC-${payModal.id}`, amount: payModal.amount, mop: payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop, session_type: payForm.session_type || payModal.session_type, date: today, payment_type: 'document', reference: payForm.reference || '' }) })
       } else {
         let creditRef = ''
         let creditMop = 'Credit'
