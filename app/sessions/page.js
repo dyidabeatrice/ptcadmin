@@ -123,8 +123,6 @@ export default function SchedulePage() {
   const [payModal, setPayModal] = useState(null)
   const [payForm, setPayForm] = useState({ session_type: '', mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0 })
   const [clientCredit, setClientCredit] = useState(0)
-  const [rescheduleModal, setRescheduleModal] = useState(null)
-  const [rescheduleForm, setRescheduleForm] = useState({ day: '', therapist: '', time_start: '', time_end: '' })
   const [remindModal, setRemindModal] = useState(null)
   const [remindSending, setRemindSending] = useState(false)
   const [addModal, setAddModal] = useState(false)
@@ -405,19 +403,6 @@ export default function SchedulePage() {
 
   async function confirmReschedule() {
     if (!rescheduleForm.day || !rescheduleForm.therapist || !rescheduleForm.time_start || !rescheduleForm.time_end) return alert('Please fill in all fields')
-    setSaving(true)
-    const parts = selectedWeek.key.replace('week_', '').split('_')
-    const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
-    const weekDates = {}
-    DAYS.forEach((day, i) => {
-      const d = new Date(monday)
-      d.setDate(d.getDate() + i)
-      weekDates[day] = d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
-    })
-    await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'reschedule', week_key: selectedWeek.key, rowIndex: rescheduleModal.index, therapist: rescheduleForm.therapist, date: weekDates[rescheduleForm.day] || '', day: rescheduleForm.day, time_start: rescheduleForm.time_start, time_end: rescheduleForm.time_end }) })
-    setRescheduleModal(null)
-    fetchSessions(selectedWeek.key)
-    setSaving(false)
   }
 
   async function addOneOff() {
@@ -736,8 +721,6 @@ export default function SchedulePage() {
                             <button onClick={() => s.status === 'Absent' ? null : reversePayment(s)} disabled={s.status === 'Absent'} title={s.status === 'Absent' ? 'Payment moved to credit — cannot reverse' : 'Reverse payment'}
                               style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#EAF3DE', color: s.status === 'Absent' ? '#aaa' : '#27500A', cursor: s.status === 'Absent' ? 'not-allowed' : 'pointer' }}>Paid ✓</button>
                           )}
-                          <button onClick={() => { setRescheduleModal(s); setRescheduleForm({ day: '', therapist: '', time_start: '', time_end: '' }) }}
-                            style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: '1px solid #ddd', background: 'white', color: '#666', cursor: 'pointer' }}>Move</button>
                           <button onClick={() => setRemindModal(s)}
                             style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: '1px solid #B5D4F4', background: '#E6F1FB', color: '#0C447C', cursor: 'pointer' }}>Remind</button>
                           <button onClick={() => deleteSession(s)} disabled={s.payment === 'Paid'}
@@ -1235,68 +1218,6 @@ export default function SchedulePage() {
               <button onClick={confirmPayment} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes)}
                 style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes)) ? 0.5 : 1 }}>
                 {saving ? 'Saving...' : `Confirm ₱${Number(payForm.amount || 0).toLocaleString()}`}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {rescheduleModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
-            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Reschedule</h3>
-            <p style={{ margin: '0 0 1.25rem', fontSize: '13px', color: '#999' }}>{rescheduleModal.client_name} · {rescheduleModal.day} {rescheduleModal.time_start}</p>
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>New day</label>
-              <select value={rescheduleForm.day} onChange={e => setRescheduleForm({ ...rescheduleForm, day: e.target.value, therapist: '', time_start: '', time_end: '' })}
-                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
-                <option value="">Select day...</option>
-                {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
-            </div>
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Therapist</label>
-              <select value={rescheduleForm.therapist} onChange={e => setRescheduleForm({ ...rescheduleForm, therapist: e.target.value, time_start: '', time_end: '' })} disabled={!rescheduleForm.day}
-                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', opacity: !rescheduleForm.day ? 0.5 : 1 }}>
-                <option value="">Select therapist...</option>
-                {[...new Set(therapistData.filter(t => t.day === rescheduleForm.day).map(t => t.name))].sort().map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '1.5rem' }}>
-              <div>
-                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Start time</label>
-                <select value={rescheduleForm.time_start} onChange={e => setRescheduleForm({ ...rescheduleForm, time_start: e.target.value, time_end: '' })} disabled={!rescheduleForm.therapist}
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', opacity: !rescheduleForm.therapist ? 0.5 : 1 }}>
-                  <option value="">Start...</option>
-                  {(() => {
-                    const entry = therapistData.find(t => t.name === rescheduleForm.therapist && t.day === rescheduleForm.day)
-                    if (!entry) return null
-                    const slots = []
-                    let mins = parseTime(entry.time_start)
-                    const end = parseTime(entry.time_end)
-                    while (mins < end) { slots.push(formatTime(mins)); mins += 15 }
-                    return slots.map(t => <option key={t} value={t}>{t}</option>)
-                  })()}
-                </select>
-              </div>
-              <div>
-                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>End time</label>
-                <select value={rescheduleForm.time_end} onChange={e => setRescheduleForm({ ...rescheduleForm, time_end: e.target.value })} disabled={!rescheduleForm.time_start}
-                  style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', opacity: !rescheduleForm.time_start ? 0.5 : 1 }}>
-                  <option value="">End...</option>
-                  {[60, 90, 120].map(mins => {
-                    if (!rescheduleForm.time_start) return null
-                    const endMins = parseTime(rescheduleForm.time_start) + mins
-                    return <option key={mins} value={formatTime(endMins)}>{mins === 60 ? '1 hr' : mins === 90 ? '1.5 hrs' : '2 hrs'} ({formatTime(endMins)})</option>
-                  })}
-                </select>
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button onClick={() => { setRescheduleModal(null); setRescheduleForm({ day: '', therapist: '', time_start: '', time_end: '' }) }}
-                style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
-              <button onClick={confirmReschedule} disabled={saving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
-                {saving ? 'Moving...' : 'Confirm reschedule'}
               </button>
             </div>
           </div>
