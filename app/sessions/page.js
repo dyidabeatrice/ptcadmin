@@ -692,12 +692,20 @@ export default function SchedulePage() {
                           left: '8%', width: '85%',
                           height: `${stackCount > 1 ? stackedHeight : height}px`,
                           background: sc.bg, border: `1px solid ${sc.border}`,
-                          borderRadius: '4px', padding: '1px 5px 3px',
+                          borderRadius: '4px', padding: '0px 5px 3px',
                           overflow: 'auto', boxSizing: 'border-box', zIndex: 1, cursor: 'grab'
                         }}>
-                        <div style={{ display: 'inline-block', background: sc.color, color: 'white', fontSize: '9px', fontWeight: '500', padding: '1px 7px', borderRadius: '10px', marginBottom: '3px' }}>
+                        <div style={{ 
+                          position: 'absolute', top: 0, left: 0, right: 0,
+                          background: sc.color, color: 'white', 
+                          fontSize: '9px', fontWeight: '500', 
+                          padding: '2px 6px', 
+                          borderRadius: '4px 4px 0 0',
+                          textAlign: 'center'
+                        }}>
                           {s.time_start}–{s.time_end}
                         </div>
+                        <div style={{ marginTop: '14px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <div style={{ fontSize: '10px', fontWeight: '600', color: sc.color, lineHeight: '1.3' }}>{s.client_name}</div>
                           {needsWarning && <span style={{ fontSize: '15px' }}>⚠️</span>}
@@ -723,6 +731,7 @@ export default function SchedulePage() {
                             style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: '1px solid #B5D4F4', background: '#E6F1FB', color: '#0C447C', cursor: 'pointer' }}>💬</button>
                           <button onClick={() => deleteSession(s)} disabled={s.payment === 'Paid'}
                             style={{ fontSize: '8px', padding: '1px 3px', borderRadius: '3px', border: '1px solid #fcc', background: s.payment === 'Paid' ? '#f5f5f5' : '#fff5f5', color: s.payment === 'Paid' ? '#ccc' : '#c00', cursor: s.payment === 'Paid' ? 'not-allowed' : 'pointer' }}>✕</button>
+                        </div>
                         </div>
                       </div>
                     )
