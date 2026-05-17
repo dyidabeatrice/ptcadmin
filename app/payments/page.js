@@ -486,6 +486,198 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
   )
 }
 
+function OutstandingByDayTab({ clients, onSettle }) {
+  const [unpaidSessions, setUnpaidSessions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [payModal, setPayModal] = useState(null)
+  const [payForm, setPayForm] = useState({ mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0 })
+  const [clientCredit, setClientCredit] = useState(0)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => { fetchOutstanding(true) }, [])
+
+  async function fetchOutstanding(showLoading = false) {
+    if (showLoading) setLoading(true)
+    const res = await fetch('/api/payments?action=outstanding')
+    const json = await res.json()
+    if (json.success) setUnpaidSessions(json.data)
+    setLoading(false)
+  }
+
+  async function openSettle(session) {
+    setPayModal(session)
+    const initialAmount = Number(session.amount) || 0
+    setPayForm({ mop: 'Cash', amount: initialAmount, use_credit: false, split: false, split_credit: 0, split_cash: initialAmount })
+    const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
+    const json = await res.json()
+    if (json.success) setClientCredit(json.credit_balance || 0)
+  }
+
+  async function settlePayment() {
+    setSaving(true)
+    const isPartial = !payForm.use_credit && !payForm.split && payModal.amount > 0 && Number(payForm.amount) < Number(payModal.amount)
+    if (isPartial) {
+      const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
+      await fetch('/api/credits', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add_credit', client_name: payModal.client_name, amount: Number(payForm.amount) || Number(payModal.amount), mop: payForm.mop, date: today, note: `Partial payment for ${payModal.date}` })
+      })
+    } else {
+      let creditRef = ''
+      let creditMop = 'Credit'
+      if (payForm.use_credit || payForm.split) {
+        const payData = await fetch('/api/payments').then(r => r.json())
+        if (payData.success) {
+          const advances = payData.data.filter(p => p.client_name === payModal.client_name && p.payment_type === 'advance')
+          const latestAdvance = advances.length > 0 ? advances[advances.length - 1] : null
+          creditRef = latestAdvance?.reference || ''
+          creditMop = latestAdvance?.mop || 'Credit'
+        }
+      }
+      await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pay', week_key: payModal.week_key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payModal.session_type || 'Regular', mop: payForm.use_credit ? creditMop : payForm.split ? 'Split' : payForm.mop, amount: Number(payForm.amount) || Number(payModal.amount), use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, credit_balance: clientCredit, reference: payForm.reference || creditRef }) })
+    }
+    setPayModal(null)
+    fetchOutstanding()
+    setSaving(false)
+  }
+
+  const isPartial = !payForm.use_credit && !payForm.split && payForm.amount < (payModal?.amount || 0)
+
+  return (
+    <div>
+      {payModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '420px', maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h3 style={{ margin: '0 0 1rem', color: '#0f4c81' }}>Settle payment</h3>
+            <div style={{ background: '#f8f9fa', borderRadius: '8px', padding: '10px 12px', marginBottom: '1rem' }}>
+              <div style={{ fontWeight: '500', color: '#0f4c81' }}>{payModal.client_name}</div>
+              <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>{payModal.therapist} · {payModal.date} · {payModal.time_start}</div>
+              <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>Status: {payModal.status} · Balance due: ₱{Number(payModal.amount || 0).toLocaleString()}</div>
+              {clientCredit > 0 && <div style={{ marginTop: '6px', fontSize: '12px', color: '#27500A', background: '#EAF3DE', padding: '4px 8px', borderRadius: '6px', display: 'inline-block' }}>💳 Credit available: ₱{clientCredit.toLocaleString()}</div>}
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Amount (₱)</label>
+              <input type="number" value={payForm.amount}
+                onChange={e => { const val = Number(e.target.value); setPayForm({ ...payForm, amount: val, split_cash: val }) }}
+                onFocus={e => { if (payForm.amount === 0) setPayForm({ ...payForm, amount: '', split_cash: '' }) }}
+                onBlur={e => { if (payForm.amount === '') setPayForm({ ...payForm, amount: 0, split_cash: 0 }) }}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '16px', fontWeight: '500', boxSizing: 'border-box' }} />
+              {payForm.amount > 0 && isPartial && <div style={{ marginTop: '6px', padding: '8px 10px', borderRadius: '6px', background: '#FAEEDA', border: '1px solid #EF9F27', fontSize: '12px', color: '#633806' }}>⚠️ Partial — ₱{((payModal?.amount || 0) - payForm.amount).toLocaleString()} remaining. Will be recorded as advance credit.</div>}
+              {payForm.amount > 0 && !isPartial && !payForm.use_credit && !payForm.split && <div style={{ marginTop: '6px', padding: '8px 10px', borderRadius: '6px', background: '#EAF3DE', border: '1px solid #97C459', fontSize: '12px', color: '#27500A' }}>✓ Full payment — session will be marked as paid.</div>}
+            </div>
+            {clientCredit > 0 && (
+              <div style={{ marginBottom: '12px', padding: '10px 12px', background: '#EAF3DE', borderRadius: '8px', border: '1px solid #97C459' }}>
+                <div style={{ fontSize: '12px', fontWeight: '500', color: '#27500A', marginBottom: '8px' }}>Use available credit:</div>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[
+                    ...(clientCredit >= payModal.amount ? [{ key: 'full', label: 'Use full credit', active: payForm.use_credit && !payForm.split }] : []),
+                    { key: 'split', label: 'Split payment', active: payForm.split },
+                    { key: 'normal', label: 'Pay normally', active: !payForm.use_credit && !payForm.split },
+                  ].map(opt => (
+                    <button key={opt.key} onClick={() => {
+                      if (opt.key === 'full') setPayForm({ ...payForm, use_credit: true, split: false, amount: payModal.amount })
+                      else if (opt.key === 'split') setPayForm({ ...payForm, split: true, use_credit: false, amount: payModal.amount, split_credit: Math.min(clientCredit, payModal.amount), split_cash: Math.max(0, payModal.amount - clientCredit) })
+                      else setPayForm({ ...payForm, use_credit: false, split: false })
+                    }} style={{ padding: '6px 12px', borderRadius: '20px', cursor: 'pointer', fontSize: '12px', border: 'none', background: opt.active ? '#27500A' : 'white', color: opt.active ? 'white' : '#27500A', fontWeight: '500' }}>{opt.label}</button>
+                  ))}
+                </div>
+                {payForm.split && (
+                  <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#666', display: 'block', marginBottom: '3px' }}>Credit amount</label>
+                      <input type="number" value={payForm.split_credit} onChange={e => setPayForm({ ...payForm, split_credit: Number(e.target.value), split_cash: Math.max(0, payModal.amount - Number(e.target.value)) })} style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #97C459', fontSize: '13px', boxSizing: 'border-box' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '11px', color: '#666', display: 'block', marginBottom: '3px' }}>Cash amount</label>
+                      <input type="number" value={payForm.split_cash} onChange={e => setPayForm({ ...payForm, split_cash: Number(e.target.value), split_credit: Math.max(0, payModal.amount - Number(e.target.value)) })} style={{ width: '100%', padding: '6px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box' }} />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {!payForm.use_credit && (
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Mode of payment</label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {MOP_OPTIONS.map(mop => (
+                    <button key={mop} onClick={() => setPayForm({ ...payForm, mop, reference: '' })} style={{ padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px', border: payForm.mop === mop ? '2px solid #0f4c81' : '1px solid #ddd', background: payForm.mop === mop ? '#E6F1FB' : 'white', color: payForm.mop === mop ? '#0f4c81' : '#666', fontWeight: payForm.mop === mop ? '500' : '400' }}>{mop}</button>
+                  ))}
+                </div>
+                {(payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && (
+                  <div style={{ marginTop: '8px' }}>
+                    <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Reference number <span style={{ color: '#E24B4A' }}>*</span></label>
+                    <input value={payForm.reference || ''} onChange={e => setPayForm({ ...payForm, reference: e.target.value })} style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: !payForm.reference ? '2px solid #EF9F27' : '1px solid #97C459', fontSize: '14px', boxSizing: 'border-box' }} />
+                  </div>
+                )}
+              </div>
+            )}
+            <div style={{ background: '#EAF3DE', borderRadius: '8px', padding: '10px 14px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: '#27500A', fontWeight: '500' }}>Total due</span>
+              <span style={{ color: '#27500A', fontWeight: '700', fontSize: '18px' }}>₱{Number(payModal.amount || 0).toLocaleString()}</span>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setPayModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={settlePayment} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference)} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference)) ? 0.5 : 1 }}>
+                {saving ? 'Saving...' : `Confirm ₱${Number(payForm.amount || 0).toLocaleString()}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading outstanding sessions...</div>
+      ) : unpaidSessions.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#1D9E75', background: '#EAF3DE', borderRadius: '12px' }}>All caught up — no outstanding balances!</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {(() => {
+            const byDate = {}
+            unpaidSessions.forEach(s => {
+              const key = s.date || 'Unknown'
+              if (!byDate[key]) byDate[key] = []
+              byDate[key].push(s)
+            })
+
+            return Object.entries(byDate)
+              .sort(([a], [b]) => parseDate(b) - parseDate(a))
+              .map(([date, dateSessions]) => {
+                const totalOwed = dateSessions.reduce((sum, s) => sum + Number(s.amount || 0), 0)
+                return (
+                  <div key={date}>
+                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f4c81', marginBottom: '8px', padding: '4px 0', borderBottom: '2px solid #E6F1FB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>{date}</span>
+                      <span style={{ fontSize: '13px', color: '#E24B4A', fontWeight: '700' }}>₱{totalOwed.toLocaleString()} total</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+                      {dateSessions.sort((a, b) => a.time_start?.localeCompare(b.time_start)).map((s, i) => {
+                        const client = clients.find(c => c.name === s.client_name)
+                        return (
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', background: 'white', border: '1px solid #F09595' }}>
+                            <div>
+                              <div style={{ fontSize: '13px', fontWeight: '500', color: '#791F1F' }}>
+                                {s.client_name}
+                                {client?.credit_balance > 0 && <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 6px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A' }}>💳 ₱{Number(client.credit_balance).toLocaleString()} credit</span>}
+                              </div>
+                              <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}>{s.time_start}–{s.time_end} · {s.therapist} · {s.status} · {s.session_type || 'Regular'}</div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                              <span style={{ fontSize: '13px', fontWeight: '500', color: '#E24B4A' }}>₱{Number(s.amount || 0).toLocaleString()}</span>
+                              <button onClick={() => openSettle(s)} style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Settle</button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )
+              })
+          })()}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function OutstandingTab({ clients, onSettle }) {
   const [unpaidSessions, setUnpaidSessions] = useState([])
   const [loading, setLoading] = useState(true)
@@ -874,7 +1066,8 @@ export default function PaymentsPage() {
   const tabs = [
     { key: 'ledger', label: 'Ledger' },
     { key: 'credits', label: 'Credits' },
-    { key: 'outstanding', label: `Outstanding (${outstandingClients.length})` },
+    { key: 'outstanding', label: `By Client (${outstandingClients.length})` },
+    { key: 'by-day', label: `By Day (${outstandingClients.length})` },
     { key: 'pending', label: `Pending Payments${pendingPayments.filter(p => p.status === 'pending').length > 0 ? ` (${pendingPayments.filter(p => p.status === 'pending').length})` : ''}` },
   ]
 
@@ -1148,8 +1341,11 @@ export default function PaymentsPage() {
             </div>
           )}
 
-          {/* Outstanding tab */}
+          {/* By Client tab */}
           {activeTab === 'outstanding' && <OutstandingTab clients={clients} onSettle={() => {}} />}
+
+          {/* By Day tab */}
+          {activeTab === 'by-day' && <OutstandingByDayTab clients={clients} onSettle={() => {}} />}
 
           {/* Pending Payments tab */}
           {activeTab === 'pending' && (
