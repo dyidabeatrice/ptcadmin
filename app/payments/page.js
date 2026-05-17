@@ -641,16 +641,27 @@ function OutstandingByDayTab({ clients, onSettle }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {(() => {
-            const byDate = {}
-            unpaidSessions.forEach(s => {
-              const key = s.date || 'Unknown'
-              if (!byDate[key]) byDate[key] = []
-              byDate[key].push(s)
-            })
+          const byDate = {}
+          unpaidSessions.forEach(s => {
+            const key = s.date || 'Unknown'
+            if (!byDate[key]) byDate[key] = []
+            byDate[key].push(s)
+          })
 
-            return Object.entries(byDate)
-              .sort(([a], [b]) => parseDate(b) - parseDate(a))
-              .map(([date, dateSessions]) => {
+          return Object.entries(byDate)
+            .sort(([a], [b]) => parseDate(b) - parseDate(a))
+            .map(([date, dateSessions]) => {
+              // Group by therapist within each date
+              const byTherapist = {}
+              dateSessions.forEach(s => {
+                const key = s.therapist || 'Unknown'
+                if (!byTherapist[key]) byTherapist[key] = []
+                byTherapist[key].push(s)
+              })
+              // Sort each therapist's sessions by time
+              Object.values(byTherapist).forEach(sessions => {
+                sessions.sort((a, b) => (a.time_start || '').localeCompare(b.time_start || ''))
+              })
                 const totalOwed = dateSessions.reduce((sum, s) => sum + Number(s.amount || 0), 0)
                 return (
                   <div key={date}>
@@ -658,26 +669,44 @@ function OutstandingByDayTab({ clients, onSettle }) {
                       <span>{date}</span>
                       <span style={{ fontSize: '13px', color: '#E24B4A', fontWeight: '700' }}>₱{totalOwed.toLocaleString()} total</span>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-                      {dateSessions.sort((a, b) => a.time_start?.localeCompare(b.time_start)).map((s, i) => {
-                        const client = clients.find(c => c.name === s.client_name)
-                        return (
-                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', background: 'white', border: '1px solid #F09595' }}>
-                            <div>
-                              <div style={{ fontSize: '13px', fontWeight: '500', color: '#791F1F' }}>
-                                {s.client_name}
-                                {client?.credit_balance > 0 && <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 6px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A' }}>💳 ₱{Number(client.credit_balance).toLocaleString()} credit</span>}
-                              </div>
-                              <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}>{s.time_start}–{s.time_end} · {s.therapist} · {s.status} · {s.session_type || 'Regular'}</div>
-                            </div>
-                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-                              <span style={{ fontSize: '13px', fontWeight: '500', color: '#E24B4A' }}>₱{Number(s.amount || 0).toLocaleString()}</span>
-                              <button onClick={() => openSettle(s)} style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Settle</button>
-                            </div>
+{(() => {
+                      const byTherapist = {}
+                      dateSessions.forEach(s => {
+                        const key = s.therapist || 'Unknown'
+                        if (!byTherapist[key]) byTherapist[key] = []
+                        byTherapist[key].push(s)
+                      })
+                      Object.values(byTherapist).forEach(sessions => {
+                        sessions.sort((a, b) => (a.time_start || '').localeCompare(b.time_start || ''))
+                      })
+                      return Object.entries(byTherapist).sort(([a], [b]) => a.localeCompare(b)).map(([therapistName, therapistSessions]) => (
+                        <div key={therapistName} style={{ marginBottom: '12px' }}>
+                          <div style={{ fontSize: '11px', fontWeight: '600', color: '#0f4c81', padding: '4px 8px', background: '#E6F1FB', borderRadius: '6px', marginBottom: '4px' }}>
+                            {therapistName}
                           </div>
-                        )
-                      })}
-                    </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            {therapistSessions.map((s, i) => {
+                              const client = clients.find(c => c.name === s.client_name)
+                              return (
+                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', background: 'white', border: '1px solid #F09595' }}>
+                                  <div>
+                                    <div style={{ fontSize: '13px', fontWeight: '500', color: '#791F1F' }}>
+                                      {s.client_name}
+                                      {client?.credit_balance > 0 && <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 6px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A' }}>💳 ₱{Number(client.credit_balance).toLocaleString()} credit</span>}
+                                    </div>
+                                    <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}>{s.time_start}–{s.time_end} · {s.status} · {s.session_type || 'Regular'}</div>
+                                  </div>
+                                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
+                                    <span style={{ fontSize: '13px', fontWeight: '500', color: '#E24B4A' }}>₱{Number(s.amount || 0).toLocaleString()}</span>
+                                    <button onClick={() => openSettle(s)} style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Settle</button>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      ))
+                    })()}
                   </div>
                 )
               })
