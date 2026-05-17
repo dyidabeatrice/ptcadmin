@@ -701,9 +701,18 @@ export default function SchedulePage() {
                           fontSize: '9px', fontWeight: '500', 
                           padding: '2px 6px', 
                           borderRadius: '4px 4px 0 0',
-                          textAlign: 'center'
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                         }}>
-                          {s.time_start}–{s.time_end}
+                          <span>{s.time_start}–{s.time_end}</span>
+                          {(() => {
+                            const t = (s.session_type || '').toUpperCase()
+                            if (t.includes('IE') || t.includes('EVALUATION')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>IE</span>
+                            if (t.includes('FE')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>FE</span>
+                            if (t.includes('SPECIALIZED')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>SPEC</span>
+                            if (t.includes('CANCELLATION')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>CANCEL</span>
+                            if (t.includes('PLAYSCHOOL')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>PLAY</span>
+                            return null
+                          })()}
                         </div>
                         <div style={{ marginTop: '14px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
