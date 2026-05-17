@@ -1084,10 +1084,10 @@ export default function PaymentsPage() {
   const outstandingClients = clients.filter(c => Number(c.outstanding_balance) >= 1)
 
   const tabs = [
-    { key: 'ledger', label: 'Ledger' },
-    { key: 'credits', label: 'Credits' },
+    { key: 'ledger', label: 'By Therapist' },
     { key: 'outstanding', label: `By Client (${outstandingClients.length})` },
     { key: 'by-day', label: `By Day (${outstandingClients.length})` },
+    { key: 'credits', label: 'Credits' },
     { key: 'pending', label: `Pending Payments${pendingPayments.filter(p => p.status === 'pending').length > 0 ? ` (${pendingPayments.filter(p => p.status === 'pending').length})` : ''}` },
   ]
 
@@ -1295,7 +1295,7 @@ export default function PaymentsPage() {
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading...</div>
       ) : (
         <>
-          {/* Ledger tab */}
+          {/* Ledger/By Therapist tab */}
           {activeTab === 'ledger' && (
             <div>
               {/* Therapist tabs */}
@@ -1339,6 +1339,12 @@ export default function PaymentsPage() {
             </div>
           )}
 
+          {/* By Client tab */}
+          {activeTab === 'outstanding' && <OutstandingTab clients={clients} onSettle={() => {}} />}
+
+          {/* By Day tab */}
+          {activeTab === 'by-day' && <OutstandingByDayTab clients={clients} onSettle={() => {}} />}
+
           {/* Credits tab */}
           {activeTab === 'credits' && (
             <div>
@@ -1360,12 +1366,6 @@ export default function PaymentsPage() {
               )}
             </div>
           )}
-
-          {/* By Client tab */}
-          {activeTab === 'outstanding' && <OutstandingTab clients={clients} onSettle={() => {}} />}
-
-          {/* By Day tab */}
-          {activeTab === 'by-day' && <OutstandingByDayTab clients={clients} onSettle={() => {}} />}
 
           {/* Pending Payments tab */}
           {activeTab === 'pending' && (
