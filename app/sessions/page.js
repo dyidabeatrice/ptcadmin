@@ -692,7 +692,7 @@ export default function SchedulePage() {
                           left: '8%', width: '85%',
                           height: `${stackCount > 1 ? stackedHeight : height}px`,
                           background: sc.bg, border: `1px solid ${sc.border}`,
-                          borderRadius: '4px', padding: '3px 5px',
+                          borderRadius: '4px', padding: '1px 5px 3px',
                           overflow: 'auto', boxSizing: 'border-box', zIndex: 1, cursor: 'grab'
                         }}>
                         <div style={{ display: 'inline-block', background: sc.color, color: 'white', fontSize: '9px', fontWeight: '500', padding: '1px 7px', borderRadius: '10px', marginBottom: '3px' }}>
