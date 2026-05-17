@@ -695,15 +695,13 @@ export default function SchedulePage() {
                           borderRadius: '4px', padding: '3px 5px',
                           overflow: 'auto', boxSizing: 'border-box', zIndex: 1, cursor: 'grab'
                         }}>
+                        <div style={{ display: 'inline-block', background: sc.color, color: 'white', fontSize: '9px', fontWeight: '500', padding: '1px 7px', borderRadius: '10px', marginBottom: '3px' }}>
+                          {s.time_start}–{s.time_end}
+                        </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <div style={{ fontSize: '10px', fontWeight: '600', color: sc.color, lineHeight: '1.3' }}>{s.client_name}</div>
                           {needsWarning && <span style={{ fontSize: '15px' }}>⚠️</span>}
                         </div>
-                        {height > 30 && (
-                          <div style={{ fontSize: '9px', fontWeight: '700', color: sc.color, marginBottom: '3px' }}>
-                            {s.time_start}–{s.time_end}
-                          </div>
-                        )}
                         <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap', marginTop: '2px' }}>
                           <select value={s.status} onChange={e => updateStatus(s, e.target.value)}
                             style={{ fontSize: '8px', padding: '1px 2px', borderRadius: '3px', border: '1px solid #ddd', cursor: 'pointer', background: 'white', color: '#444', maxWidth: '72px' }}>
@@ -722,7 +720,7 @@ export default function SchedulePage() {
                               style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#EAF3DE', color: s.status === 'Absent' ? '#aaa' : '#27500A', cursor: s.status === 'Absent' ? 'not-allowed' : 'pointer' }}>Paid ✓</button>
                           )}
                           <button onClick={() => setRemindModal(s)}
-                            style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: '1px solid #B5D4F4', background: '#E6F1FB', color: '#0C447C', cursor: 'pointer' }}>Remind</button>
+                            style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: '1px solid #B5D4F4', background: '#E6F1FB', color: '#0C447C', cursor: 'pointer' }}>💬</button>
                           <button onClick={() => deleteSession(s)} disabled={s.payment === 'Paid'}
                             style={{ fontSize: '8px', padding: '1px 3px', borderRadius: '3px', border: '1px solid #fcc', background: s.payment === 'Paid' ? '#f5f5f5' : '#fff5f5', color: s.payment === 'Paid' ? '#ccc' : '#c00', cursor: s.payment === 'Paid' ? 'not-allowed' : 'pointer' }}>✕</button>
                         </div>
