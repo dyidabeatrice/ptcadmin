@@ -227,10 +227,15 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
       </td>
       <td style={{ padding: '8px 10px' }}>
         <input value={reference} onChange={e => setReference(e.target.value)} onBlur={savePayment}
-          placeholder="Ref no." style={{
+          placeholder="Ref no."
+          disabled={!mop || mop === 'Cash'}
+          style={{
             fontSize: '12px', padding: '4px 6px', borderRadius: '6px',
             border: (mop === 'BDO' || mop === 'Union Bank') && !reference ? '1px solid #EF9F27' : '1px solid #ddd',
-            width: '130px', boxSizing: 'border-box'
+            width: '130px', boxSizing: 'border-box',
+            background: (!mop || mop === 'Cash') ? '#6b6a6a' : 'white',
+            opacity: (!mop || mop === 'Cash') ? 0.6 : 1,
+            cursor: (!mop || mop === 'Cash') ? 'not-allowed' : 'text'
           }} />
       </td>
       <td style={{ padding: '8px 10px' }}>
