@@ -419,7 +419,7 @@ export default function TherapistDashboard() {
 
         <div style={{ marginTop: '1rem', padding: '12px 14px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
         <div style={{ fontSize: '11px', fontWeight: '500', color: '#666', marginBottom: '8px' }}>Color guide</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
           {[
             { bg: '#FFFBE6', border: '#FFD666', label: 'Pencil — tentative' },
             { bg: '#E6F1FB', border: '#B5D4F4', label: 'Scheduled/Confirmed' },
