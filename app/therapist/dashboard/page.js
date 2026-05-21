@@ -269,7 +269,15 @@ export default function TherapistDashboard() {
                   const aAbsent = a.status === 'Absent' ? 1 : 0
                   const bAbsent = b.status === 'Absent' ? 1 : 0
                   if (aAbsent !== bAbsent) return aAbsent - bAbsent
-                  return (a.time_start || '').localeCompare(b.time_start || '')
+                  const parseT = t => {
+                    if (!t) return 0
+                    const [time, period] = t.split(' ')
+                    let [h, m] = time.split(':').map(Number)
+                    if (period === 'PM' && h !== 12) h += 12
+                    if (period === 'AM' && h === 12) h = 0
+                    return h * 60 + m
+                  }
+                  return parseT(a.time_start) - parseT(b.time_start)
                 }).map((s, i) => (
                     <div key={i} style={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
