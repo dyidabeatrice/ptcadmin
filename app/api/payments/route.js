@@ -93,7 +93,11 @@ export async function POST(request) {
           body.session_id, body.amount, body.mop,
           body.session_type, body.date,
           body.payment_type || 'document',
-          body.reference || ''
+          body.reference || '',
+          '',                                    // K: verified_by
+          '',                                    // L: comments
+          body.custom_cut ?? '',                 // M: custom_cut
+          body.custom_center ?? ''               // N: custom_center
         ]]}
       })
       return Response.json({ success: true })

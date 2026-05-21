@@ -446,7 +446,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                         const periodLabel = getPeriodLabel(monthData.label, period)
                         const release = pfReleases.find(r => r.month_key === monthKey && r.period === String(period))
                         return (
-                          <tr key={`period-${period}`} style={{ background: '#E6F1FB', borderTop: '2px solid #0f4c81', borderBottom: '2px solid #0f4c81' }}>
+                          <tr key={`period-${period}`} style={{ background: '#67a6e2', borderTop: '2px solid #0f4c81', borderBottom: '2px solid #0f4c81' }}>
                             <td colSpan={5} style={{ padding: '6px 10px', fontSize: '11px', color: '#666' }}>{periodLabel}</td>
                             <td colSpan={2} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>₱{periodCut.toLocaleString()} cut</td>
                             <td colSpan={3} style={{ padding: '6px 10px' }}>
