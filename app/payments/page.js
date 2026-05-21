@@ -394,89 +394,97 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedDates.map(([date, sessions]) => {
-                    const dateTotal = sessions.reduce((sum, s) => sum + (overrides[s.id]?.total ?? s.total ?? 0), 0)
-                    const dateCut = sessions.reduce((sum, s) => sum + (overrides[s.id]?.cut ?? s.therapist_cut ?? 0), 0)
-                    const dateCenter = sessions.reduce((sum, s) => sum + (overrides[s.id]?.center ?? s.center ?? 0), 0)
-
-                      return [
-                        // Date header row
-                        <tr key={`date-${date}`} style={{ background: '#E6F1FB' }}>
-                          <td colSpan={10} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>
-                            {date} <span style={{ fontWeight: '400', color: '#666', marginLeft: '8px' }}>({sessions.length} session{sessions.length !== 1 ? 's' : ''})</span>
-                          </td>
-                        </tr>,
-                        // Session rows
-                        ...sessions.map((s, i) => (
-                          <LedgerRow 
-                            key={s.id} 
-                            session={s} 
-                            onPaid={onPaid} 
-                            clients={clients}
-                            onOverride={(id, t, c, ce) => setOverrides(prev => ({ ...prev, [id]: { total: t, cut: c, center: ce } }))}
-                          />
-                        )),
-                        // Date subtotal row
-                        <tr key={`subtotal-${date}`} style={{ background: '#f8f9fa', borderTop: '2px solid #e0e0e0' }}>
-                          <td colSpan={5} style={{ padding: '6px 10px', fontSize: '12px', color: '#666', fontStyle: 'italic' }}>
-                            {date} subtotal
-                          </td>
-                          <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>₱{dateTotal.toLocaleString()}</td>
-                          <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#1D9E75' }}>₱{dateCut.toLocaleString()}</td>
-                          <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#633806' }}>₱{dateCenter.toLocaleString()}</td>
-                          <td colSpan={2} />
-                        </tr>
-                      ]
-                    })}
-                    {/* Month total row */}
                     {(() => {
-                    const mTotal = allSessions.reduce((sum, s) => sum + (overrides[s.id]?.total ?? s.total ?? 0), 0)
-                    const mCut = allSessions.reduce((sum, s) => sum + (overrides[s.id]?.cut ?? s.therapist_cut ?? 0), 0)
-                    const mCenter = allSessions.reduce((sum, s) => sum + (overrides[s.id]?.center ?? s.center ?? 0), 0)
+                      const period1Dates = sortedDates.filter(([date]) => {
+                        const day = parseInt((date || '').split(' ')[1] || '1')
+                        return day <= 15
+                      })
+                      const period2Dates = sortedDates.filter(([date]) => {
+                        const day = parseInt((date || '').split(' ')[1] || '1')
+                        return day > 15
+                      })
+
+                      const renderDateRows = ([date, sessions]) => {
+                        const dateTotal = sessions.reduce((sum, s) => sum + (overrides[s.id]?.total ?? s.total ?? 0), 0)
+                        const dateCut = sessions.reduce((sum, s) => sum + (overrides[s.id]?.cut ?? s.therapist_cut ?? 0), 0)
+                        const dateCenter = sessions.reduce((sum, s) => sum + (overrides[s.id]?.center ?? s.center ?? 0), 0)
+                        const sortedSessions = [...sessions].sort((a, b) => {
+                          const aAbsent = a.status === 'Absent' ? 1 : 0
+                          const bAbsent = b.status === 'Absent' ? 1 : 0
+                          if (aAbsent !== bAbsent) return aAbsent - bAbsent
+                          return (a.time_start || '').localeCompare(b.time_start || '')
+                        })
+                        return [
+                          <tr key={`date-${date}`} style={{ background: '#E6F1FB' }}>
+                            <td colSpan={10} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>
+                              {date} <span style={{ fontWeight: '400', color: '#666', marginLeft: '8px' }}>({sessions.length} session{sessions.length !== 1 ? 's' : ''})</span>
+                            </td>
+                          </tr>,
+                          ...sortedSessions.map((s, i) => (
+                            <LedgerRow
+                              key={s.id}
+                              session={s}
+                              onPaid={onPaid}
+                              clients={clients}
+                              onOverride={(id, t, c, ce) => setOverrides(prev => ({ ...prev, [id]: { total: t, cut: c, center: ce } }))}
+                            />
+                          )),
+                          <tr key={`subtotal-${date}`} style={{ background: '#f8f9fa', borderTop: '2px solid #e0e0e0' }}>
+                            <td colSpan={5} style={{ padding: '6px 10px', fontSize: '12px', color: '#666', fontStyle: 'italic' }}>{date} subtotal</td>
+                            <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>₱{dateTotal.toLocaleString()}</td>
+                            <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#1D9E75' }}>₱{dateCut.toLocaleString()}</td>
+                            <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#633806' }}>₱{dateCenter.toLocaleString()}</td>
+                            <td colSpan={2} />
+                          </tr>
+                        ]
+                      }
+
+                      const renderPeriodRow = (period) => {
+                        const periodSessions = getPeriodSessions(allSessions, period)
+                        if (periodSessions.length === 0) return null
+                        const periodCut = periodSessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
+                        const periodLabel = getPeriodLabel(monthData.label, period)
+                        const release = pfReleases.find(r => r.month_key === monthKey && r.period === String(period))
+                        return (
+                          <tr key={`period-${period}`} style={{ background: '#f0f4f8' }}>
+                            <td colSpan={5} style={{ padding: '6px 10px', fontSize: '11px', color: '#666' }}>{periodLabel}</td>
+                            <td colSpan={2} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>₱{periodCut.toLocaleString()} cut</td>
+                            <td colSpan={3} style={{ padding: '6px 10px' }}>
+                              {release ? (
+                                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A', fontWeight: '500' }}>
+                                  ✓ Released {release.date_sent} via {release.sent_via}
+                                </span>
+                              ) : (
+                                <button onClick={() => {
+                                  setReleaseModal({ monthKey, period, label: periodLabel })
+                                  setReleaseForm({ sent_via: 'Cash', date_sent: '', notes: '' })
+                                }} style={{
+                                  padding: '4px 10px', borderRadius: '6px', border: '1px solid #0f4c81',
+                                  background: '#E6F1FB', color: '#0f4c81', cursor: 'pointer', fontSize: '11px', fontWeight: '500'
+                                }}>Mark as released</button>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      }
+
+                      const mTotal = allSessions.reduce((sum, s) => sum + (overrides[s.id]?.total ?? s.total ?? 0), 0)
+                      const mCut = allSessions.reduce((sum, s) => sum + (overrides[s.id]?.cut ?? s.therapist_cut ?? 0), 0)
+                      const mCenter = allSessions.reduce((sum, s) => sum + (overrides[s.id]?.center ?? s.center ?? 0), 0)
 
                       return (
                         <>
+                          {period1Dates.flatMap(renderDateRows)}
+                          {renderPeriodRow(1)}
+                          {period2Dates.flatMap(renderDateRows)}
+                          {renderPeriodRow(2)}
                           <tr style={{ background: '#0f4c81' }}>
-                            <td colSpan={5} style={{ padding: '8px 10px', fontSize: '12px', fontWeight: '600', color: 'white' }}>
-                              {monthData.label} TOTAL
-                            </td>
+                            <td colSpan={5} style={{ padding: '8px 10px', fontSize: '12px', fontWeight: '600', color: 'white' }}>{monthData.label} TOTAL</td>
                             <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: 'white' }}>₱{mTotal.toLocaleString()}</td>
                             <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: '#97C459' }}>₱{mCut.toLocaleString()}</td>
                             <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: '#fcc200' }}>₱{mCenter.toLocaleString()}</td>
                             <td colSpan={2} />
                           </tr>
-                          {[1, 2].map(period => {
-                            const periodSessions = getPeriodSessions(allSessions, period)
-                            if (periodSessions.length === 0) return null
-                            const periodCut = periodSessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
-                            const periodLabel = getPeriodLabel(monthData.label, period)
-                            const release = pfReleases.find(r => r.month_key === monthKey && r.period === String(period))
-                            return (
-                              <tr key={period} style={{ background: '#f0f4f8' }}>
-                                <td colSpan={5} style={{ padding: '6px 10px', fontSize: '11px', color: '#666' }}>
-                                  {periodLabel}
-                                </td>
-                                <td colSpan={2} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>
-                                  ₱{periodCut.toLocaleString()} cut
-                                </td>
-                                <td colSpan={3} style={{ padding: '6px 10px' }}>
-                                  {release ? (
-                                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A', fontWeight: '500' }}>
-                                      ✓ Released {release.date_sent} via {release.sent_via}
-                                    </span>
-                                  ) : (
-                                    <button onClick={() => {
-                                      setReleaseModal({ monthKey, period, label: periodLabel })
-                                      setReleaseForm({ sent_via: 'Cash', date_sent: '', notes: '' })
-                                    }} style={{
-                                      padding: '4px 10px', borderRadius: '6px', border: '1px solid #0f4c81',
-                                      background: '#E6F1FB', color: '#0f4c81', cursor: 'pointer', fontSize: '11px', fontWeight: '500'
-                                    }}>Mark as released</button>
-                                  )}
-                                </td>
-                              </tr>
-                            )
-                          })}
                         </>
                       )
                     })()}
