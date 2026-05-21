@@ -408,11 +408,19 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                         const dateTotal = sessions.reduce((sum, s) => sum + (overrides[s.id]?.total ?? s.total ?? 0), 0)
                         const dateCut = sessions.reduce((sum, s) => sum + (overrides[s.id]?.cut ?? s.therapist_cut ?? 0), 0)
                         const dateCenter = sessions.reduce((sum, s) => sum + (overrides[s.id]?.center ?? s.center ?? 0), 0)
+                        const parseT = t => {
+                          if (!t) return 0
+                          const [time, period] = t.split(' ')
+                          let [h, m] = time.split(':').map(Number)
+                          if (period === 'PM' && h !== 12) h += 12
+                          if (period === 'AM' && h === 12) h = 0
+                          return h * 60 + m
+                        }
                         const sortedSessions = [...sessions].sort((a, b) => {
                           const aAbsent = a.status === 'Absent' ? 1 : 0
                           const bAbsent = b.status === 'Absent' ? 1 : 0
                           if (aAbsent !== bAbsent) return aAbsent - bAbsent
-                          return (a.time_start || '').localeCompare(b.time_start || '')
+                          return parseT(a.time_start) - parseT(b.time_start)
                         })
                         return [
                           <tr key={`date-${date}`} style={{ background: '#E6F1FB' }}>
