@@ -446,9 +446,9 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                         const periodLabel = getPeriodLabel(monthData.label, period)
                         const release = pfReleases.find(r => r.month_key === monthKey && r.period === String(period))
                         return (
-                          <tr key={`period-${period}`} style={{ background: '#67a6e2', borderTop: '2px solid #0f4c81', borderBottom: '2px solid #0f4c81' }}>
-                            <td colSpan={5} style={{ padding: '6px 10px', fontSize: '11px', color: '#666' }}>{periodLabel}</td>
-                            <td colSpan={2} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>₱{periodCut.toLocaleString()} cut</td>
+                          <tr key={`period-${period}`} style={{ background: '#fffbe6', borderTop: '2px solid #fcc200', borderBottom: '2px solid #fcc200' }}>
+                            <td colSpan={5} style={{ padding: '6px 10px', fontSize: '11px', color: '#0f4c81' }}>{periodLabel}</td>
+                            <td colSpan={2} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>₱{periodCut.toLocaleString()}</td>
                             <td colSpan={3} style={{ padding: '6px 10px' }}>
                               {release ? (
                                 <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A', fontWeight: '500' }}>
