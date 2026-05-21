@@ -265,7 +265,12 @@ export default function TherapistDashboard() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {daySessions.map((s, i) => (
+                {[...daySessions].sort((a, b) => {
+                  const aAbsent = a.status === 'Absent' ? 1 : 0
+                  const bAbsent = b.status === 'Absent' ? 1 : 0
+                  if (aAbsent !== bAbsent) return aAbsent - bAbsent
+                  return (a.time_start || '').localeCompare(b.time_start || '')
+                }).map((s, i) => (
                     <div key={i} style={{
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                       padding: '10px 14px', borderRadius: '8px',
@@ -328,44 +333,70 @@ export default function TherapistDashboard() {
                                 </tr>
                               </thead>
                               <tbody>
-                                {Object.entries(monthData.dates).sort(([a], [b]) => new Date(a) - new Date(b)).map(([date, sessions]) =>
-                                  sessions.map((s, i) => (
-                                    <tr key={`${date}-${i}`} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                                {(() => {
+                                  const period1Sessions = []
+                                  const period2Sessions = []
+                                  Object.entries(monthData.dates).sort(([a], [b]) => new Date(a) - new Date(b)).forEach(([date, sessions]) => {
+                                    sessions.forEach(s => {
+                                      const day = parseInt((s.date || '').split(' ')[1] || '1')
+                                      if (day <= 15) period1Sessions.push(s)
+                                      else period2Sessions.push(s)
+                                    })
+                                  })
+
+                                  const renderRow = (s, i, key) => (
+                                    <tr key={key} style={{ borderBottom: '1px solid #f0f0f0', opacity: s.status === 'Absent' ? 0.6 : 1 }}>
                                       <td style={{ padding: '8px 10px', color: '#666', whiteSpace: 'nowrap' }}>{s.date}</td>
                                       <td style={{ padding: '8px 10px', fontWeight: '500', color: '#0f4c81' }}>{s.client_name}</td>
                                       <td style={{ padding: '8px 10px', color: '#555' }}>{s.session_type}</td>
                                       <td style={{ padding: '8px 10px', fontWeight: '500', color: '#1D9E75' }}>₱{(s.therapist_cut || 0).toLocaleString()}</td>
                                       <td style={{ padding: '8px 10px', color: '#999', fontSize: '11px' }}>{s.comments || '—'}</td>
                                     </tr>
-                                  ))
-                                )}
+                                  )
+
+                                  const period1Cut = period1Sessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
+                                  const period2Cut = period2Sessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
+                                  const release1 = pfReleases.find(r => r.month_key === monthKey && r.period === '1')
+                                  const release2 = pfReleases.find(r => r.month_key === monthKey && r.period === '2')
+
+                                  const periodRow = (period, cut, release) => (
+                                    <tr key={`period-${period}`} style={{ background: '#f0f4f8', borderTop: '2px solid #e0e0e0', borderBottom: '2px solid #e0e0e0' }}>
+                                      <td colSpan={3} style={{ padding: '6px 10px', fontSize: '11px', color: '#666', fontWeight: '500' }}>
+                                        {monthData.label} ({period === 1 ? '1–15' : '16–end'}) · ₱{cut.toLocaleString()}
+                                      </td>
+                                      <td colSpan={2} style={{ padding: '6px 10px', textAlign: 'right' }}>
+                                        {release ? (
+                                          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A', fontWeight: '500' }}>
+                                            ✓ Released {release.date_sent} via {release.sent_via}
+                                          </span>
+                                        ) : (
+                                          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#FAEEDA', color: '#633806' }}>
+                                            ⏳ Not yet released
+                                          </span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  )
+
+                                  return (
+                                    <>
+                                      {period1Sessions.sort((a, b) => {
+                                        const aAbsent = a.status === 'Absent' ? 1 : 0
+                                        const bAbsent = b.status === 'Absent' ? 1 : 0
+                                        return aAbsent !== bAbsent ? aAbsent - bAbsent : (a.date || '').localeCompare(b.date || '')
+                                      }).map((s, i) => renderRow(s, i, `p1-${i}`))}
+                                      {period1Sessions.length > 0 && periodRow(1, period1Cut, release1)}
+                                      {period2Sessions.sort((a, b) => {
+                                        const aAbsent = a.status === 'Absent' ? 1 : 0
+                                        const bAbsent = b.status === 'Absent' ? 1 : 0
+                                        return aAbsent !== bAbsent ? aAbsent - bAbsent : (a.date || '').localeCompare(b.date || '')
+                                      }).map((s, i) => renderRow(s, i, `p2-${i}`))}
+                                      {period2Sessions.length > 0 && periodRow(2, period2Cut, release2)}
+                                    </>
+                                  )
+                                })()}
                               </tbody>
                             </table>
-                            {[1, 2].map(period => {
-                              const periodSessions = allSessions.filter(s => {
-                                const day = parseInt((s.date || '').split(' ')[1] || '1')
-                                return period === 1 ? day <= 15 : day > 15
-                              })
-                              if (periodSessions.length === 0) return null
-                              const periodCut = periodSessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
-                              const release = pfReleases.find(r => r.month_key === monthKey && r.period === String(period))
-                              return (
-                                <div key={period} style={{ padding: '8px 14px', background: '#f8f9fa', borderTop: '1px solid #e0e0e0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <span style={{ fontSize: '12px', color: '#666' }}>
-                                    {monthData.label} ({period === 1 ? '1–15' : '16–end'}) · ₱{periodCut.toLocaleString()}
-                                  </span>
-                                  {release ? (
-                                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A', fontWeight: '500' }}>
-                                      ✓ Released {release.date_sent} via {release.sent_via}
-                                    </span>
-                                  ) : (
-                                    <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#FAEEDA', color: '#633806' }}>
-                                      ⏳ Not yet released
-                                    </span>
-                                  )}
-                                </div>
-                              )
-                            })}
                           </div>
                         )}
                       </div>
