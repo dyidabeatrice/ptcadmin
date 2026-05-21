@@ -446,7 +446,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                         const periodLabel = getPeriodLabel(monthData.label, period)
                         const release = pfReleases.find(r => r.month_key === monthKey && r.period === String(period))
                         return (
-                          <tr key={`period-${period}`} style={{ background: '#f0f4f8' }}>
+                          <tr key={`period-${period}`} style={{ background: '#E6F1FB', borderTop: '2px solid #0f4c81', borderBottom: '2px solid #0f4c81' }}>
                             <td colSpan={5} style={{ padding: '6px 10px', fontSize: '11px', color: '#666' }}>{periodLabel}</td>
                             <td colSpan={2} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>₱{periodCut.toLocaleString()} cut</td>
                             <td colSpan={3} style={{ padding: '6px 10px' }}>
@@ -478,7 +478,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                           {renderPeriodRow(1)}
                           {period2Dates.flatMap(renderDateRows)}
                           {renderPeriodRow(2)}
-                          <tr style={{ background: '#0f4c81' }}>
+                          <tr style={{ background: '#0f4c81', borderTop: '3px solid #fcc200' }}>
                             <td colSpan={5} style={{ padding: '8px 10px', fontSize: '12px', fontWeight: '600', color: 'white' }}>{monthData.label} TOTAL</td>
                             <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: 'white' }}>₱{mTotal.toLocaleString()}</td>
                             <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: '#97C459' }}>₱{mCut.toLocaleString()}</td>
