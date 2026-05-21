@@ -45,7 +45,7 @@ export default function TherapistLogin() {
         
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '0.5rem' }}>
-            <span style={{ background: '#fcc200', color: '#0f4c81', padding: '4px 10px', borderRadius: '6px', fontSize: '14px', fontWeight: '800' }}>PTC</span>
+            <img src="/logobig.png" alt="PTC" style={{ height: '50px', width: 'auto' }} />
             <span style={{ fontSize: '16px', fontWeight: '600', color: '#0f4c81' }}>Therapist Portal</span>
           </div>
           <p style={{ margin: 0, fontSize: '13px', color: '#999' }}>Sign in to view your schedule</p>

@@ -113,12 +113,12 @@ export default function TherapistDashboard() {
     <div style={{ minHeight: '100vh', background: '#f8f9fa', fontFamily: 'sans-serif' }}>
 
       <nav style={{
-        background: '#0f4c81', padding: '0 1.5rem',
+        background: '#efefef', padding: '0 1.5rem',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         height: '56px', borderBottom: '3px solid #fcc200'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ background: '#fcc200', color: '#0f4c81', padding: '2px 8px', borderRadius: '4px', fontSize: '13px', fontWeight: '800' }}>PTC</span>
+          <img src="/logobig.png" alt="PTC" style={{ height: '36px', width: 'auto' }} />
           <span style={{ color: 'white', fontSize: '14px', fontWeight: '500' }}>{therapistName}</span>
         </div>
         <button onClick={logout} style={{
