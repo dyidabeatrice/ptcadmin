@@ -416,6 +416,23 @@ export default function TherapistDashboard() {
           )}
 
         </div>
+
+        <div style={{ marginTop: '1rem', padding: '12px 14px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
+        <div style={{ fontSize: '11px', fontWeight: '500', color: '#666', marginBottom: '8px' }}>Color guide</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {[
+            { bg: '#FFFBE6', border: '#FFD666', label: 'Pencil — tentative' },
+            { bg: '#E6F1FB', border: '#B5D4F4', label: 'Scheduled/Confirmed' },
+            { bg: '#D9EAD3', border: '#6AA84F', label: 'Present' },
+            { bg: '#F4CCCC', border: '#E06666', label: 'Absent' },
+          ].map((c, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '14px', height: '14px', borderRadius: '3px', background: c.bg, border: `1px solid ${c.border}`, flexShrink: 0 }} />
+              <span style={{ fontSize: '11px', color: '#666' }}>{c.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
       </>
     )}
   </div>
