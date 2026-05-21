@@ -119,10 +119,10 @@ export default function TherapistDashboard() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <img src="/logobig.png" alt="PTC" style={{ height: '36px', width: 'auto' }} />
-          <span style={{ color: 'white', fontSize: '14px', fontWeight: '500' }}>{therapistName}</span>
+          <span style={{ color: '#0f4c81', fontSize: '14px', fontWeight: '500' }}>{therapistName}</span>
         </div>
         <button onClick={logout} style={{
-          background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+          background: '#0f4c81', border: '1px solid #fcc200',
           color: 'white', padding: '6px 14px', borderRadius: '6px',
           cursor: 'pointer', fontSize: '12px'
         }}>Sign out</button>
