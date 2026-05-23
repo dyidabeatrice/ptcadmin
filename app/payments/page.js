@@ -510,6 +510,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
 function OutstandingByDayTab({ clients, onSettle }) {
   const [unpaidSessions, setUnpaidSessions] = useState([])
   const [loading, setLoading] = useState(true)
+  const [creditTransactions, setCreditTransactions] = useState([])
   const [payModal, setPayModal] = useState(null)
   const [payForm, setPayForm] = useState({ mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0 })
   const [clientCredit, setClientCredit] = useState(0)
@@ -978,7 +979,7 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('ledger')
   const [advanceModal, setAdvanceModal] = useState(false)
-  const [advanceForm, setAdvanceForm] = useState({ client_name: '', amount: '', mop: 'Cash', reference: '' })
+  const [advanceForm, setAdvanceForm] = useState({ client_name: '', amount: '', mop: 'Cash', reference: '', notes: '' })
   const [ieReportModal, setIeReportModal] = useState(false)
   const [ieReportForm, setIeReportForm] = useState({ client_name: '', therapist: '' })
   const [refundModal, setRefundModal] = useState(null)
@@ -1013,6 +1014,9 @@ export default function PaymentsPage() {
       await fetchWeekSessions(current.key)
     }
     await fetchPendingPayments()
+    const advRes = await fetch('/api/payments')
+    const advJson = await advRes.json()
+    if (advJson.success) setCreditTransactions(advJson.data.filter(p => p.payment_type === 'advance'))
     const pfRes = await fetch('/api/pf-releases')
     const pfJson = await pfRes.json()
     if (pfJson.success) setPfReleases(pfJson.data)
@@ -1107,11 +1111,12 @@ export default function PaymentsPage() {
         amount: Number(advanceForm.amount),
         mop: advanceForm.mop,
         date: today,
-        reference: advanceForm.reference || ''
+        reference: advanceForm.reference || '',
+        note: advanceForm.notes || ''
       })
     })
     setAdvanceModal(false)
-    setAdvanceForm({ client_name: '', amount: '', mop: 'Cash', reference: '' })
+    setAdvanceForm({ client_name: '', amount: '', mop: 'Cash', reference: '', notes: '' })
     fetchAll()
     setSaving(false)
   }
@@ -1232,6 +1237,10 @@ export default function PaymentsPage() {
                   <input value={advanceForm.reference || ''} onChange={e => setAdvanceForm({ ...advanceForm, reference: e.target.value })} style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: !advanceForm.reference ? '2px solid #EF9F27' : '1px solid #97C459', fontSize: '14px', boxSizing: 'border-box' }} />
                 </div>
               )}
+            </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Notes</label>
+              <input value={advanceForm.notes || ''} onChange={e => setAdvanceForm({ ...advanceForm, notes: e.target.value })} placeholder="e.g., for May sessions, advance for xx but was absent..." style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
             </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => { setAdvanceModal(false); setAdvanceForm({ client_name: '', amount: '', mop: 'Cash', reference: '' }) }} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>

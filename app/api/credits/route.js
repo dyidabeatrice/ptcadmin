@@ -81,7 +81,9 @@ export async function POST(request) {
           body.amount, body.mop,
           'Advance', body.date || today,
           'advance',
-          body.reference || ''
+          body.reference || '',
+          '',              // K: verified_by
+          body.note || ''  // L: comments
         ]]}
       })
       return Response.json({ success: true, ...result })
