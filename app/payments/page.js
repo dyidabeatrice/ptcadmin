@@ -1014,9 +1014,6 @@ export default function PaymentsPage() {
       await fetchWeekSessions(current.key)
     }
     await fetchPendingPayments()
-    const advRes = await fetch('/api/payments')
-    const advJson = await advRes.json()
-    if (advJson.success) setCreditTransactions(advJson.data.filter(p => p.payment_type === 'advance'))
     const pfRes = await fetch('/api/pf-releases')
     const pfJson = await pfRes.json()
     if (pfJson.success) setPfReleases(pfJson.data)
