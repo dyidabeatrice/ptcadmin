@@ -698,7 +698,7 @@ export default function SchedulePage() {
                         <div style={{ 
                           position: 'absolute', top: 0, left: 0, right: 0,
                           background: (() => {
-                            const t = (s.session_Type || '').toUpperCase()
+                            const t = (s.session_type || '').toUpperCase()
                             if (t.includes('IE') || t.includes('EVALUATION')) return '#2196F3'
                             if (t.includes('FE')) return '#64B5F6'
                             if (t.includes('SPECIALIZED')) return '#9C27B0'
