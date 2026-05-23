@@ -967,6 +967,34 @@ async function openSettle(session) {
   )
 }
 
+function CreditHistory({ clientName }) {
+  const [latest, setLatest] = useState(null)
+
+  useEffect(() => {
+    fetch('/api/payments')
+      .then(r => r.json())
+      .then(json => {
+        if (json.success) {
+          const advances = json.data.filter(p => p.client_name === clientName && p.payment_type === 'advance')
+          if (advances.length > 0) setLatest(advances[advances.length - 1])
+        }
+      })
+  }, [clientName])
+
+  return (
+    <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>
+      {latest ? (
+        <>
+          <div><span style={{ color: '#999' }}>Date of payment:</span> {latest.date}</div>
+          {latest.comments && <div><span style={{ color: '#999' }}>Notes:</span> {latest.comments}</div>}
+        </>
+      ) : (
+        <div style={{ color: '#999' }}>Available credit</div>
+      )}
+    </div>
+  )
+}
+
 export default function PaymentsPage() {
   const [ledger, setLedger] = useState({})
   const [ledgerTherapists, setLedgerTherapists] = useState([])
@@ -1414,7 +1442,7 @@ export default function PaymentsPage() {
                         <div style={{ fontWeight: '500', color: '#0f4c81', fontSize: '14px' }}>{c.name}</div>
                         <div style={{ fontWeight: '700', color: '#1D9E75', fontSize: '18px' }}>₱{Number(c.credit_balance).toLocaleString()}</div>
                       </div>
-                      <div style={{ fontSize: '12px', color: '#999', marginBottom: '10px' }}>Available credit</div>
+                      <CreditHistory clientName={c.name} />
                       <button onClick={() => setRefundModal(c)} style={{ width: '100%', padding: '7px', borderRadius: '6px', border: '1px solid #E24B4A', background: '#fff5f5', color: '#E24B4A', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Process refund</button>
                     </div>
                   ))}
