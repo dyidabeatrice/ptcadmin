@@ -70,7 +70,8 @@ export async function GET(request) {
       session_type: row[6], date: row[7],
       payment_type: row[8] || 'session',
       reference: row[9] || '',
-      verified_by: row[10] || ''
+      verified_by: row[10] || '',
+      comments: row[11] || '',
     }))
     return Response.json({ success: true, data: payments })
   } catch (error) {
