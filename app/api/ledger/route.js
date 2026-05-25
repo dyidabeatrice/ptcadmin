@@ -209,7 +209,7 @@ ieReports.forEach(row => {
 
       // Find matching payment record for date and mop
       const paymentRecord = payRows.find(p => p && p[3] === `DOC-${row[0]}`)
-      const payDate = paymentRecord ? paymentRecord[7] : row[4]
+      const payDate = row[13] || (paymentRecord ? paymentRecord[7] : row[4])
       const mop = paymentRecord ? paymentRecord[5] : ''
       const reference = paymentRecord ? paymentRecord[9] : ''
       const rates = calcRates(row[6], level, amount, '')
