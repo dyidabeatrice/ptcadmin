@@ -1005,7 +1005,10 @@ export default function PaymentsPage() {
   const [selectedWeek, setSelectedWeek] = useState(null)
   const [weekSessions, setWeekSessions] = useState([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('payments_tab') || 'ledger')
+  const [activeTab, setActiveTab] = useState(() => {
+    if (typeof window === 'undefined') return 'ledger'
+    return localStorage.getItem('payments_tab') || 'ledger'
+  })
   const [advanceModal, setAdvanceModal] = useState(false)
   const [advanceForm, setAdvanceForm] = useState({ client_name: '', amount: '', mop: 'Cash', reference: '', notes: '' })
   const [ieReportModal, setIeReportModal] = useState(false)

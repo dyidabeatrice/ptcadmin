@@ -201,7 +201,7 @@ export default function SchedulePage() {
       const targetDay = isSunday ? new Date(today.getTime() + 24 * 60 * 60 * 1000) : today
       const monday = getMondayOf(targetDay)
       const currentKey = getWeekKey(monday)
-      const savedWeekKey = localStorage.getItem('selected_week')
+      const savedWeekKey = typeof window !== 'undefined' ? localStorage.getItem('selected_week') : null
       const current = (savedWeekKey && weeksJson.data.find(w => w.key === savedWeekKey)) || weeksJson.data.find(w => w.key === currentKey) || weeksJson.data[weeksJson.data.length - 1]
       setSelectedWeek(current)
       const absentByDay = {}
