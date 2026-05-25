@@ -1005,10 +1005,7 @@ export default function PaymentsPage() {
   const [selectedWeek, setSelectedWeek] = useState(null)
   const [weekSessions, setWeekSessions] = useState([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState(() => {
-    if (typeof window === 'undefined') return 'ledger'
-    return localStorage.getItem('payments_tab') || 'ledger'
-  })
+  const [activeTab, setActiveTab] = useState('ledger')
   const [advanceModal, setAdvanceModal] = useState(false)
   const [advanceForm, setAdvanceForm] = useState({ client_name: '', amount: '', mop: 'Cash', reference: '', notes: '' })
   const [ieReportModal, setIeReportModal] = useState(false)
@@ -1227,7 +1224,7 @@ export default function PaymentsPage() {
       {/* Main tabs */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', padding: '4px', background: '#f0f0f0', borderRadius: '10px', width: 'fit-content' }}>
         {tabs.map(tab => (
-          <button key={tab.key} onClick={() => { setActiveTab(tab.key); localStorage.setItem('payments_tab', tab.key) }} style={{
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
             padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer',
             fontSize: '13px', fontWeight: '500', transition: 'all 0.15s',
             background: activeTab === tab.key ? 'white' : 'transparent',
