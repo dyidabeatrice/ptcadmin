@@ -201,7 +201,8 @@ export default function SchedulePage() {
       const targetDay = isSunday ? new Date(today.getTime() + 24 * 60 * 60 * 1000) : today
       const monday = getMondayOf(targetDay)
       const currentKey = getWeekKey(monday)
-      const current = weeksJson.data.find(w => w.key === currentKey) || weeksJson.data[weeksJson.data.length - 1]
+      const savedWeekKey = localStorage.getItem('selected_week')
+      const current = (savedWeekKey && weeksJson.data.find(w => w.key === savedWeekKey)) || weeksJson.data.find(w => w.key === currentKey) || weeksJson.data[weeksJson.data.length - 1]
       setSelectedWeek(current)
       const absentByDay = {}
       DAYS.forEach(d => {
@@ -303,6 +304,7 @@ export default function SchedulePage() {
 
   async function switchWeek(week) {
     setSelectedWeek(week)
+    localStorage.setItem('selected_week', week.key)
     const bRes = await fetch('/api/blocked')
     const bJson = await bRes.json()
     if (bJson.success) {
