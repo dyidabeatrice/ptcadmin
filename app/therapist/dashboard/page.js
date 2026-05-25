@@ -214,7 +214,7 @@ export default function TherapistDashboard() {
 
             <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem' }}>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '1.25rem', padding: '4px', background: '#f0f0f0', borderRadius: '10px', width: 'fit-content' }}>
-              {[{ key: 'schedule', label: 'My Schedule' }, { key: 'fees', label: 'My Fees' }, { key: 'policies', label: 'Clinic Policies' }].map(tab => (
+              {[{ key: 'schedule', label: 'My Schedule' }, { key: 'fees', label: 'My Fees' }, { key: 'policies', label: 'Therapist-Center Agreement' }].map(tab => (
                 <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
                   padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer',
                   fontSize: '13px', fontWeight: '500',
@@ -418,7 +418,7 @@ export default function TherapistDashboard() {
           {activeTab === 'policies' && (
             <div style={{ textAlign: 'center', padding: '3rem 2rem' }}>
               <div style={{ fontSize: '48px', marginBottom: '1rem' }}>📋</div>
-              <h2 style={{ color: '#0f4c81', margin: '0 0 8px', fontSize: '18px' }}>Clinic Policies</h2>
+              <h2 style={{ color: '#0f4c81', margin: '0 0 8px', fontSize: '18px' }}>Therapist-Center Agreement</h2>
               <p style={{ color: '#999', fontSize: '14px', margin: 0 }}>This section is under construction — check back soon!</p>
             </div>
           )}
