@@ -351,7 +351,11 @@ export default function TherapistDashboard() {
                                 {(() => {
                                   const period1Sessions = []
                                   const period2Sessions = []
-                                  Object.entries(monthData.dates).sort(([a], [b]) => new Date(a) - new Date(b)).forEach(([date, sessions]) => {
+                                  Object.entries(monthData.dates).sort(([a], [b]) => {
+                                    const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
+                                    const parse = d => { const p = d.replace(',','').split(' '); return new Date(parseInt(p[2]), months[p[0]], parseInt(p[1])) }
+                                    return parse(a) - parse(b)
+                                  }).forEach(([date, sessions]) => {
                                     sessions.forEach(s => {
                                       const day = parseInt((s.date || '').split(' ')[1] || '1')
                                       if (day <= 15) period1Sessions.push(s)
@@ -398,13 +402,17 @@ export default function TherapistDashboard() {
                                       {period1Sessions.sort((a, b) => {
                                         const aAbsent = a.status === 'Absent' ? 1 : 0
                                         const bAbsent = b.status === 'Absent' ? 1 : 0
-                                        return aAbsent !== bAbsent ? aAbsent - bAbsent : (a.date || '').localeCompare(b.date || '')
+                                        const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
+                                        const parse = d => { const p = (d || '').replace(',','').split(' '); return p.length < 3 ? 0 : new Date(parseInt(p[2]), months[p[0]], parseInt(p[1])) }
+                                        return aAbsent !== bAbsent ? aAbsent - bAbsent : parse(a.date) - parse(b.date)
                                       }).map((s, i) => renderRow(s, i, `p1-${i}`))}
                                       {period1Sessions.length > 0 && periodRow(1, period1Cut, release1)}
                                       {period2Sessions.sort((a, b) => {
                                         const aAbsent = a.status === 'Absent' ? 1 : 0
                                         const bAbsent = b.status === 'Absent' ? 1 : 0
-                                        return aAbsent !== bAbsent ? aAbsent - bAbsent : (a.date || '').localeCompare(b.date || '')
+                                        const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
+                                        const parse = d => { const p = (d || '').replace(',','').split(' '); return p.length < 3 ? 0 : new Date(parseInt(p[2]), months[p[0]], parseInt(p[1])) }
+                                        return aAbsent !== bAbsent ? aAbsent - bAbsent : parse(a.date) - parse(b.date)
                                       }).map((s, i) => renderRow(s, i, `p2-${i}`))}
                                       {period2Sessions.length > 0 && periodRow(2, period2Cut, release2)}
                                     </>
