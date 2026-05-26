@@ -30,6 +30,10 @@ export async function POST(request) {
     const parentEmail = reportRow[3]
     const docType = reportRow[6]
     const delivery = reportRow[11] || 'soft'
+    const therapistData = await getSheetData('therapists')
+    const [, ...therapistRows] = therapistData
+    const therapistRow = therapistRows.find(r => r && r[1] === therapistName)
+    const therapistEmail = therapistRow?.[7] || ''
 
     // Convert file to buffer for email attachment
     const buffer = Buffer.from(await file.arrayBuffer())
@@ -60,6 +64,7 @@ export async function POST(request) {
       await transporter.sendMail({
         from: `Potentials Therapy Center <${process.env.GMAIL_USER}>`,
         to: process.env.GMAIL_USER,
+        cc: therapistEmail,
         subject: `IE Report Submitted — ${clientName} by ${therapistName}`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
@@ -113,6 +118,7 @@ export async function POST(request) {
       await transporter.sendMail({
         from: `Potentials Therapy Center <${process.env.GMAIL_USER}>`,
         to: parentEmail,
+        cc: therapistEmail,
         subject: `${docType} — ${clientName}`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
