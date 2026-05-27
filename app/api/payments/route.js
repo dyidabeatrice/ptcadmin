@@ -158,6 +158,20 @@ export async function PATCH(request) {
       return Response.json({ success: true })
     }
 
+    if (body.action === 'update_mop') {
+      const payData = await getSheetData('payments')
+      const [, ...payRows] = payData
+      const index = payRows.findIndex(r => r && r[0] === body.id)
+      if (index === -1) return Response.json({ success: false, error: 'Not found' })
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `payments!F${index + 2}:J${index + 2}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[body.mop, '', '', '', body.reference || '']] }
+      })
+      return Response.json({ success: true })
+    }
+
     if (body.action === 'update_amounts') {
       const payData = await getSheetData('payments')
       const [, ...payRows] = payData

@@ -84,29 +84,44 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
     if (unchanged) return
     setSaving(true)
     try {
-      await fetch('/api/sessions', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'pay',
-          week_key: session.week_key,
-          rowIndex: session.index,
-          session_id: session.id,
-          client_name: session.client_name,
-          therapist: session.therapist,
-          date: session.date,
-          session_type: session.session_type || 'Regular',
-          mop,
-          amount: Number(total),
-          use_credit: false,
-          split: false,
-          split_credit: 0,
-          split_cash: Number(total),
-          credit_balance: 0,
-          reference: reference || '',
-          custom_notes: comments || ''
+      if (session.is_paid && session.payment_id) {
+        // Already paid — just update existing record
+        await fetch('/api/payments', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update_mop',
+            id: session.payment_id,
+            mop,
+            reference: reference || ''
+          })
         })
-      })
+      } else {
+        // New payment — create entry
+        await fetch('/api/sessions', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'pay',
+            week_key: session.week_key,
+            rowIndex: session.index,
+            session_id: session.id,
+            client_name: session.client_name,
+            therapist: session.therapist,
+            date: session.date,
+            session_type: session.session_type || 'Regular',
+            mop,
+            amount: Number(total),
+            use_credit: false,
+            split: false,
+            split_credit: 0,
+            split_cash: Number(total),
+            credit_balance: 0,
+            reference: reference || '',
+            custom_notes: comments || ''
+          })
+        })
+      }
       prevMop.current = mop
       setIsPaid(true)
     } catch (e) { console.error(e) }
