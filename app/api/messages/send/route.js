@@ -2,6 +2,8 @@ const PAGE_ACCESS_TOKEN = process.env.META_PAGE_ACCESS_TOKEN
 
 async function sendMessengerMessage(recipientId, message, quickReplies = null) {
   const body = {
+    messaging_type: 'MESSAGE_TAG',
+    tag: 'CONFIRMED_EVENT_UPDATE',
     recipient: { id: recipientId },
     message: quickReplies ? {
       text: message,
