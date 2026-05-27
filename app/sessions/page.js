@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import PaymentScreenshotReader from '@/components/PaymentScreenshotReader'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
@@ -143,6 +143,7 @@ export default function SchedulePage() {
   const [blockType, setBlockType] = useState('blocked')
   const [blockLabel, setBlockLabel] = useState('')
   const [savingBlock, setSavingBlock] = useState(false)
+  const selectedWeekRef = useRef(null)
 
 
   function toggleDay(day) {
@@ -172,7 +173,23 @@ export default function SchedulePage() {
     return (maps[specialty] || maps.OT).map(v => ({ value: v, label: `${v} ${SESSION_TYPE_RATES[v] !== undefined ? `(₱${SESSION_TYPE_RATES[v].toLocaleString()})` : ''}` }))
   }
 
-  useEffect(() => { initializePage() }, [])
+  useEffect(() => {
+    initializePage()
+
+    const interval = setInterval(() => {
+      if (selectedWeekRef.current) fetchSessions(selectedWeekRef.current.key)
+    }, 30000)
+
+    const handleFocus = () => {
+      if (selectedWeekRef.current) fetchSessions(selectedWeekRef.current.key)
+    }
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [])
 
   async function initializePage() {
     setLoading(true)
@@ -204,6 +221,7 @@ export default function SchedulePage() {
       const savedWeekKey = typeof window !== 'undefined' ? localStorage.getItem('selected_week') : null
       const current = (savedWeekKey && weeksJson.data.find(w => w.key === savedWeekKey)) || weeksJson.data.find(w => w.key === currentKey) || weeksJson.data[weeksJson.data.length - 1]
       setSelectedWeek(current)
+      selectedWeekRef.current = current
       const absentByDay = {}
       DAYS.forEach(d => {
         absentByDay[d] = new Set(
@@ -304,6 +322,7 @@ export default function SchedulePage() {
 
   async function switchWeek(week) {
     setSelectedWeek(week)
+    selectedWeekRef.current = week
     localStorage.setItem('selected_week', week.key)
     const bRes = await fetch('/api/blocked')
     const bJson = await bRes.json()
