@@ -1025,7 +1025,21 @@ export default function PaymentsPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
 
-  useEffect(() => { fetchAll() }, [])
+  useEffect(() => {
+    fetchAll()
+
+    const interval = setInterval(() => {
+      fetchLedger()
+    }, 30000)
+
+    const handleFocus = () => fetchLedger()
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [])
 
   async function fetchAll() {
     setLoading(true)
