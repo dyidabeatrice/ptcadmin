@@ -76,11 +76,11 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
     
     if (!mop) return
     if (session.is_ie_report || session.is_document) return
-    const unchanged = session.is_paid 
+    const unchanged = isPaid 
       && mop === prevMop.current 
-      && reference === session.reference 
-      && comments === session.comments
+      && reference === (session.reference || '')
       && Number(total) === Number(session.total)
+    if (unchanged) return
     if (unchanged) return
     setSaving(true)
     try {
