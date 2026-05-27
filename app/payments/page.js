@@ -525,6 +525,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
 function OutstandingByDayTab({ clients, onSettle }) {
   const [unpaidSessions, setUnpaidSessions] = useState([])
   const [loading, setLoading] = useState(true)
+  const [collapsedDays, setCollapsedDays] = useState({})
   const [creditTransactions, setCreditTransactions] = useState([])
   const [payModal, setPayModal] = useState(null)
   const [payForm, setPayForm] = useState({ mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0 })
@@ -702,21 +703,22 @@ function OutstandingByDayTab({ clients, onSettle }) {
                 const totalOwed = dateSessions.reduce((sum, s) => sum + Number(s.amount || 0), 0)
                 return (
                   <div key={date}>
-                    <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f4c81', marginBottom: '8px', padding: '4px 0', borderBottom: '2px solid #E6F1FB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>{date}</span>
-                      <span style={{ fontSize: '13px', color: '#E24B4A', fontWeight: '700' }}>₱{totalOwed.toLocaleString()} total</span>
-                    </div>
-{(() => {
-                      const byTherapist = {}
-                      dateSessions.forEach(s => {
-                        const key = s.therapist || 'Unknown'
-                        if (!byTherapist[key]) byTherapist[key] = []
-                        byTherapist[key].push(s)
-                      })
-                      Object.values(byTherapist).forEach(sessions => {
-                        sessions.sort((a, b) => (a.time_start || '').localeCompare(b.time_start || ''))
-                      })
-                      return Object.entries(byTherapist).sort(([a], [b]) => a.localeCompare(b)).map(([therapistName, therapistSessions]) => (
+                  <div onClick={() => setCollapsedDays(prev => ({ ...prev, [date]: !prev[date] }))}
+                    style={{ fontSize: '13px', fontWeight: '600', color: '#0f4c81', marginBottom: '8px', padding: '4px 0', borderBottom: '2px solid #E6F1FB', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', userSelect: 'none' }}>
+                    <span>{date} <span style={{ fontSize: '11px', color: '#999', fontWeight: '400' }}>{collapsedDays[date] ? '▶' : '▼'}</span></span>
+                    <span style={{ fontSize: '13px', color: '#E24B4A', fontWeight: '700' }}>₱{totalOwed.toLocaleString()} total</span>
+                  </div>
+                  {!collapsedDays[date] && (() => {
+                    const byTherapist = {}
+                    dateSessions.forEach(s => {
+                      const key = s.therapist || 'Unknown'
+                      if (!byTherapist[key]) byTherapist[key] = []
+                      byTherapist[key].push(s)
+                    })
+                    Object.values(byTherapist).forEach(sessions => {
+                      sessions.sort((a, b) => (a.time_start || '').localeCompare(b.time_start || ''))
+                    })
+                    return Object.entries(byTherapist).sort(([a], [b]) => a.localeCompare(b)).map(([therapistName, therapistSessions]) => (
                         <div key={therapistName} style={{ marginBottom: '12px' }}>
                           <div style={{ fontSize: '11px', fontWeight: '600', color: '#0f4c81', padding: '4px 8px', background: '#E6F1FB', borderRadius: '6px', marginBottom: '4px' }}>
                             {therapistName}
