@@ -1028,15 +1028,10 @@ export default function PaymentsPage() {
   useEffect(() => {
     fetchAll()
 
-    const interval = setInterval(() => {
-      fetchLedger()
-    }, 30000)
-
     const handleFocus = () => fetchLedger()
     window.addEventListener('focus', handleFocus)
 
     return () => {
-      clearInterval(interval)
       window.removeEventListener('focus', handleFocus)
     }
   }, [])
