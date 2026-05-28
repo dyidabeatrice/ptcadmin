@@ -451,6 +451,7 @@ export default function TherapistDashboard() {
             { bg: '#E6F1FB', border: '#B5D4F4', label: 'Scheduled/Confirmed' },
             { bg: '#D9EAD3', border: '#6AA84F', label: 'Present' },
             { bg: '#F4CCCC', border: '#E06666', label: 'Absent' },
+            { bg: '#f8f8f8', border: '#e0e0e0', label: 'Cancelled/No Show' },
           ].map((c, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div style={{ width: '14px', height: '14px', borderRadius: '3px', background: c.bg, border: `1px solid ${c.border}`, flexShrink: 0 }} />
