@@ -229,6 +229,8 @@ export default function TherapistDashboard() {
                 <strong>Disclaimer:</strong> The schedule shown is not yet final. Please <strong>wait for confirmation</strong> from the admin assistants.
                 <br />
                 For schedules already confirmed on your end, kindly coordinate with the admin assistants so they can update them here.
+                <br />
+                <u>Admin will continue its best to schedule new clients on agreed open slots of therapists for decking.</u>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '8px' }}>
                 <h2 style={{ margin: 0, color: '#0f4c81', fontSize: '16px' }}>My schedule</h2>
