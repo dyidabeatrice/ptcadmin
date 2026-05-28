@@ -227,7 +227,7 @@ export default function TherapistDashboard() {
             {activeTab === 'schedule' && (<>
               <div style={{ padding: '12px 14px', background: '#FAEEDA', border: '1px solid #EF9F27', borderRadius: '8px', marginBottom: '1rem', fontSize: '12px', color: '#633806', lineHeight: '1.6' }}>
                 <strong>Disclaimer:</strong> The schedule shown is not yet final. Please <strong>wait for confirmation</strong> from the admin assistants.
-                <br /><br />
+                <br />
                 For schedules already confirmed on your end, kindly coordinate with the admin assistants so they can update them here.
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '8px' }}>
@@ -270,48 +270,91 @@ export default function TherapistDashboard() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {[...daySessions].sort((a, b) => {
-                  const aAbsent = a.status === 'Absent' ? 1 : 0
-                  const bAbsent = b.status === 'Absent' ? 1 : 0
-                  if (aAbsent !== bAbsent) return aAbsent - bAbsent
-                  const parseT = t => {
-                    if (!t) return 0
-                    const [time, period] = t.split(' ')
-                    let [h, m] = time.split(':').map(Number)
-                    if (period === 'PM' && h !== 12) h += 12
-                    if (period === 'AM' && h === 12) h = 0
-                    return h * 60 + m
-                  }
-                  return parseT(a.time_start) - parseT(b.time_start)
-                }).map((s, i) => (
-                    <div key={i} style={{
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      padding: '10px 14px', borderRadius: '8px',
-                      background: s.status === 'Absent' ? '#F4CCCC' : s.status === 'Cancelled' ? '#f8f8f8' : s.status === 'Pencil' ? '#FFFBE6' : s.status === 'Present' ? '#D9EAD3' : '#E6F1FB',
-                      border: `1px solid ${s.status === 'Absent' ? '#E06666' : s.status === 'Cancelled' ? '#e0e0e0' : s.status === 'Pencil' ? '#FFD666' : s.status === 'Present' ? '#6AA84F' : '#B5D4F4'}`,
-                      opacity: s.status === 'Cancelled' ? 0.6 : 1
-                    }}>
-                      <div>
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                        <div style={{ fontSize: '11px', color: '#888', whiteSpace: 'nowrap', minWidth: '90px', paddingTop: '2px' }}>
+                  {(() => {
+                    const parseT = t => {
+                      if (!t) return 0
+                      const [time, period] = t.split(' ')
+                      let [h, m] = time.split(':').map(Number)
+                      if (period === 'PM' && h !== 12) h += 12
+                      if (period === 'AM' && h === 12) h = 0
+                      return h * 60 + m
+                    }
+                    const formatT = mins => {
+                      let h = Math.floor(mins / 60)
+                      const m = mins % 60
+                      const period = h >= 12 ? 'PM' : 'AM'
+                      if (h > 12) h -= 12
+                      if (h === 0) h = 12
+                      return `${h}:${m.toString().padStart(2, '0')} ${period}`
+                    }
+
+                    const sorted = [...daySessions].sort((a, b) => {
+                      const aAbsent = a.status === 'Absent' ? 1 : 0
+                      const bAbsent = b.status === 'Absent' ? 1 : 0
+                      if (aAbsent !== bAbsent) return aAbsent - bAbsent
+                      return parseT(a.time_start) - parseT(b.time_start)
+                    })
+
+                    // Only non-absent sessions for gap detection
+                    const activeSessions = sorted.filter(s => s.status !== 'Absent')
+                    const result = []
+
+                    activeSessions.forEach((s, i) => {
+                      // Check gap before this session
+                      if (i > 0) {
+                        const prevEnd = parseT(activeSessions[i - 1].time_end)
+                        const currStart = parseT(s.time_start)
+                        if (currStart > prevEnd) {
+                          result.push({ isFree: true, time_start: formatT(prevEnd), time_end: formatT(currStart) })
+                        }
+                      }
+                      result.push({ ...s, isFree: false })
+                    })
+
+                    // Add absent sessions at the end
+                    sorted.filter(s => s.status === 'Absent').forEach(s => result.push({ ...s, isFree: false }))
+
+                    return result.map((s, i) => s.isFree ? (
+                      <div key={`free-${i}`} style={{
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '8px 14px', borderRadius: '8px',
+                        background: '#f8f9fa', border: '1px dashed #ddd'
+                      }}>
+                        <div style={{ fontSize: '11px', color: '#aaa', whiteSpace: 'nowrap', minWidth: '90px' }}>
                           {s.time_start} – {s.time_end}
                         </div>
+                        <div style={{ fontSize: '12px', color: '#bbb', fontStyle: 'italic' }}>Free</div>
+                      </div>
+                    ) : (
+                      <div key={i} style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        padding: '10px 14px', borderRadius: '8px',
+                        background: s.status === 'Absent' ? '#F4CCCC' : s.status === 'Cancelled' ? '#f8f8f8' : s.status === 'Pencil' ? '#FFFBE6' : s.status === 'Present' ? '#D9EAD3' : '#E6F1FB',
+                        border: `1px solid ${s.status === 'Absent' ? '#E06666' : s.status === 'Cancelled' ? '#e0e0e0' : s.status === 'Pencil' ? '#FFD666' : s.status === 'Present' ? '#6AA84F' : '#B5D4F4'}`,
+                        opacity: s.status === 'Cancelled' ? 0.6 : 1
+                      }}>
                         <div>
-                          <div style={{ fontWeight: '500', fontSize: '13px', color: '#0f4c81' }}>{s.client_name}</div>
-                          <div style={{ fontSize: '11px', color: '#888', marginTop: '1px' }}>{s.session_type || 'Regular'}</div>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                            <div style={{ fontSize: '11px', color: '#888', whiteSpace: 'nowrap', minWidth: '90px', paddingTop: '2px' }}>
+                              {s.time_start} – {s.time_end}
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: '500', fontSize: '13px', color: '#0f4c81' }}>{s.client_name}</div>
+                              <div style={{ fontSize: '11px', color: '#888', marginTop: '1px' }}>{s.session_type || 'Regular'}</div>
+                            </div>
+                          </div>
                         </div>
+                        <span style={{
+                          fontSize: '11px', padding: '3px 10px', borderRadius: '10px', fontWeight: '500',
+                          background: s.status === 'Present' ? '#EAF3DE' : s.status === 'Absent' ? '#FCEBEB' : s.status === 'Cancelled' ? '#F1EFE8' : '#E6F1FB',
+                          color: s.status === 'Present' ? '#27500A' : s.status === 'Absent' ? '#791F1F' : s.status === 'Cancelled' ? '#5F5E5A' : '#0C447C'
+                        }}>{s.status}</span>
                       </div>
-                      </div>
-                      <span style={{
-                        fontSize: '11px', padding: '3px 10px', borderRadius: '10px', fontWeight: '500',
-                        background: s.status === 'Present' ? '#EAF3DE' : s.status === 'Absent' ? '#FCEBEB' : s.status === 'Cancelled' ? '#F1EFE8' : '#E6F1FB',
-                        color: s.status === 'Present' ? '#27500A' : s.status === 'Absent' ? '#791F1F' : s.status === 'Cancelled' ? '#5F5E5A' : '#0C447C'
-                      }}>{s.status}</span>
-                    </div>
-                  ))}
+                    ))
+                  })()}
                 </div>
               )}
-            </>)}
+              </>)}
 
           {activeTab === 'fees' && (
             <div>
