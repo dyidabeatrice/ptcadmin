@@ -353,11 +353,10 @@ export default function TherapistDashboard() {
                               {s.time_start} – {s.time_end}
                             </div>
                             <div>
-                              <div style={{ fontWeight: '500', fontSize: '13px', color: '#0f4c81' }}>{s.client_name}</div>
-                              {(s.notes || '').includes('makeup') && (
-                                <div style={{ display: 'inline-block', fontSize: '10px', background: '#c9b8c4', color: '#4a2d42', padding: '1px 6px', borderRadius: '8px', marginTop: '2px', fontWeight: '600' }}>Make-up session</div>
-                              )}
-                              <div style={{ fontSize: '11px', color: '#888', marginTop: '1px' }}>{s.session_type || 'Regular'}</div>
+                            <div style={{ fontWeight: '500', fontSize: '13px', color: '#0f4c81' }}>{s.client_name}</div>
+                            <div style={{ fontSize: '11px', color: '#888', marginTop: '1px' }}>
+                              {s.session_type || 'Regular'}{(s.notes || '').includes('makeup') ? ' • <i>Make-up session</i>' : ''}
+                            </div>
                             </div>
                           </div>
                         </div>
