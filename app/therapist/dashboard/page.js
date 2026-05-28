@@ -355,7 +355,7 @@ export default function TherapistDashboard() {
                             <div>
                             <div style={{ fontWeight: '500', fontSize: '13px', color: '#0f4c81' }}>{s.client_name}</div>
                             <div style={{ fontSize: '11px', color: '#888', marginTop: '1px' }}>
-                              {s.session_type || 'Regular'}{(s.notes || '').includes('makeup') ? ' • <i>Make-up session</i>' : ''}
+                              {s.session_type || 'Regular'}{(s.notes || '').includes('makeup') && <span style={{ fontStyle: 'italic' }}> • Make-up session</span>}
                             </div>
                             </div>
                           </div>
