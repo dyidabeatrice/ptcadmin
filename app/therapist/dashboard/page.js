@@ -250,7 +250,7 @@ export default function TherapistDashboard() {
 
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
                 {DAYS.map(day => {
-                  const count = sessions.filter(s => s.day === day).length
+                  const count = sessions.filter(s => s.day === day && s.status !== 'Absent').length
                   return (
                     <button key={day} onClick={() => setSelectedDay(day)} style={{
                       padding: '6px 14px', borderRadius: '20px', border: 'none',
@@ -292,10 +292,15 @@ export default function TherapistDashboard() {
                       opacity: s.status === 'Cancelled' ? 0.6 : 1
                     }}>
                       <div>
-                        <div style={{ fontWeight: '500', fontSize: '13px', color: '#0f4c81' }}>{s.client_name}</div>
-                        <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
-                          {s.time_start} – {s.time_end} · {s.session_type || 'Regular'}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                        <div style={{ fontSize: '11px', color: '#888', whiteSpace: 'nowrap', minWidth: '90px', paddingTop: '2px' }}>
+                          {s.time_start} – {s.time_end}
                         </div>
+                        <div>
+                          <div style={{ fontWeight: '500', fontSize: '13px', color: '#0f4c81' }}>{s.client_name}</div>
+                          <div style={{ fontSize: '11px', color: '#888', marginTop: '1px' }}>{s.session_type || 'Regular'}</div>
+                        </div>
+                      </div>
                       </div>
                       <span style={{
                         fontSize: '11px', padding: '3px 10px', borderRadius: '10px', fontWeight: '500',
