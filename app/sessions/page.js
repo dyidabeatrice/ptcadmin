@@ -740,7 +740,7 @@ export default function SchedulePage() {
                             if (t.includes('SPECIALIZED')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>SPEC</span>
                             if (t.includes('CANCELLATION')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>CANCEL</span>
                             if (t.includes('PLAYSCHOOL')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>PLAY</span>
-                            if ((s.notes || '').includes('makeup')) return <span style={{ fontSize: '8px', background: '#fcc200', color: '#274E13', padding: '0px 4px', borderRadius: '3px', fontWeight: '700' }}>MU</span>
+                            if ((s.notes || '').includes('makeup')) return <span style={{ fontSize: '8px', background: '#c9b8c4', color: '#4a2d42', padding: '0px 4px', borderRadius: '3px', fontWeight: '700' }}>MU</span>
                             return null
                           })()}
                         </div>
@@ -781,9 +781,9 @@ export default function SchedulePage() {
                             fetchSessions(selectedWeek.key)
                           }} style={{ 
                             fontSize: '8px', padding: '1px 4px', borderRadius: '3px', 
-                            border: (s.notes || '').includes('makeup') ? '1px solid #fcc200' : '1px solid #ddd', 
-                            background: (s.notes || '').includes('makeup') ? '#fcc200' : 'white', 
-                            color: (s.notes || '').includes('makeup') ? '#274E13' : '#999', 
+                            border: (s.notes || '').includes('makeup') ? '1px solid #C9B8C4' : '1px solid #ddd', 
+                            background: (s.notes || '').includes('makeup') ? '#C9B8C4' : 'white', 
+                            color: (s.notes || '').includes('makeup') ? '#4a2d42' : '#999', 
                             cursor: 'pointer', fontWeight: '600'
                           }}>MU</button>
                           <button onClick={() => setRemindModal(s)}
