@@ -296,7 +296,7 @@ export default function TherapistDashboard() {
                     })
 
                     // Only non-absent sessions for gap detection
-                    const activeSessions = sorted.filter(s => s.status !== 'Absent')
+                    const activeSessions = sorted.filter(s => s.status !== 'Absent' && s.status !== 'Cancelled')
                     const result = []
 
                     activeSessions.forEach((s, i) => {
