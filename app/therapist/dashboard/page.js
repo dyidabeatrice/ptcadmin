@@ -311,10 +311,22 @@ export default function TherapistDashboard() {
                       result.push({ ...s, isFree: false })
                     })
 
-                    // Add absent sessions at the end
-                    sorted.filter(s => s.status === 'Absent').forEach(s => result.push({ ...s, isFree: false }))
+                    // Add separator + absent sessions at the end
+                    const absentSessions = sorted.filter(s => s.status === 'Absent')
+                    if (absentSessions.length > 0) {
+                      result.push({ isSeparator: true })
+                      absentSessions.forEach(s => result.push({ ...s, isFree: false }))
+                    }
 
-                    return result.map((s, i) => s.isFree ? (
+                    return result.map((s, i) => s.isSeparator ? (
+                      <div key={`sep-${i}`} style={{ 
+                        display: 'flex', alignItems: 'center', gap: '8px', margin: '4px 0' 
+                      }}>
+                        <div style={{ flex: 1, height: '2px', background: '#E06666' }} />
+                        <span style={{ fontSize: '10px', color: '#E06666', fontWeight: '500', whiteSpace: 'nowrap' }}>Absent</span>
+                        <div style={{ flex: 1, height: '2px', background: '#E06666' }} />
+                      </div>
+                    ) : s.isFree ? (
                       <div key={`free-${i}`} style={{
                         display: 'flex', alignItems: 'center', gap: '10px',
                         padding: '8px 14px', borderRadius: '8px',
