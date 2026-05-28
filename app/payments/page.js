@@ -1010,8 +1010,11 @@ function CreditHistory({ clientName }) {
     <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>
       {latest ? (
         <>
-          <div><span style={{ color: '#999' }}>Date of payment:</span> {latest.date}</div>
+        <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+          <div><span style={{ color: '#999' }}>Date recorded:</span> {latest.date}</div>
+          <div><span style={{ color: '#999' }}>MOP:</span> {latest.mop || '—'}{latest.reference ? ` · ${latest.reference}` : ''}</div>
           {latest.comments && <div><span style={{ color: '#999' }}>Notes:</span> {latest.comments}</div>}
+        </div>
         </>
       ) : (
         <div style={{ color: '#999' }}>Available credit</div>
