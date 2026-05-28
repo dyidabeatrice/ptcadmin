@@ -538,7 +538,15 @@ function OutstandingByDayTab({ clients, onSettle }) {
     if (showLoading) setLoading(true)
     const res = await fetch('/api/payments?action=outstanding')
     const json = await res.json()
-    if (json.success) setUnpaidSessions(json.data)
+    if (json.success) {
+      setUnpaidSessions(json.data)
+      setCollapsedDays(prev => {
+        if (Object.keys(prev).length > 0) return prev
+        const dates = {}
+        json.data.forEach(s => { if (s.date) dates[s.date] = true })
+        return dates
+      })
+    }
     setLoading(false)
   }
 
@@ -770,15 +778,7 @@ function OutstandingTab({ clients, onSettle }) {
     if (showLoading) setLoading(true)
     const res = await fetch('/api/payments?action=outstanding')
     const json = await res.json()
-    if (json.success) {
-      setUnpaidSessions(json.data)
-      setCollapsedDays(prev => {
-        if (Object.keys(prev).length > 0) return prev
-        const dates = {}
-        json.data.forEach(s => { if (s.date) dates[s.date] = true })
-        return dates
-      })
-    }
+    if (json.success) setUnpaidSessions(json.data)
     setLoading(false)
   }
 
