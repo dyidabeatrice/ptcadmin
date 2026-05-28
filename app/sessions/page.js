@@ -740,6 +740,7 @@ export default function SchedulePage() {
                             if (t.includes('SPECIALIZED')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>SPEC</span>
                             if (t.includes('CANCELLATION')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>CANCEL</span>
                             if (t.includes('PLAYSCHOOL')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>PLAY</span>
+                            if ((s.notes || '').includes('makeup')) return <span style={{ fontSize: '8px', background: '#fcc200', color: '#274E13', padding: '0px 4px', borderRadius: '3px', fontWeight: '700' }}>MU</span>
                             return null
                           })()}
                         </div>
@@ -765,6 +766,26 @@ export default function SchedulePage() {
                             <button onClick={() => s.status === 'Absent' ? null : reversePayment(s)} disabled={s.status === 'Absent'} title={s.status === 'Absent' ? 'Payment moved to credit — cannot reverse' : 'Reverse payment'}
                               style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#EAF3DE', color: s.status === 'Absent' ? '#aaa' : '#27500A', cursor: s.status === 'Absent' ? 'not-allowed' : 'pointer' }}>Paid ✓</button>
                           )}
+                          <button onClick={async () => {
+                            const isMakeup = (s.notes || '').includes('makeup')
+                            await fetch('/api/sessions', {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                action: 'update_notes',
+                                week_key: selectedWeek.key,
+                                rowIndex: s.index,
+                                notes: isMakeup ? '' : 'makeup'
+                              })
+                            })
+                            fetchSessions(selectedWeek.key)
+                          }} style={{ 
+                            fontSize: '8px', padding: '1px 4px', borderRadius: '3px', 
+                            border: (s.notes || '').includes('makeup') ? '1px solid #fcc200' : '1px solid #ddd', 
+                            background: (s.notes || '').includes('makeup') ? '#fcc200' : 'white', 
+                            color: (s.notes || '').includes('makeup') ? '#274E13' : '#999', 
+                            cursor: 'pointer', fontWeight: '600'
+                          }}>MU</button>
                           <button onClick={() => setRemindModal(s)}
                             style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: '1px solid #B5D4F4', background: '#E6F1FB', color: '#0C447C', cursor: 'pointer' }}>💬</button>
                           <button onClick={() => deleteSession(s)} disabled={s.payment === 'Paid'}

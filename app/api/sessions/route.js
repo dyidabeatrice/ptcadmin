@@ -539,6 +539,16 @@ if (body.action === 'status') {
       return Response.json({ success: true })
     }
 
+    if (body.action === 'update_notes') {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${weekKey}!M${sheetRow}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[body.notes || '']] }
+      })
+      return Response.json({ success: true })
+    }
+
     return Response.json({ success: false, error: 'Unknown action' })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
