@@ -493,10 +493,91 @@ export default function TherapistDashboard() {
           )}
 
           {activeTab === 'policies' && (
-            <div style={{ textAlign: 'center', padding: '3rem 2rem' }}>
-              <div style={{ fontSize: '48px', marginBottom: '1rem' }}>📋</div>
-              <h2 style={{ color: '#0f4c81', margin: '0 0 8px', fontSize: '18px' }}>Therapist-Center Agreement</h2>
-              <p style={{ color: '#999', fontSize: '14px', margin: 0 }}>This section is under construction — check back soon!</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontSize: '13px' }}>
+
+              {/* Attendance */}
+              <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem' }}>
+                <h3 style={{ margin: '0 0 12px', color: '#0f4c81', fontSize: '14px' }}>📅 Attendance & Absences</h3>
+                <ul style={{ margin: 0, paddingLeft: '18px', lineHeight: '1.8', color: '#444' }}>
+                  <li>Planned leave — inform admin <strong>at least 1 week prior</strong></li>
+                  <li>Sick leave — inform admin <strong>at least the day prior</strong></li>
+                  <li>Emergency absence — inform admin <strong>immediately</strong></li>
+                  <li>Coordinate with admin for client <strong>make-up sessions</strong> for any absence</li>
+                  <li>If late, extend time or coordinate with admin and client's guardian</li>
+                </ul>
+              </div>
+
+              {/* Documentation */}
+              <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem' }}>
+                <h3 style={{ margin: '0 0 12px', color: '#0f4c81', fontSize: '14px' }}>📄 Documentation Deadlines</h3>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                    <thead>
+                      <tr style={{ background: '#f0f4f8' }}>
+                        <th style={{ padding: '8px 12px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Document</th>
+                        <th style={{ padding: '8px 12px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Deadline</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { doc: 'Initial Evaluation / Re-evaluation Report', deadline: '1 month (not exceeding 6 months)' },
+                        { doc: 'Progress Report (regular)', deadline: '2 weeks advance notice' },
+                        { doc: 'Progress Report (rushed)', deadline: 'Day before appointment' },
+                        { doc: 'Daily / Session Notes', deadline: 'Within the day of session' },
+                        { doc: 'Home Instructions Program', deadline: '1 week' },
+                        { doc: 'Incident Report', deadline: 'Immediate verbal report + written report within the day' },
+                      ].map((r, i) => (
+                        <tr key={i} style={{ borderBottom: '1px solid #f0f0f0', background: i % 2 === 0 ? 'white' : '#fafafa' }}>
+                          <td style={{ padding: '8px 12px', color: '#333' }}>{r.doc}</td>
+                          <td style={{ padding: '8px 12px', color: '#0f4c81', fontWeight: '500' }}>{r.deadline}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#999' }}>Submit all documents to: <strong>potentialstherapycenter@gmail.com</strong></p>
+              </div>
+
+              {/* Professional Fees */}
+              <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem' }}>
+                <h3 style={{ margin: '0 0 12px', color: '#0f4c81', fontSize: '14px' }}>💰 Professional Fees</h3>
+                <ul style={{ margin: 0, paddingLeft: '18px', lineHeight: '1.8', color: '#444' }}>
+                  <li>Cut-off: <strong>Day 1–15</strong> and <strong>Day 16–last day</strong> of the month</li>
+                  <li>Released within <strong>1–5 days</strong> after cut-off</li>
+                  <li>IE: <strong>50%</strong> upon evaluation, remaining <strong>50%</strong> upon report submission (max 6 months)</li>
+                  <li>No official receipt issued = <strong>10% deduction</strong> from professional fee</li>
+                  <li>Submit bank details (BDO preferred) and GCash account to admin</li>
+                </ul>
+              </div>
+
+              {/* Confidentiality */}
+              <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem' }}>
+                <h3 style={{ margin: '0 0 12px', color: '#0f4c81', fontSize: '14px' }}>🔒 Confidentiality</h3>
+                <ul style={{ margin: 0, paddingLeft: '18px', lineHeight: '1.8', color: '#444' }}>
+                  <li>All patient data and clinic information must be kept <strong>strictly confidential</strong></li>
+                  <li>Do not disclose any information to unauthorized persons</li>
+                  <li>Improper disposal of patient information is a violation of the <strong>Data Privacy Act of 2012 (R.A. 10173)</strong></li>
+                </ul>
+              </div>
+
+              {/* Resignation */}
+              <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem' }}>
+                <h3 style={{ margin: '0 0 12px', color: '#0f4c81', fontSize: '14px' }}>📝 Resignation</h3>
+                <ul style={{ margin: 0, paddingLeft: '18px', lineHeight: '1.8', color: '#444' }}>
+                  <li>Submit a formal resignation letter <strong>at least 1 month</strong> in advance</li>
+                  <li>Submit all pending documents and endorsements before clearance</li>
+                  <li><strong>30% of professional fees</strong> for remaining cut-off will be held until all documents are submitted</li>
+                </ul>
+              </div>
+
+              {/* Full agreement button */}
+              <div style={{ textAlign: 'center', padding: '1rem' }}>
+                <a href="https://drive.google.com/file/d/1ux4lLylZM9DjCOgg2vnuYRFrmOdh-ItM/view?usp=sharing" target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'inline-block', padding: '12px 24px', borderRadius: '8px', background: '#0f4c81', color: 'white', textDecoration: 'none', fontSize: '13px', fontWeight: '500' }}>
+                  view full Therapist–Center Agreement
+                </a>
+              </div>
+
             </div>
           )}
 
