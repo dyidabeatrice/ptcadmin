@@ -211,7 +211,13 @@ async function fetchClients() {
               <div key={msg.id} style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', overflow: 'hidden' }}>
                 <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0' }}>
                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <span style={{ fontWeight: '600', color: '#0f4c81', fontSize: '14px' }}>{msg.client_name}</span>
+                    <div>
+                      <span style={{ fontWeight: '600', color: '#0f4c81', fontSize: '14px' }}>{msg.client_name}</span>
+                      {(() => {
+                        const client = clients.find(c => c.name === msg.client_name)
+                        return client?.fb_account ? <div style={{ fontSize: '11px', color: '#999', marginTop: '1px' }}>FB: {client.fb_account}</div> : null
+                      })()}
+                    </div>
                     <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: tc.bg, color: tc.color, border: `1px solid ${tc.border}` }}>
                       {MESSAGE_TYPES[msg.type] || msg.type}
                     </span>
