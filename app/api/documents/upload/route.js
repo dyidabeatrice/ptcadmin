@@ -127,7 +127,7 @@ export async function POST(request) {
             </div>
             <div style="background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0;">
               <p>Hello!</p>
-              <p>Please find attached the <strong>${docType}</strong> for <strong>${clientName}</strong> prepared by <strong>${therapistName}</strong>.</p>
+              <p>Please find attached the <strong>${docType}</strong> for <strong>${clientName}</strong> prepared by <strong>T. ${therapistName}</strong>.</p>
               <p style="color: #666; font-size: 13px; margin-top: 20px;">— Potentials Therapy Center</p>
             </div>
           </div>
@@ -151,7 +151,7 @@ export async function POST(request) {
             <div style="font-family: sans-serif;">
               <p>Please print the attached document for <strong>${clientName}</strong>.</p>
               <p>Document type: <strong>${docType}</strong></p>
-              <p>Prepared by: <strong>${therapistName}</strong></p>
+              <p>Prepared by: <strong>T. ${therapistName}</strong></p>
             </div>
           `,
           attachments: [{
