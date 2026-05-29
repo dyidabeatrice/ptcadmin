@@ -573,7 +573,7 @@ export default function TherapistDashboard() {
               {/* Full agreement button */}
               <div style={{ textAlign: 'center', padding: '1rem' }}>
                 <p style={{ fontSize: '12px', color: '#999', marginBottom: '12px', fontStyle: 'italic' }}>
-                  This is an excerpt of the most important points from the Therapist–Center Agreement. Please refer to the full document for complete details.
+                  This is an excerpt of the most important points from the Therapist–Center Agreement. <br />Please refer to the full document for complete details.
                 </p>
                 <a href="https://drive.google.com/your-link-here" target="_blank" rel="noopener noreferrer"
                   style={{ display: 'inline-block', padding: '12px 24px', borderRadius: '8px', background: '#0f4c81', color: 'white', textDecoration: 'none', fontSize: '13px', fontWeight: '500' }}>
