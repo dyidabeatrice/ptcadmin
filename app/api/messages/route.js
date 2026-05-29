@@ -7,6 +7,8 @@ async function sendMessengerMessage(psid, message) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      messaging_type: 'MESSAGE_TAG',
+      tag: 'CONFIRMED_EVENT_UPDATE',
       recipient: { id: psid },
       message: { text: message }
     })
