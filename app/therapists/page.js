@@ -103,6 +103,7 @@ export default function TherapistsPage() {
       specialty: first.specialty,
       is_intern: first.is_intern,
       level: first.level || '',
+      specialized_therapies: first.specialized_therapies || '',
       days: rows.map(r => ({
         rowIndex: r.index,
         day: r.day,
@@ -184,7 +185,8 @@ export default function TherapistsPage() {
             day: d.day,
             time_start: d.time_start,
             time_end: d.time_end,
-          })
+            specialized_therapies: editForm.specialized_therapies || '',
+            })
         })
       }
 
@@ -287,6 +289,15 @@ export default function TherapistsPage() {
                 onChange={e => setEditForm({ ...editForm, is_intern: e.target.checked })} />
               <label htmlFor="edit_intern" style={{ fontSize: '13px', color: '#666', cursor: 'pointer' }}>Intern</label>
             </div>
+          </div>
+
+          {/* Specialized Therapies */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Specialized Therapies</label>
+            <input value={editForm.specialized_therapies || ''} onChange={e => setEditForm(prev => ({ ...prev, specialized_therapies: e.target.value }))}
+              placeholder="e.g. PROMPT, AAC, Sensory Integration"
+              style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box' }} />
+            <p style={{ fontSize: '11px', color: '#999', margin: '4px 0 0' }}>Separate with commas</p>
           </div>
 
           {/* Days */}
@@ -539,6 +550,12 @@ export default function TherapistsPage() {
                         </span>
                       ))}
                     </div>
+
+                    {therapist.specialized_therapies && (
+                      <div style={{ fontSize: '12px', color: '#555', marginTop: '6px' }}>
+                        <span style={{ color: '#999' }}>Specialized: </span>{therapist.specialized_therapies}
+                      </div>
+                    )}
                   </div>
                 )
               })}

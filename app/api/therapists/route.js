@@ -22,7 +22,7 @@ async function getSheetId(sheets, sheetName) {
 
 export async function GET() {
   try {
-    const data = await getSheetData('therapists!A:I')
+    const data = await getSheetData('therapists!A:K')
     const [, ...rows] = data
     if (!rows || rows.length === 0) return Response.json({ success: true, data: [] })
     const therapists = rows.filter(r => r && r[0]).map((row, i) => ({
@@ -32,8 +32,9 @@ export async function GET() {
       time_start: row[5], time_end: row[6],
       email: row[7] || '',
       level: row[8] || '',
+      specialized_therapies: row[10] || '',
     }))
-      return Response.json({ success: true, data: therapists }, {
+    return Response.json({ success: true, data: therapists }, {
       headers: { 'Cache-Control': 'no-store' }
     })
   } catch (error) {
@@ -67,18 +68,35 @@ export async function PATCH(request) {
     const body = await request.json()
     const sheets = google.sheets({ version: 'v4', auth })
     const sheetRow = body.rowIndex + 2
+
+    // B:G — core fields only (never touches H email, I level, J pin)
     await sheets.spreadsheets.values.update({
       spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
-      range: `therapists!B${sheetRow}:I${sheetRow}`,  // B to I
+      range: `therapists!B${sheetRow}:G${sheetRow}`,
       valueInputOption: 'RAW',
       requestBody: { values: [[
         body.name, body.specialty,
         body.is_intern ? 'TRUE' : 'FALSE',
         body.day, body.time_start, body.time_end,
-        body.email || '',   // col H — preserve email
-        body.level || '',   // col I — level
       ]]}
     })
+
+    // I — level only
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
+      range: `therapists!I${sheetRow}`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [[body.level || '']] }
+    })
+
+    // K — specialized therapies only
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
+      range: `therapists!K${sheetRow}`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [[body.specialized_therapies || '']] }
+    })
+
     return Response.json({ success: true })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
