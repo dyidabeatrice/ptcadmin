@@ -9,7 +9,22 @@ export async function GET() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         recipient: { id: '4801456173302861' },
-        message: { text: 'Test from PTCAdmin!' }
+        messaging_type: "UTILITY",
+        message: {
+          template: {
+            name: "ptc_appointment_reminder",
+            language: { code: "en" },
+            components: [
+              {
+                type: "body",
+                parameters: [
+                  { type: "text", text: "Juan" },
+                  { type: "text", text: "June 5 at 10am" }
+                ]
+              }
+            ]
+          }
+        }
       })
     }
   )

@@ -19,6 +19,26 @@ async function sendMessage(recipientId, message, quickReplies = null) {
   })
 }
 
+async function sendTemplateMessage(recipientId, templateName, components = null) {
+  const template = {
+    name: templateName,
+    language: { code: "en" }
+  }
+  if (components) template.components = components
+
+  const body = {
+    recipient: { id: recipientId },
+    messaging_type: "UTILITY",
+    message: { template }
+  }
+
+  await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+}
+
 async function findSessionByPsid(psid) {
   const clientData = await getSheetData('clients')
   const [, ...clientRows] = clientData
