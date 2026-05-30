@@ -262,10 +262,8 @@ export default function TherapistsPage() {
           <h3 style={{ margin: '0 0 1.5rem', color: '#0f4c81', fontSize: '18px' }}>Edit therapist</h3>
 
           {/* Name */}
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Name</label>
-            <input value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-              style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+          <div style={{ marginBottom: '16px', fontSize: '14px', color: '#333' }}>
+            <span style={{ color: '#999', fontSize: '12px' }}>Name: </span><strong>{editForm.name}</strong>
           </div>
 
           {/* Specialty + Intern + Level */}
@@ -292,12 +290,8 @@ export default function TherapistsPage() {
           </div>
 
           {/* Specialized Therapies */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Specialized Therapies</label>
-            <input value={editForm.specialized_therapies || ''} onChange={e => setEditForm(prev => ({ ...prev, specialized_therapies: e.target.value }))}
-              placeholder="e.g. PROMPT, AAC, Sensory Integration"
-              style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box' }} />
-            <p style={{ fontSize: '11px', color: '#999', margin: '4px 0 0' }}>Separate with commas</p>
+          <div style={{ marginBottom: '16px', fontSize: '14px', color: '#333' }}>
+            <span style={{ color: '#999', fontSize: '12px' }}>Specialized Therapy: </span><strong>{editForm.specialized_therapies || '— none —'}</strong>
           </div>
 
           {/* Days */}
@@ -553,7 +547,7 @@ export default function TherapistsPage() {
 
                     {therapist.specialized_therapies && (
                       <div style={{ fontSize: '12px', color: '#555', marginTop: '6px' }}>
-                        <span style={{ color: '#999' }}>Specialized: </span>{therapist.specialized_therapies}
+                        <span style={{ color: '#999' }}>Specialized Therapy: </span>{therapist.specialized_therapies}
                       </div>
                     )}
                   </div>
