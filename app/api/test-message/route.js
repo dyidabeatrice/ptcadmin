@@ -18,7 +18,7 @@ export async function GET() {
               {
                 type: "body",
                 parameters: [
-                  { type: "text", text: "Juan" },
+                  { type: "text", text: "Ida" },
                   { type: "text", text: "June 5 at 10am" }
                 ]
               }
