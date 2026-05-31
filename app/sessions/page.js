@@ -605,7 +605,7 @@ export default function SchedulePage() {
                         position: 'absolute', top: `${i * ROW_HEIGHT}px`,
                         width: '100%', height: `${ROW_HEIGHT}px`,
                         borderBottom: `${i % 4 === 3 ? '2px solid #ccc' : `1px solid ${i % 4 === 0 ? '#e8e8e8' : '#f5f5f5'}`}`,
-                        background: dragOver?.therapist === therapist && dragOver?.slotMins === slotMins ? 'rgba(66,165,245,0.3)' : isAbsent ? '#f5f5f5' : freeSlotMode && free ? 'rgba(225,245,238,0.6)' : freeSlotMode && !free ? '#f8f8f8' : i % 4 === 0 ? '#fafafa' : 'white',
+                        background: dragOver?.therapist === therapist && dragOver?.slotMins === slotMins ? 'rgba(66,165,245,0.3)' : isAbsent ? '#f5f5f5' : freeSlotMode && free ? 'rgba(0, 238, 255, 0.95)' : freeSlotMode && !free ? '#f8f8f8' : i % 4 === 0 ? '#fafafa' : 'white',
                         boxSizing: 'border-box'
                       }}
                         onClick={() => {
@@ -1548,7 +1548,7 @@ export default function SchedulePage() {
                     }}>{isHoliday ? '🏖 Holiday' : 'Mark holiday'}</button>
                     <button onClick={e => { e.stopPropagation(); setFreeSlotMode(!freeSlotMode) }} style={{
                       padding: '4px 10px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontSize: '11px',
-                      background: freeSlotMode ? '#00ffff' : '#f0f0f0', color: freeSlotMode ? 'white' : '#666'
+                      background: freeSlotMode ? '#006c6c' : '#f0f0f0', color: freeSlotMode ? 'white' : '#666'
                     }}>Free slots</button>
                     <span style={{ color: '#999', fontSize: '12px' }}>{isExpanded ? '▼' : '▶'}</span>
                   </div>
