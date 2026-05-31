@@ -605,7 +605,7 @@ export default function SchedulePage() {
                         position: 'absolute', top: `${i * ROW_HEIGHT}px`,
                         width: '100%', height: `${ROW_HEIGHT}px`,
                         borderBottom: `${i % 4 === 3 ? '2px solid #ccc' : `1px solid ${i % 4 === 0 ? '#e8e8e8' : '#f5f5f5'}`}`,
-                        background: dragOver?.therapist === therapist && dragOver?.slotMins === slotMins ? 'rgba(66,165,245,0.3)' : isAbsent ? '#f5f5f5' : freeSlotMode && free ? 'rgba(0, 238, 255, 0.95)' : freeSlotMode && !free ? '#f8f8f8' : i % 4 === 0 ? '#fafafa' : 'white',
+                        background: dragOver?.therapist === therapist && dragOver?.slotMins === slotMins ? 'rgba(66,165,245,0.3)' : isAbsent ? '#f5f5f5' : freeSlotMode && free ? 'rgba(225, 244, 245, 0.6)' : freeSlotMode && !free ? '#f8f8f8' : i % 4 === 0 ? '#fafafa' : 'white',
                         boxSizing: 'border-box'
                       }}
                         onClick={() => {
