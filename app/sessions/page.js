@@ -143,6 +143,7 @@ export default function SchedulePage() {
   const [blockType, setBlockType] = useState('blocked')
   const [blockLabel, setBlockLabel] = useState('')
   const [savingBlock, setSavingBlock] = useState(false)
+  const [soecialtiesExpanded, setSpecialtiesExpanded] = useState(false)
   const selectedWeekRef = useRef(null)
 
 
@@ -1581,6 +1582,55 @@ export default function SchedulePage() {
         ))}
         <span>⚠️ Outstanding balance</span>
       </div>
+
+      {/* Specialized Therapies Reference */}
+      {(() => {
+        const specialtyMap = {}
+        const seen = new Set()
+        therapistData.forEach(t => {
+          if (seen.has(t.name)) return
+          seen.add(t.name)
+          if (!t.specialized_therapies) return
+          t.specialized_therapies.split(',').map(s => s.trim()).filter(Boolean).forEach(sp => {
+            if (!specialtyMap[sp]) specialtyMap[sp] = []
+            specialtyMap[sp].push(t.name)
+          })
+        })
+        const specialties = Object.keys(specialtyMap).sort()
+        if (specialties.length === 0) return null
+        return (
+          <div style={{ marginTop: '1rem' }}>
+            <div onClick={() => setSpecialtiesExpanded(e => !e)} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>
+              <span>{specialtiesExpanded ? '▼' : '▶'}</span>
+              <span>Specialized Therapies Reference</span>
+            </div>
+            {specialtiesExpanded && (
+              <div style={{ marginTop: '10px', overflowX: 'auto' }}>
+                <table style={{ borderCollapse: 'collapse', fontSize: '12px', minWidth: '100%' }}>
+                  <thead>
+                    <tr>
+                      {specialties.map(sp => (
+                        <th key={sp} style={{ padding: '6px 12px', background: '#EEEDFE', color: '#3C3489', border: '1px solid #CECBF6', fontWeight: '600', textAlign: 'left', whiteSpace: 'nowrap' }}>{sp}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: Math.max(...specialties.map(sp => specialtyMap[sp].length)) }).map((_, ri) => (
+                      <tr key={ri}>
+                        {specialties.map(sp => (
+                          <td key={sp} style={{ padding: '5px 12px', border: '1px solid #e0e0e0', color: '#333', verticalAlign: 'top' }}>
+                            {specialtyMap[sp][ri] || ''}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )
+      })()}
     </div>
   )
 }
