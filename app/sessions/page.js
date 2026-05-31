@@ -1548,7 +1548,7 @@ export default function SchedulePage() {
                     }}>{isHoliday ? '🏖 Holiday' : 'Mark holiday'}</button>
                     <button onClick={e => { e.stopPropagation(); setFreeSlotMode(!freeSlotMode) }} style={{
                       padding: '4px 10px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontSize: '11px',
-                      background: freeSlotMode ? '#1D9E75' : '#f0f0f0', color: freeSlotMode ? 'white' : '#666'
+                      background: freeSlotMode ? '#00ffff' : '#f0f0f0', color: freeSlotMode ? 'white' : '#666'
                     }}>Free slots</button>
                     <span style={{ color: '#999', fontSize: '12px' }}>{isExpanded ? '▼' : '▶'}</span>
                   </div>
