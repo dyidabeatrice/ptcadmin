@@ -143,7 +143,7 @@ export default function SchedulePage() {
   const [blockType, setBlockType] = useState('blocked')
   const [blockLabel, setBlockLabel] = useState('')
   const [savingBlock, setSavingBlock] = useState(false)
-  const [soecialtiesExpanded, setSpecialtiesExpanded] = useState(false)
+  const [specialtiesExpanded, setSpecialtiesExpanded] = useState(false)
   const selectedWeekRef = useRef(null)
 
 
