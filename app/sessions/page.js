@@ -737,9 +737,9 @@ export default function SchedulePage() {
                           {(() => {
                             const t = (s.session_type || '').toUpperCase()
                             if (t.includes('IE') || t.includes('EVALUATION')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>IE</span>
+                            if (t.includes('CANCELLATION')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>NO SHOW</span>
                             if (t.includes('FE')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>FE</span>
                             if (t.includes('SPECIALIZED')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>SPEC</span>
-                            if (t.includes('CANCELLATION')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>CANCEL</span>
                             if (t.includes('PLAYSCHOOL')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>PLAY</span>
                             if ((s.notes || '').includes('makeup')) return <span style={{ fontSize: '8px', background: '#c9b8c4', color: '#4a2d42', padding: '0px 4px', borderRadius: '3px', fontWeight: '700' }}>MU</span>
                             return null
