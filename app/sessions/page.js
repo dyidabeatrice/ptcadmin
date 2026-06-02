@@ -722,7 +722,7 @@ export default function SchedulePage() {
                           background: (() => {
                             const t = (s.session_type || '').toUpperCase()
                             if (t.includes('IE') || t.includes('EVALUATION')) return '#2196F3'
-                            if (t.includes('FE')) return '#64B5F6'
+                            if (t.includes('-FE') || t === 'FE') return '#64B5F6'
                             if (t.includes('SPECIALIZED')) return '#9C27B0'
                             if (t.includes('PLAYSCHOOL')) return '#CE93D8'
                             return sc.color
