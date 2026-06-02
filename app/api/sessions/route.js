@@ -408,7 +408,7 @@ if (body.action === 'status') {
           const deadline = new Date(sessionDate)
           deadline.setMonth(deadline.getMonth() + 6)
           const deadlineStr = deadline.toISOString().split('T')[0]
-          const today = new Date().toLocaleDateString('en-PH', {
+          const sessionDateFormatted = body.date || new Date().toLocaleDateString('en-PH', {
             timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric'
           })
           await sheets.spreadsheets.values.append({
@@ -420,7 +420,7 @@ if (body.action === 'status') {
               body.client_name || '',
               body.therapist || '',
               '',
-              today,
+              sessionDateFormatted,
               deadlineStr,
               'IE Report',
               0,
