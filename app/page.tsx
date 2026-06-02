@@ -359,47 +359,23 @@ export default function HomePage() {
       </div>
 
       {/* Social Media Plugins */}
-      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1100px', margin: '2.5rem auto 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '14px' }}>
           <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
           <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>FOLLOW US</div>
           <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
         </div>
         <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '1rem' }}>
-          {/* Facebook */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
           <iframe
-            src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fpotentialstherapycenter&tabs=timeline&width=340&height=500&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=false"
-            width="340"
-            height="500"
+            src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fpotentialstherapycenter&tabs=timeline&width=500&height=350&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=false"
+            width="500"
+            height="350"
             style={{ border: 'none', overflow: 'hidden', borderRadius: '12px' }}
             scrolling="no"
             allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
           />
-          {/* Instagram */}
-          <a href="https://instagram.com/potentialstherapycenter" target="_blank" rel="noopener noreferrer"
-            style={{ width: '340px', height: '500px', background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', textDecoration: 'none' }}>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="url(#ig)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <defs>
-                <linearGradient id="ig" x1="0%" y1="100%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#f09433"/>
-                  <stop offset="25%" stopColor="#e6683c"/>
-                  <stop offset="50%" stopColor="#dc2743"/>
-                  <stop offset="75%" stopColor="#cc2366"/>
-                  <stop offset="100%" stopColor="#bc1888"/>
-                </linearGradient>
-              </defs>
-              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
-              <circle cx="12" cy="12" r="4"/>
-              <circle cx="17.5" cy="6.5" r="0.5" fill="#dc2743" stroke="none"/>
-            </svg>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontFamily: "'Nunito', sans-serif", fontWeight: '700', color: '#0f4c81', fontSize: '15px' }}>@potentialstherapycenter</div>
-              <div style={{ color: '#999', fontSize: '13px', marginTop: '4px' }}>Follow us on Instagram</div>
-            </div>
-            <div style={{ padding: '8px 20px', borderRadius: '20px', background: 'linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888)', color: 'white', fontSize: '13px', fontWeight: '600' }}>
-              Follow →
-            </div>
-          </a>
+        </div>
         </div>
       </div>
       </section>
