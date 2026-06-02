@@ -125,7 +125,7 @@ export default function TasksPage() {
         <div style={{ display: 'flex', gap: '8px' }}>
           <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
             onKeyDown={e => e.key === 'Enter' && addTask()}
-            placeholder={form.type === 'ie' ? 'Add note (e.g. May 3 IE with PATRICIA)...' : form.type === 'makeup' ? 'Add note (e.g. absent Apr 21, needs make-up)...' : 'Add a task...'}
+            placeholder={form.type === 'ie' ? 'Add note (e.g. May 3 IE with THERAPIST)...' : form.type === 'makeup' ? 'Add note (e.g. absent Apr 21, needs make-up)...' : 'Add a task...'}
             style={{ flex: 1, padding: '8px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px' }} />
           <button onClick={addTask} disabled={saving} style={{
             padding: '8px 18px', borderRadius: '8px', border: 'none',
