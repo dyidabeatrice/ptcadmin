@@ -34,6 +34,17 @@ export default function HomePage() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  useEffect(() => {
+    const script = document.createElement('script')
+    script.async = true
+    script.charset = 'UTF-8'
+    script.src = 'https://cdn.curator.io/published/86f456eb-f528-4228-a9b3-705552a7c017.js'
+    document.body.appendChild(script)
+    return () => {
+      document.body.removeChild(script)
+    }
+  }, [])
+
   const services = [
     { icon: '🧠', name: 'Occupational Therapy', desc: 'Building independence in daily activities and sensory processing' },
     { icon: '💬', name: 'Speech Therapy', desc: 'Communication, language development, and fluency' },
@@ -359,21 +370,16 @@ export default function HomePage() {
       </div>
 
       {/* Social Media Plugins */}
-        <div style={{ maxWidth: '1100px', margin: '0 auto 2.5rem', padding: '0 1rem' }}>
+        <div style={{ maxWidth: '1100px', margin: '2.5rem auto 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '14px' }}>
             <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
             <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>Follow Us</div>
             <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
-            <iframe
-              src="https://www.facebook.com/plugins/page.php?href=https%3A%2F%2Fwww.facebook.com%2Fpotentialstherapycenter&tabs=timeline&width=500&height=600&small_header=true&adapt_container_width=true&hide_cover=true&show_facepile=false"
-              width="500"
-              height="600"
-              style={{ border: 'none', overflow: 'hidden', borderRadius: '12px', maxWidth: '100%' }}
-              scrolling="no"
-              allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-            />
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem', width: '100%' }}>
+            <div id="curator-feed-default-feed-layout" style={{ width: '100%' }}>
+              <a href="https://curator.io" target="_blank" className="crt-logo crt-tag">Powered by Curator.io</a>
+            </div>
           </div>
         </div>
       </section>
