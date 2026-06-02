@@ -511,7 +511,7 @@ export default function TherapistDashboard() {
               <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem' }}>
                 <h3 style={{ margin: '0 0 12px', color: '#0f4c81', fontSize: '14px' }}>📄 Documentation </h3>
                 <div style={{ overflowX: 'auto' }}>
-                <div style={{ textAlign: 'center', padding: '1rem' }}>
+                <div style={{ textAlign: 'center', marginBottom: '12px' }}>
                 <a href="https://drive.google.com/drive/u/2/folders/14VfZ9AZx2ct1oyTMfgLyp1Ew8Xq9IeYK" target="_blank" rel="noopener noreferrer"
                   style={{ display: 'inline-block', padding: '10px 10px', borderRadius: '8px', background: '#0f4c81', color: 'white', textDecoration: 'none', fontSize: '13px', fontWeight: '1000' }}>
                   Access document templates
