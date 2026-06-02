@@ -128,20 +128,25 @@ if (deliveryTypes.includes('soft') && parentEmail) {
           cc: therapistEmail,
           subject: `${clientName} ${therapistSpecialty} ${docType} (${docMonth})`,
           html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-              <p>Good day!</p>
-              <p>Attached is your child's ${therapistSpecialty} ${docType} prepared by your child's assigned therapist.</p>
-              <p>If you have any questions or concerns regarding the report, please do not hesitate to let us know.</p>
-              <p>Thank you!</p>
-              <p>Best regards,<br/>PTC Admin</p>
-              <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;" />
-              <p style="font-size: 13px; color: #555;">
-                <strong>POTENTIALS THERAPY CENTER</strong><br/>
-                📍 Unit 2A, MIC Building, Bukidnon Street, Brgy. Ramon Magsaysay, Bago Bantay, Quezon City (Near SM North Annex)<br/>
-                📞 09752419349<br/>
-                📧 potentialstherapycenter@gmail.com<br/>
-                🖥️ <a href="https://facebook.com/potentialstherapycenter" target="_blank" rel="noopener noreferrer" >facebook.com/potentialstherapycenter</a>
-              </p>
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: #0f4c81; padding: 20px; border-radius: 8px 8px 0 0;">
+                <h2 style="color: white; margin: 0;">Document Ready</h2>
+              </div>
+              <div style="background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0;">
+                <p>Good day!</p>
+                <p>Attached are your child's ${therapistSpecialty} ${docType} prepared by your child's assigned therapist.</p>
+                <p>If you have any questions or concerns regarding the report, please do not hesitate to let us know.</p>
+                <p>Thank you!</p>
+                <p>Best regards,<br/>PTC Admin</p>
+                <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;" />
+                <p style="font-size: 13px; color: #555;">
+                  <strong>POTENTIALS THERAPY CENTER</strong><br/>
+                  📍 Unit 2A, MIC Building, Bukidnon Street, Brgy. Ramon Magsaysay, Bago Bantay, Quezon City (Near SM North Annex)<br/>
+                  📞 09752419349<br/>
+                  📧 potentialstherapycenter@gmail.com<br/>
+                  🖥️ <a href="https://facebook.com/potentialstherapycenter" style="color: #0f4c81;">facebook.com/potentialstherapycenter</a>
+                </p>
+              </div>
             </div>
           `,
           attachments: [{
