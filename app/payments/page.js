@@ -706,7 +706,17 @@ function OutstandingByDayTab({ clients, onSettle }) {
               })
               // Sort each therapist's sessions by time
               Object.values(byTherapist).forEach(sessions => {
-                sessions.sort((a, b) => (a.time_start || '').localeCompare(b.time_start || ''))
+              sessions.sort((a, b) => {
+                const parseT = t => {
+                  if (!t) return 0
+                  const [time, period] = t.split(' ')
+                  let [h, m] = time.split(':').map(Number)
+                  if (period === 'PM' && h !== 12) h += 12
+                  if (period === 'AM' && h === 12) h = 0
+                  return h * 60 + m
+                }
+                return parseT(a.time_start) - parseT(b.time_start)
+              })
               })
                 const totalOwed = dateSessions.reduce((sum, s) => sum + Number(s.amount || 0), 0)
                 return (
@@ -724,7 +734,17 @@ function OutstandingByDayTab({ clients, onSettle }) {
                       byTherapist[key].push(s)
                     })
                     Object.values(byTherapist).forEach(sessions => {
-                      sessions.sort((a, b) => (a.time_start || '').localeCompare(b.time_start || ''))
+                      sessions.sort((a, b) => {
+                        const parseT = t => {
+                          if (!t) return 0
+                          const [time, period] = t.split(' ')
+                          let [h, m] = time.split(':').map(Number)
+                          if (period === 'PM' && h !== 12) h += 12
+                          if (period === 'AM' && h === 12) h = 0
+                          return h * 60 + m
+                        }
+                        return parseT(a.time_start) - parseT(b.time_start)
+                      })
                     })
                     return Object.entries(byTherapist).sort(([a], [b]) => a.localeCompare(b)).map(([therapistName, therapistSessions]) => (
                         <div key={therapistName} style={{ marginBottom: '12px' }}>
