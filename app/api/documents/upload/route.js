@@ -34,6 +34,7 @@ export async function POST(request) {
     const [, ...therapistRows] = therapistData
     const therapistRow = therapistRows.find(r => r && r[1] === therapistName)
     const therapistEmail = therapistRow?.[7] || ''
+    const therapistSpecialty = therapistRow?.[2] || 'therapy'
 
     // Convert file to buffer for email attachment
     const buffer = Buffer.from(await file.arrayBuffer())
@@ -113,31 +114,42 @@ export async function POST(request) {
 
       const deliveryTypes = (delivery || 'soft').split(',')
 
-      if (deliveryTypes.includes('soft') && parentEmail) {
-      // Send email to parent with PDF attached
-      await transporter.sendMail({
-        from: `Potentials Therapy Center <${process.env.GMAIL_USER}>`,
-        to: parentEmail,
-        cc: therapistEmail,
-        subject: `${docType} — ${clientName}`,
-        html: `
-          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: #0f4c81; padding: 20px; border-radius: 8px 8px 0 0;">
-              <h2 style="color: white; margin: 0;">Document Ready</h2>
+if (deliveryTypes.includes('soft') && parentEmail) {
+        const docMonth = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', month: 'long', year: 'numeric' })
+        const specialtyLabel = therapistName ? (
+          therapistName.includes('(OT)') || reportRow[6]?.includes('OT') ? 'OT' :
+          therapistName.includes('(ST)') || reportRow[6]?.includes('ST') ? 'ST' :
+          therapistName.includes('(PT)') || reportRow[6]?.includes('PT') ? 'PT' :
+          'SPED'
+        ) : 'therapy'
+        await transporter.sendMail({
+          from: `Potentials Therapy Center <${process.env.GMAIL_USER}>`,
+          to: parentEmail,
+          cc: therapistEmail,
+          subject: `${clientName} ${therapistSpecialty} ${docType} (${docMonth})`,
+          html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+              <p>Good day!</p>
+              <p>Attached is your child's ${therapistSpecialty} ${docType} prepared by your child's assigned therapist.</p>
+              <p>If you have any questions or concerns regarding the report, please do not hesitate to let us know.</p>
+              <p>Thank you!</p>
+              <p>Best regards,<br/>PTC Admin</p>
+              <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;" />
+              <p style="font-size: 13px; color: #555;">
+                <strong>POTENTIALS THERAPY CENTER</strong><br/>
+                📍 Unit 2A, MIC Building, Bukidnon Street, Brgy. Ramon Magsaysay, Bago Bantay, Quezon City (Near SM North Annex)<br/>
+                📞 09752419349<br/>
+                📧 potentialstherapycenter@gmail.com<br/>
+                🖥️ <a href="https://facebook.com/potentialstherapycenter" target="_blank" rel="noopener noreferrer" >facebook.com/potentialstherapycenter</a>
+              </p>
             </div>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0;">
-              <p>Hello!</p>
-              <p>Please find attached the <strong>${docType}</strong> for <strong>${clientName}</strong> prepared by <strong>T. ${therapistName}</strong>.</p>
-              <p style="color: #666; font-size: 13px; margin-top: 20px;">— Potentials Therapy Center</p>
-            </div>
-          </div>
-        `,
-        attachments: [{
-          filename: `${clientName}_${docType}_${now}.pdf`,
-          content: buffer,
-          contentType: 'application/pdf'
-        }]
-        })      
+          `,
+          attachments: [{
+            filename: `${clientName}_${docType}_${now}.pdf`,
+            content: buffer,
+            contentType: 'application/pdf'
+          }]
+        })
       }
     if (deliveryTypes.includes('hard')) {
       // Send to secretary for printing
