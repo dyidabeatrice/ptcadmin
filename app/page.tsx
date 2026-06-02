@@ -16,6 +16,7 @@ export default function HomePage() {
       d.classList.toggle('active', i === index)
     })
   }
+  const [lightbox, setLightbox] = useState<string | null>(null)
 
   const slideShow = (id: string, dir: number, total: number) => {
     const current = slideState.current[id]
@@ -312,35 +313,28 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Our Facility — Slideshow */}
+        {/* Our Facility */}
         <div style={{ maxWidth: '1100px', margin: '0 auto 2.5rem', padding: '0 1rem' }}>
-        <div style={{ width: '100%' }} className="slideshow" id="clinic-show">
-        <div style={{ maxWidth: '1100px', margin: '0 auto 2.5rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '14px' }}>
             <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
             <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>Our Facility</div>
             <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
           </div>
-          <div className="slideshow" id="clinic-show">
-            <div className="slides" id="clinic-slides" style={{ transform: 'translateX(-100%)' }}>
-              {['/clinic1.jpg', '/clinic2.jpg', '/clinic3.jpg'].map((src, i) => (
-                <div key={i} className="slide"><img src={src} alt="Our Facility" /></div>
-              ))}
-            </div>
-            <button className="slide-arrow slide-arrow-left" onClick={() => slideShow('clinic', -1, 3)}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0f4c81" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-            </button>
-            <button className="slide-arrow slide-arrow-right" onClick={() => slideShow('clinic', 1, 3)}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0f4c81" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-            </button>
-          </div>
-          <div className="slide-dots" id="clinic-dots">
-            {[0, 1, 2].map(i => (
-              <button key={i} className={`slide-dot${i === 1 ? ' active' : ''}`} onClick={() => goToSlide('clinic', i)} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+            {['/clinic-new1.jpg', '/clinic-new2.jpg', '/clinic-new3.jpg', '/clinic-new4.jpg'].map((imgSrc, i) => (
+              <div key={i} onClick={() => setLightbox(imgSrc)}
+                style={{ height: '220px', borderRadius: '12px', overflow: 'hidden', cursor: 'zoom-in' }}>
+                <img src={imgSrc} alt="Our Facility" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s ease' }}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} />
+              </div>
             ))}
           </div>
-        </div>
-        </div>
+          {lightbox && (
+            <div onClick={() => setLightbox(null)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}>
+              <img src={lightbox} alt="Facility" style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px' }} />
+            </div>
+          )}
         </div>
 
       {/* Our Team — Auto Scroll Strip */}
