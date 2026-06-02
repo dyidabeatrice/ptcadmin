@@ -535,7 +535,7 @@ export default function TherapistDashboard() {
                     </tbody>
                   </table>
                 </div>
-                <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#999' }}>Submit all documents to: <strong>potentialstherapycenter@gmail.com</strong></p>
+                <p style={{ margin: '10px 0 0', fontSize: '12px', color: '#999' }}>Submit all documents via <strong>therapist portal</strong> or <strong>potentialstherapycenter@gmail.com</strong> (if uploading is not available)</p>
               </div>
 
               {/* Professional Fees */}
@@ -544,9 +544,9 @@ export default function TherapistDashboard() {
                 <ul style={{ margin: 0, paddingLeft: '18px', lineHeight: '1.8', color: '#444' }}>
                   <li>Cut-off: <strong>Day 1–15</strong> and <strong>Day 16–last day</strong> of the month</li>
                   <li>Released within <strong>1–5 days</strong> after cut-off</li>
-                  <li>IE: <strong>50%</strong> upon evaluation, remaining <strong>50%</strong> upon report submission (max 6 months)</li>
+                  <li>IE: <strong>50%</strong> upon evaluation, remaining <strong>50%</strong> upon report submission (forfeited if submitted after 6 months)</li>
                   <li>No official receipt issued = <strong>10% deduction</strong> from professional fee</li>
-                  <li>Submit bank details (BDO preferred) and GCash account to admin</li>
+                  <li>Either in cash or via bank transfer (submit bank details (BDO preferred) account to admin)</li>
                 </ul>
               </div>
 
