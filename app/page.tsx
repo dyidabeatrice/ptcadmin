@@ -612,7 +612,7 @@ export default function HomePage() {
           {/* Map */}
           <div style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: '0 8px 32px rgba(15,76,129,0.1)', border: '1px solid #e8edf5', height: '380px' }}>
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3859.9362508724644!2d121.02258107404421!3d14.65955918583378!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397b7d948f8a53d%3A0xbeb6658438477430!2sPotentials%20Therapy%20Center!5e0!3m2!1sfr!2sfr!4v1775319508687!5m2!1sfr!2sfr"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3859.936250872463!2d121.02258107440107!3d14.659559185833862!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397b7d948f8a53d%3A0xbeb6658438477430!2sPotentials%20Therapy%20Center!5e0!3m2!1sen!2sfr!4v1780397807353!5m2!1sen!2sfr"
               width="100%" height="100%"
               style={{ border: 0 }}
               allowFullScreen

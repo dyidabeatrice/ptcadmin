@@ -509,8 +509,12 @@ export default function TherapistDashboard() {
 
               {/* Documentation */}
               <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem' }}>
-                <h3 style={{ margin: '0 0 12px', color: '#0f4c81', fontSize: '14px' }}>📄 Documentation Deadlines</h3>
+                <h3 style={{ margin: '0 0 12px', color: '#0f4c81', fontSize: '14px' }}>📄 Documentation </h3>
                 <div style={{ overflowX: 'auto' }}>
+                <a href="https://drive.google.com/drive/u/2/folders/14VfZ9AZx2ct1oyTMfgLyp1Ew8Xq9IeYK" target="_blank" rel="noopener noreferrer"
+                  style={{ display: 'inline-block', padding: '12px 24px', borderRadius: '8px', background: '#0f4c81', color: 'white', textDecoration: 'none', fontSize: '13px', fontWeight: '500' }}>
+                  Access document templates
+                </a>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                     <thead>
                       <tr style={{ background: '#f0f4f8' }}>
@@ -575,7 +579,7 @@ export default function TherapistDashboard() {
                 <p style={{ fontSize: '12px', color: '#999', marginBottom: '12px', fontStyle: 'italic' }}>
                   This is an excerpt of the most important points from the Therapist–Center Agreement. <br />Please refer to the full document for complete details.
                 </p>
-                <a href="https://drive.google.com/your-link-here" target="_blank" rel="noopener noreferrer"
+                <a href="https://drive.google.com/file/d/1b1JJqnANNZidIvx9tnPB8epJ7M74-VuZ/view?usp=sharing" target="_blank" rel="noopener noreferrer"
                   style={{ display: 'inline-block', padding: '12px 24px', borderRadius: '8px', background: '#0f4c81', color: 'white', textDecoration: 'none', fontSize: '13px', fontWeight: '500' }}>
                   view full Therapist–Center Agreement
                 </a>
