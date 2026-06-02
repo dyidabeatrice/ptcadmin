@@ -321,7 +321,7 @@ export default function HomePage() {
             <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-            {['/clinic-new1.jpg', '/clinic-new2.jpg', '/clinic-new3.jpg', '/clinic-new4.jpg'].map((imgSrc, i) => (
+            {['/clinic-new1.jpeg', '/clinic-new2.jpeg', '/clinic-new3.jpeg', '/clinic-new4.jpeg'].map((imgSrc, i) => (
               <div key={i} onClick={() => setLightbox(imgSrc)}
                 style={{ height: '220px', borderRadius: '12px', overflow: 'hidden', cursor: 'zoom-in' }}>
                 <img src={imgSrc} alt="Our Facility" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s ease' }}
