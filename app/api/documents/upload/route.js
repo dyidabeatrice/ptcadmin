@@ -65,7 +65,7 @@ export async function POST(request) {
       await transporter.sendMail({
         from: `Potentials Therapy Center <${process.env.GMAIL_USER}>`,
         to: process.env.GMAIL_USER,
-        cc: therapistEmail,
+        bcc: therapistEmail,
         subject: `IE Report Submitted — ${clientName} by ${therapistName}`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
@@ -125,7 +125,7 @@ if (deliveryTypes.includes('soft') && parentEmail) {
         await transporter.sendMail({
           from: `Potentials Therapy Center <${process.env.GMAIL_USER}>`,
           to: parentEmail,
-          cc: therapistEmail,
+          bcc: therapistEmail,
           subject: `${clientName} ${therapistSpecialty} ${docType} (${docMonth})`,
           html: `
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
