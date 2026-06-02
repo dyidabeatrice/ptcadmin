@@ -504,6 +504,7 @@ export default function TherapistDashboard() {
                   <li>Emergency absence — inform admin <strong>immediately</strong></li>
                   <li>Coordinate with admin for client <strong>make-up sessions</strong> for any absence</li>
                   <li>If late, extend time or coordinate with admin and client's guardian</li>
+                  <li>Consultants with a pattern of frequent absences shall undergo an <strong>employment review</strong></li>
                 </ul>
               </div>
 
@@ -527,7 +528,7 @@ export default function TherapistDashboard() {
                     <tbody>
                       {[
                         { doc: 'Initial Evaluation / Re-evaluation Report', deadline: '1 month (not exceeding 6 months)' },
-                        { doc: 'Progress Report (regular)', deadline: '2 weeks advance notice' },
+                        { doc: 'Progress Report (regular) / Discharge Notes / Endorsement Notes', deadline: '2 weeks advance notice' },
                         { doc: 'Progress Report (rushed)', deadline: 'Day before appointment' },
                         { doc: 'Daily / Session Notes', deadline: 'Within the day of session' },
                         { doc: 'Home Instructions Program', deadline: '1 week' },
@@ -551,7 +552,7 @@ export default function TherapistDashboard() {
                   <li>Cut-off: <strong>Day 1–15</strong> and <strong>Day 16–last day</strong> of the month</li>
                   <li>Released within <strong>1–5 days</strong> after cut-off</li>
                   <li>IE: <strong>50%</strong> upon evaluation, remaining <strong>50%</strong> upon report submission (forfeited if submitted after 6 months)</li>
-                  <li>No official receipt issued = <strong>10% deduction</strong> from professional fee</li>
+                  <li>Consultants must issue official receipt when requested. Separate receipts from therapist and clinic. No official receipt issued = <strong>10% deduction</strong> from professional fee</li>
                   <li>Either in cash or via bank transfer (submit bank details (BDO preferred) account to admin)</li>
                 </ul>
               </div>
@@ -566,13 +567,14 @@ export default function TherapistDashboard() {
                 </ul>
               </div>
 
-              {/* Resignation */}
+              {/* Termination of agreement */}
               <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem' }}>
-                <h3 style={{ margin: '0 0 12px', color: '#0f4c81', fontSize: '14px' }}>📝 Resignation</h3>
+                <h3 style={{ margin: '0 0 12px', color: '#0f4c81', fontSize: '14px' }}>📝 Resignation / Termination of Agreement</h3>
                 <ul style={{ margin: 0, paddingLeft: '18px', lineHeight: '1.8', color: '#444' }}>
                   <li>Submit a formal resignation letter <strong>at least 1 month</strong> in advance</li>
                   <li>Submit all pending documents and endorsements before clearance</li>
                   <li><strong>30% of professional fees</strong> for remaining cut-off will be held until all documents are submitted</li>
+                  <li>Immediate termination may occur if the consultant engages in unethical or illegal conduct. This includes but not limited to: (1) misconduct or willful disobedience of the lawful orders of the clinic administration or his representative or assigned department heads, (2) breach of contract/agreement, (3) gross negligence, (4) dishonesty or fraud, (5) commission of a crime, (6) any action that materially harms the center, its reputation, other staff and/or its clients, (7) breach of data privacy, (8) notorious absences and/or tardiness, (9) and similar causes are analogous to the foregoing.</li>
                 </ul>
               </div>
 
@@ -581,7 +583,7 @@ export default function TherapistDashboard() {
                 <p style={{ fontSize: '12px', color: '#999', marginBottom: '12px', fontStyle: 'italic' }}>
                   This is an excerpt of the most important points from the Therapist–Center Agreement. <br />Please refer to the full document for complete details.
                 </p>
-                <a href="https://drive.google.com/file/d/1b1JJqnANNZidIvx9tnPB8epJ7M74-VuZ/view?usp=sharing" target="_blank" rel="noopener noreferrer"
+                <a href="https://drive.google.com/file/d/1b1JJqnANNZidIvx9tnPB8epJ7M74-VuZ/view?usp=share_link" target="_blank" rel="noopener noreferrer"
                   style={{ display: 'inline-block', padding: '12px 24px', borderRadius: '8px', background: '#0f4c81', color: 'white', textDecoration: 'none', fontSize: '13px', fontWeight: '1000' }}>
                   view full Therapist–Center Agreement
                 </a>
