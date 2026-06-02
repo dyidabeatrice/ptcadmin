@@ -368,8 +368,9 @@ export default function SchedulePage() {
   async function openPayModal(session) {
     const key = getTherapistKey(session.therapist, therapistData)
     const types = SESSION_TYPES[key] || SESSION_TYPES.OT
-    const defaultType = types[0].value
-    const amount = types[0].amount
+    const matchedType = types.find(t => t.value === session.session_type)
+    const defaultType = matchedType ? session.session_type : types[0].value
+    const amount = matchedType ? matchedType.amount : types[0].amount
     setPayForm({ session_type: defaultType, mop: 'Cash', amount, use_credit: false, split: false, split_credit: 0, split_cash: amount })
     setPayModal(session)
     const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
