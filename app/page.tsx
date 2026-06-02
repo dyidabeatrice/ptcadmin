@@ -378,7 +378,7 @@ export default function HomePage() {
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem', width: '100%' }}>
             <div id="curator-feed-default-feed-layout" style={{ width: '100%' }}>
-              <a href="https://curator.io" target="_blank" className="crt-logo crt-tag">Powered by Curator.io</a>
+              <a href="https://curator.io" target="_blank" className="crt-logo crt-tag" style={{ fontSize: '8px', opacity: 0.5 }}>Powered by Curator.io</a>
             </div>
           </div>
         </div>
