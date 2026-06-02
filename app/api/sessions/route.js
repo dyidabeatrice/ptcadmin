@@ -397,7 +397,43 @@ if (body.action === 'status') {
           ]]}
         })
       }
-      
+
+      // Auto-create IE report entry when IE session is paid and present
+      if (isIE && isPresent) {
+        const reportsData = await getSheetData('reports')
+        const [, ...reportRows] = reportsData
+        const exists = reportRows.find(r => r && r[0] === `IE-${body.session_id}`)
+        if (!exists) {
+          const sessionDate = new Date(body.date || new Date())
+          const deadline = new Date(sessionDate)
+          deadline.setMonth(deadline.getMonth() + 6)
+          const deadlineStr = deadline.toISOString().split('T')[0]
+          const today = new Date().toLocaleDateString('en-PH', {
+            timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric'
+          })
+          await sheets.spreadsheets.values.append({
+            spreadsheetId: SPREADSHEET_ID,
+            range: 'reports',
+            valueInputOption: 'RAW',
+            requestBody: { values: [[
+              `IE-${body.session_id}`,
+              body.client_name || '',
+              body.therapist || '',
+              '',
+              today,
+              deadlineStr,
+              'IE Report',
+              0,
+              'Pending Submission',
+              '',
+              '',
+              'soft',
+              '',
+              ''
+            ]]}
+          })
+        }
+      }      
       // Credits calls after — wrapped so they don't block the response
       try {
         if (body.use_credit || body.split) {
