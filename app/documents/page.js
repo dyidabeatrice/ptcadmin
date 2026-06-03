@@ -36,7 +36,7 @@ export default function DocumentsPage() {
   const [payModal, setPayModal] = useState(null)
   const [payForm, setPayForm] = useState({ amount: 0, mop: 'Cash', use_credit: false, split: false, split_credit: 0, split_cash: 0, reference: '' })
   const [clientCredit, setClientCredit] = useState(0)
-  const [filterStatus, setFilterStatus] = useState('All')
+  const [filterStatus, setFilterStatus] = useState('Pending')
 
   const [form, setForm] = useState({
     client_name: '', therapists: [], 
@@ -193,7 +193,7 @@ export default function DocumentsPage() {
   const filtered = reports
     .filter(r => {
       if (filterStatus === 'IE Reports') return r.doc_type === 'IE Report'
-      if (filterStatus === 'All') return r.doc_type !== 'IE Report'
+      if (filterStatus === 'Pending') return ['Outstanding', 'Ready for Release', 'Pending Submission'].includes(r.status) && r.doc_type !== 'IE Report'
       return r.status === filterStatus && r.doc_type !== 'IE Report'
     })
     .sort((a, b) => {
@@ -478,7 +478,7 @@ export default function DocumentsPage() {
 
       {/* Filter tabs */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        {['All', 'Outstanding', 'Ready for Release', 'Completed', 'IE Reports'].map(s => (
+        {['Pending', 'Outstanding', 'Ready for Release', 'Completed', 'IE Reports'].map(s => (
           <button key={s} onClick={() => setFilterStatus(s)} style={{
             padding: '7px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '500',
             background: filterStatus === s ? '#0f4c81' : '#f0f0f0',
