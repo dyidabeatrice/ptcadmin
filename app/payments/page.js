@@ -1062,7 +1062,7 @@ export default function PaymentsPage() {
   const [saving, setSaving] = useState(false)
   const [pendingPayments, setPendingPayments] = useState([])
   const [processModal, setProcessModal] = useState(null)
-  const [processForm, setProcessForm] = useState({ client_name: '', mop: 'BDO', amount: '', reference: '' })
+  const [processForm, setProcessForm] = useState({ client_name: '', mop: 'BDO', amount: '', reference: '', notes: '' })
   const [processSaving, setProcessSaving] = useState(false)
   const [ocrLoading, setOcrLoading] = useState(false)
   const [zoomedImage, setZoomedImage] = useState(null)
@@ -1162,7 +1162,7 @@ export default function PaymentsPage() {
     if (!processForm.amount) return alert('Please enter an amount')
     setProcessSaving(true)
     const today = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
-    await fetch('/api/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add_credit', client_name: processForm.client_name, amount: Number(processForm.amount), mop: processForm.mop, date: today, reference: processForm.reference || '' }) })
+    await fetch('/api/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add_credit', client_name: processForm.client_name, amount: Number(processForm.amount), mop: processForm.mop, date: today, reference: processForm.reference || '', note: processForm.notes || '' }) })
     await fetch('/api/payments', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'process_pending', id: processModal.id }) })
     setProcessModal(null)
     fetchAll()
@@ -1401,9 +1401,13 @@ export default function PaymentsPage() {
                 {MOP_OPTIONS.map(mop => <button key={mop} onClick={() => setProcessForm({ ...processForm, mop })} style={{ padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px', border: processForm.mop === mop ? '2px solid #0f4c81' : '1px solid #ddd', background: processForm.mop === mop ? '#E6F1FB' : 'white', color: processForm.mop === mop ? '#0f4c81' : '#666', fontWeight: processForm.mop === mop ? '500' : '400' }}>{mop}</button>)}
               </div>
             </div>
-            <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Reference number</label>
               <input value={processForm.reference} onChange={e => setProcessForm({ ...processForm, reference: e.target.value })} style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Notes</label>
+              <input value={processForm.notes || ''} onChange={e => setProcessForm({ ...processForm, notes: e.target.value })} placeholder="e.g., for May sessions, advance for xx..." style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
             </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setProcessModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
