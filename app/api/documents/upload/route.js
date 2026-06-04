@@ -124,7 +124,7 @@ if (deliveryTypes.includes('soft') && parentEmail) {
         ) : 'therapy'
         await transporter.sendMail({
           from: `Potentials Therapy Center <${process.env.GMAIL_USER}>`,
-          to: parentEmail,
+          to: parentEmail.split(',').map(e => e.trim()).join(', '),
           bcc: therapistEmail,
           subject: `${clientName} ${therapistSpecialty} ${docType} (${docMonth})`,
           html: `

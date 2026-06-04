@@ -353,10 +353,11 @@ export default function DocumentsPage() {
                 </div>
 
                 <div style={{ marginBottom: '12px' }}>
-                  <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Parent email (optional)</label>
-                  <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
-                    placeholder="parent@email.com"
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Parent email (optional)</label>
+                <input type="text" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })}
+                  placeholder="parent@email.com"
+                  style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+                <p style={{ fontSize: '11px', color: '#999', margin: '4px 0 0' }}>Separate multiple emails with a comma</p>
                 </div>
 
                 <div style={{ marginBottom: '12px' }}>
