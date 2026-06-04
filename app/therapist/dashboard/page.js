@@ -150,9 +150,9 @@ export default function TherapistDashboard() {
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px'
                     }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: '500', fontSize: '13px', color: '#0f4c81' }}>{r.client_name}</div>
+                        <div style={{ fontWeight: '500', fontSize: '13px', color: '#0f4c81' }}>{r.client_name} · {r.doc_type}</div>
                         <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
-                          {r.doc_type} · Requested {r.request_date}
+                          Requested {r.request_date}
                         </div>
                         {r.file_url && (
                           <div style={{ fontSize: '11px', color: '#27500A', marginTop: '4px' }}>
@@ -160,50 +160,52 @@ export default function TherapistDashboard() {
                           </div>
                         )}
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-                        <div style={{
-                          fontSize: '11px', fontWeight: '600', padding: '3px 10px', borderRadius: '10px',
-                          background: r.file_url ? '#EAF3DE' : urgent ? '#FCEBEB' : '#EAF3DE',
-                          color: r.file_url ? '#27500A' : urgent ? '#791F1F' : '#27500A'
-                        }}>
-                          {r.file_url ? '✓ Uploaded' : days === null ? 'No deadline' : days < 0 ? 'Overdue' : days === 0 ? 'Due today' : `${days} day${days !== 1 ? 's' : ''} left`}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div style={{
+                            fontSize: '11px', fontWeight: '600', padding: '3px 10px', borderRadius: '10px',
+                            background: r.file_url ? '#EAF3DE' : urgent ? '#FCEBEB' : '#EAF3DE',
+                            color: r.file_url ? '#27500A' : urgent ? '#791F1F' : '#27500A'
+                          }}>
+                            {r.file_url ? '✓ Uploaded' : days === null ? 'No deadline' : days < 0 ? 'Overdue' : days === 0 ? 'Due today' : `${days} day${days !== 1 ? 's' : ''} left`}
+                          </div>
+                          {!r.file_url && (r.status === 'Ready for Release' || r.status === 'Pending Submission') && (
+                            <label style={{
+                              padding: '5px 12px', borderRadius: '6px', border: 'none',
+                              background: '#0f4c81', color: 'white', cursor: 'pointer',
+                              fontSize: '11px', fontWeight: '500'
+                            }}>
+                              {uploading === r.id ? 'Uploading...' : 'Upload PDF'}
+                              <input type="file" accept=".pdf" style={{ display: 'none' }}
+                                disabled={uploading === r.id}
+                                onChange={async e => {
+                                  const file = e.target.files[0]
+                                  if (!file) return
+                                  if (file.type !== 'application/pdf') return alert('Please upload a PDF file only')
+                                  setUploading(r.id)
+                                  const formData = new FormData()
+                                  formData.append('file', file)
+                                  formData.append('report_id', r.id)
+                                  formData.append('report_index', r.index)
+                                  const res = await fetch('/api/documents/upload', {
+                                    method: 'POST',
+                                    body: formData
+                                  })
+                                  const json = await res.json()
+                                  if (json.success) {
+                                    alert('Report uploaded successfully!')
+                                    const rRes = await fetch('/api/documents')
+                                    const rJson = await rRes.json()
+                                    if (rJson.success) setReports(rJson.data.filter(rep => rep.therapist === therapistName))
+                                  } else {
+                                    alert('Upload failed: ' + json.error)
+                                  }
+                                  setUploading(null)
+                                }} />
+                            </label>
+                          )}
                         </div>
                         <div style={{ fontSize: '11px', color: '#999' }}>Due {r.deadline}</div>
-                        {!r.file_url && (r.status === 'Ready for Release' || r.status === 'Pending Submission') && (
-                          <label style={{
-                            padding: '5px 12px', borderRadius: '6px', border: 'none',
-                            background: '#0f4c81', color: 'white', cursor: 'pointer',
-                            fontSize: '11px', fontWeight: '500'
-                          }}>
-                            {uploading === r.id ? 'Uploading...' : 'Upload PDF'}
-                            <input type="file" accept=".pdf" style={{ display: 'none' }}
-                              disabled={uploading === r.id}
-                              onChange={async e => {
-                                const file = e.target.files[0]
-                                if (!file) return
-                                if (file.type !== 'application/pdf') return alert('Please upload a PDF file only')
-                                setUploading(r.id)
-                                const formData = new FormData()
-                                formData.append('file', file)
-                                formData.append('report_id', r.id)
-                                formData.append('report_index', r.index)
-                                const res = await fetch('/api/documents/upload', {
-                                  method: 'POST',
-                                  body: formData
-                                })
-                                const json = await res.json()
-                                if (json.success) {
-                                  alert('Report uploaded successfully!')
-                                  const rRes = await fetch('/api/documents')
-                                  const rJson = await rRes.json()
-                                  if (rJson.success) setReports(rJson.data.filter(rep => rep.therapist === therapistName))
-                                } else {
-                                  alert('Upload failed: ' + json.error)
-                                }
-                                setUploading(null)
-                              }} />
-                          </label>
-                        )}
                       </div>
                     </div>
                     )
