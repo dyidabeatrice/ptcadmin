@@ -109,7 +109,7 @@ export default function Dashboard() {
             { href: '/clients', label: 'Add new client', color: '#0f4c81', text: 'white' },
             { href: '/messages', label: 'Send reminders', color: '#0f4c81', text: 'white' },
             { href: '/payments', label: 'View payments', color: '#1D9E75', text: 'white' },
-            { href: '/master', label: 'Master schedule', color: '#0f4c81', text: 'white' },
+            { href: '/tasks', label: 'To-do', color: '#0f4c81', text: 'white' },
           ].map(l => (
             <Link key={l.label} href={l.href} style={{
               padding: '10px 18px', borderRadius: '8px',
