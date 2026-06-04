@@ -139,8 +139,7 @@ export default function HelpPage() {
             <Step num={2}>Enter the client's <strong>Last name</strong> and <strong>First name</strong> — this will be saved as "Last, First" format.</Step>
             <Step num={3}>Fill in birthdate, phone, address, and notes as needed.</Step>
             <Step num={4}>Enter the <strong>Facebook account name</strong> — this must be typed <strong>exactly as it appears on Messenger</strong> for auto-messaging to work.</Step>
-            <Step num={5}>Add their <strong>therapist schedule</strong> — select day, therapist, start time, and session duration.</Step>
-            <Step num={6}>Click <strong>Save client</strong>.</Step>
+            <Step num={5}>Click <strong>Save client</strong>.</Step>
             <Note type="warning">The Facebook account name must match exactly. Contact <strong>Ida</strong> to set up auto-messaging for a new client.</Note>
           </SubSection>
 
@@ -175,7 +174,7 @@ export default function HelpPage() {
           </SubSection>
 
           <SubSection title="How to generate a new week">
-            <p>Week sheets are <strong>automatically generated</strong> when someone opens the Schedule page — the system always keeps the current week available.</p>
+            <p>Week sheets are <strong>automatically generated</strong> when someone opens the Schedule page on a Saturday or Sunday — the system always keeps the current week available.</p>
             <p>To manually generate the next week, click <strong>+ Generate next week</strong> in the header. This is useful if you want to prepare next week's schedule ahead of time.</p>
             <Note type="tip">Auto-generation still happens on page load — the button is just for generating on demand!</Note>
           </SubSection>
@@ -194,8 +193,8 @@ export default function HelpPage() {
                 { status: 'Pencil', desc: 'Tentative — session is scheduled but not yet confirmed' },
                 { status: 'Confirmed', desc: 'Confirmed via message with the parent' },
                 { status: 'Present', desc: 'Client attended the session' },
-                { status: 'Absent', desc: 'Client did not show up' },
-                { status: 'Cancelled', desc: 'Last-minute cancellation — may incur a cancellation fee' },
+                { status: 'Absent', desc: 'Client was absent with valid reason' },
+                { status: 'Cancelled', desc: 'Last-minute cancellation — may incur a No Show fee' },
               ].map((s, i) => (
                 <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '6px', fontSize: '12px' }}>
                   <span style={{ fontWeight: '600', color: '#0f4c81', minWidth: '90px' }}>{s.status}</span>
@@ -206,9 +205,9 @@ export default function HelpPage() {
             <p style={{ fontSize: '13px', marginBottom: '8px' }}><strong>Color guide:</strong></p>
             <ColorSwatch bg="#FFFBE6" border="#FFD666" color="#7C5800" label="Pencil — tentative" />
             <ColorSwatch bg="#E6F1FB" border="#B5D4F4" color="#0C447C" label="Confirmed — unpaid or paid" />
-            <ColorSwatch bg="#D9EAD3" border="#6AA84F" color="#274E13" label="Present + Paid or Cancelled + Paid" />
+            <ColorSwatch bg="#D9EAD3" border="#6AA84F" color="#274E13" label="Present + Paid Session or Cancelled + Paid No Show fee" />
             <ColorSwatch bg="#F4CCCC" border="#E06666" color="#7B0000" label="Absent" />
-            <ColorSwatch bg="#FCE5CD" border="#E69138" color="#7F3F00" label="Present + Unpaid or Cancelled + Unpaid" />
+            <ColorSwatch bg="#FCE5CD" border="#E69138" color="#7F3F00" label="Present + Unpaid Session or Cancelled + Unpaid No Show fee" />
           </SubSection>
 
           <SubSection title="How to change a session type (right-click)">
@@ -220,7 +219,6 @@ export default function HelpPage() {
 
           <SubSection title="How to move a session">
             <p><strong>Same day, different time or therapist:</strong> Drag the session block to the new time slot in the same day grid.</p>
-            <p><strong>Different day:</strong> Click the <strong>Move</strong> button on the session block → select new day, therapist, and time → confirm.</p>
           </SubSection>
 
           <SubSection title="How to add a one-off or make-up session">
@@ -240,7 +238,7 @@ export default function HelpPage() {
 
           <SubSection title="How to reverse a payment">
             <p>Click the green <strong>Paid ✓</strong> button on a session block. You'll be prompted to confirm — the payment will be reversed and the record deleted.</p>
-            <p>If a client paid in advance but could not attend, mark them as <strong>Paid ✓ before marking Absent</strong> — this automatically moves the payment to their credit balance for future sessions.</p>
+            <p>If a client paid in advance but could not attend, mark them as <strong>Paid ✓ before marking Absent</strong>.</p>
           </SubSection>
 
           <SubSection title="How to send a reminder to a client">
@@ -251,7 +249,6 @@ export default function HelpPage() {
 
           <SubSection title="How to mark a holiday">
             <p>Click <strong>Mark holiday</strong> on the day header. All sessions for that day will be cancelled and a message draft created for every affected client.</p>
-            <Note type="warning">This cannot be easily undone — all sessions for that day will be marked Cancelled.</Note>
           </SubSection>
 
           <SubSection title="Master Template view">
@@ -270,7 +267,7 @@ export default function HelpPage() {
         {/* PAYMENTS */}
         <div id="payments"><Section title="Payments" emoji="💳">
 
-          <SubSection title="Ledger tab">
+          <SubSection title="By Therapist tab">
             <p>The main view of the Payments page. Sessions are organized <strong>per therapist</strong> — select a therapist using the tabs at the top. Under each therapist you'll see their sessions grouped by month, then by date.</p>
             <p style={{ marginBottom: '8px' }}><strong>Color coding:</strong></p>
             <ColorSwatch bg="#FFE4EF" border="#F09595" color="#791F1F" label="Unpaid — no payment recorded yet" />
@@ -305,7 +302,6 @@ export default function HelpPage() {
               ))}
             </div>
             <p>Click <strong>Mark as released</strong> on a period row to record that the therapist's professional fee has been sent. Fill in the method (Cash or Bank Transfer), date, and any notes. Once released it shows <strong>✓ Released</strong> with the date and method.</p>
-            <Note type="tip">The ✕ button on a session row removes it from the ledger and reverses any payment if needed — useful for correcting attendance errors without going to the Schedule page.</Note>
           </SubSection>
 
           <SubSection title="Advance / Partial Payment">
@@ -318,7 +314,6 @@ export default function HelpPage() {
 
           <SubSection title="Credits tab">
             <p>Shows all clients with available credit balances. Use the <strong>Process refund</strong> button to return credit to a client.</p>
-            <Note type="warning">Refunds here are advised to be only used for <strong>advance/credit payments</strong> that were never tied to a specific session. If a client paid for a session and wants an immediate refund, use the <strong>✕ button on the Schedule page</strong> to reverse and delete the session instead — this keeps records clean.</Note>
           </SubSection>
 
           <SubSection title="Outstanding tab">
