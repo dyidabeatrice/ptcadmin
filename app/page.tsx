@@ -331,10 +331,10 @@ export default function HomePage() {
             <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>Our Facility</div>
             <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '3px' }}>
             {['/clinic-new1.jpeg', '/clinic-new2.jpeg', '/clinic-new3.jpeg', '/clinic-new4.jpeg'].map((imgSrc, i) => (
               <div key={i} onClick={() => setLightbox(imgSrc)}
-                style={{ height: '220px', borderRadius: '12px', overflow: 'hidden', cursor: 'zoom-in' }}>
+                style={{ height: '220px', borderRadius: '0px', overflow: 'hidden', cursor: 'zoom-in' }}>
                 <img src={imgSrc} alt="Our Facility" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s ease' }}
                   onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
                   onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} />
