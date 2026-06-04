@@ -99,7 +99,13 @@ export default function TherapistDashboard() {
       return toMin(a.time_start) - toMin(b.time_start)
     })
 
-  const pendingReports = reports.filter(r => r.status !== 'Completed')
+    const pendingReports = reports
+      .filter(r => r.status !== 'Completed')
+      .sort((a, b) => {
+        if (!a.deadline) return 1
+        if (!b.deadline) return -1
+        return new Date(a.deadline) - new Date(b.deadline)
+      })
   const today = new Date()
 
   function daysUntil(deadline) {
