@@ -759,7 +759,7 @@ export default function SchedulePage() {
                               { value: 'Scheduled', label: 'Confirmed' },
                               { value: 'Present', label: 'Present' },
                               { value: 'Absent', label: 'Absent' },
-                              { value: 'Cancelled', label: 'Cancelled' },
+                              { value: 'Cancelled', label: 'No Show' },
                             ].map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
                           </select>
                           {s.payment === 'Unpaid' ? (
@@ -1572,9 +1572,9 @@ export default function SchedulePage() {
         {[
           { bg: '#FFFBE6', border: '#FFD666', label: 'Pencil' },
           { bg: '#E6F1FB', border: '#B5D4F4', label: 'Confirmed/Unpaid or Paid' },
-          { bg: '#D9EAD3', border: '#6AA84F', label: 'Present/Cancelled + Paid' },
+          { bg: '#D9EAD3', border: '#6AA84F', label: 'Present/No Show + Paid' },
           { bg: '#F4CCCC', border: '#E06666', label: 'Absent' },
-          { bg: '#FCE5CD', border: '#E69138', label: 'Present/Cancelled + Unpaid' },
+          { bg: '#FCE5CD', border: '#E69138', label: 'Present/No Show + Unpaid' },
         ].map(item => (
           <span key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span style={{ width: '10px', height: '10px', background: item.bg, border: `1px solid ${item.border}`, borderRadius: '2px', display: 'inline-block' }}></span>
