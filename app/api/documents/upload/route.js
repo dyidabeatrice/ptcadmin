@@ -64,7 +64,7 @@ export async function POST(request) {
     if (docType === 'IE Report') {
       await transporter.sendMail({
         from: `Potentials Therapy Center <${process.env.GMAIL_USER}>`,
-        to: process.env.GMAIL_USER,
+        to: process.env.GMAIL_USER, secretaryEmail,
         bcc: therapistEmail,
         subject: `IE Report Submitted — ${clientName} by ${therapistName}`,
         html: `
