@@ -8,9 +8,13 @@ export async function POST(request) {
     const [, ...rows] = data
     
     const therapistRow = rows.find(r => r && r[1] === name && String(r[9]) === String(pin))
-    
+
     if (!therapistRow) {
       return Response.json({ success: false, error: 'Incorrect name or PIN' })
+    }
+
+    if (therapistRow[11] === 'TRUE') {
+      return Response.json({ success: false, error: 'This account has been disabled. Please contact the clinic.' })
     }
 
     const JWT_SECRET = process.env.JWT_SECRET || 'ptcadmin-secret-key'
