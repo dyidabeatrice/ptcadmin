@@ -228,8 +228,17 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
       }}
       style={{ fontSize: '11px', padding: '3px 6px', borderRadius: '6px', border: '1px solid #B5D4F4', cursor: 'pointer', background: '#E6F1FB', color: '#0C447C' }}>
           <option value="">— type —</option>
-          {['OT SESSION','OT-IE','OT-FE','SPECIALIZED OT TX','ST SESSION','ST-IE','ST-FE','SPECIALIZED ST TX','PT SESSION','PT-IE','PT FE','SPED SESSION','SPED IE','SPED FE','PLAYSCHOOL','PR','PR-RUSHED','IE REPORT','Cancellation Fee','OT INTERN SESSION','OT INTERN IE','ST INTERN SESSION','ST INTERN IE','PR INTERN'].map(t => (
-            <option key={t} value={t}>{t}</option>
+          {[
+            ['OT SESSION','OT SESSION'],['OT-IE','OT-IE'],['OT-FE','OT-FE'],['SPECIALIZED OT TX','SPECIALIZED OT TX'],
+            ['ST SESSION','ST SESSION'],['ST-IE','ST-IE'],['ST-FE','ST-FE'],['SPECIALIZED ST TX','SPECIALIZED ST TX'],
+            ['PT SESSION','PT SESSION'],['PT-IE','PT-IE'],['PT FE','PT FE'],
+            ['SPED SESSION','SPED SESSION'],['SPED IE','SPED IE'],['SPED FE','SPED FE'],
+            ['PLAYSCHOOL','PLAYSCHOOL'],['PR','PR'],['PR-RUSHED','PR-RUSHED'],['IE REPORT','IE REPORT'],
+            ['Cancellation Fee','No Show Fee'],
+            ['OT INTERN SESSION','OT INTERN SESSION'],['OT INTERN IE','OT INTERN IE'],
+            ['ST INTERN SESSION','ST INTERN SESSION'],['ST INTERN IE','ST INTERN IE'],['PR INTERN','PR INTERN']
+          ].map(([val, label]) => (
+            <option key={val} value={val}>{label}</option>
           ))}
         </select>
       </td>
