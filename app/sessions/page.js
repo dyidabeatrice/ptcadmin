@@ -171,7 +171,10 @@ export default function SchedulePage() {
       PT: ['PT SESSION','PT-IE','PT FE','Cancellation Fee'],
       SPED: ['SPED SESSION','SPED IE','SPED FE','PLAYSCHOOL','Cancellation Fee'],
     }
-    return (maps[specialty] || maps.OT).map(v => ({ value: v, label: `${v} ${SESSION_TYPE_RATES[v] !== undefined ? `(₱${SESSION_TYPE_RATES[v].toLocaleString()})` : ''}` }))
+    const LABEL_OVERRIDES = { 'Cancellation Fee': 'No Show Fee' }
+    return (maps[specialty] || maps.OT).map(v => ({
+      value: v,
+      label: `${v} ${SESSION_TYPE_RATES[v] !== undefined ? `(₱${SESSION_TYPE_RATES[v].toLocaleString()})` : ''}` }))
   }
 
   useEffect(() => {
