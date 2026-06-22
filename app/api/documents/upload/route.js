@@ -65,7 +65,7 @@ export async function POST(request) {
     if (docType === 'IE Report') {
       await transporter.sendMail({
         from: `Potentials Therapy Center <${process.env.GMAIL_USER}>`,
-        to: process.env.GMAIL_USER, secretaryEmail,
+        to: [process.env.GMAIL_USER, secretaryEmail].filter(Boolean).join(', '),
         bcc: therapistEmail,
         subject: `IE Report Submitted — ${clientName} by ${therapistName}`,
         html: `
@@ -117,12 +117,6 @@ export async function POST(request) {
 
 if (deliveryTypes.includes('soft') && parentEmail) {
         const docMonth = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', month: 'long', year: 'numeric' })
-        const specialtyLabel = therapistName ? (
-          therapistName.includes('(OT)') || reportRow[6]?.includes('OT') ? 'OT' :
-          therapistName.includes('(ST)') || reportRow[6]?.includes('ST') ? 'ST' :
-          therapistName.includes('(PT)') || reportRow[6]?.includes('PT') ? 'PT' :
-          'SPED'
-        ) : 'therapy'
         await transporter.sendMail({
           from: `Potentials Therapy Center <${process.env.GMAIL_USER}>`,
           to: parentEmail.split(',').map(e => e.trim()).join(', '),
