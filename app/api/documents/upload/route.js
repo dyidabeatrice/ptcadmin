@@ -61,6 +61,7 @@ export async function POST(request) {
     })
 
     // IE Report — send to clinic Gmail
+    const secretaryEmail = process.env.SECRETARY_PRINT_EMAIL
     if (docType === 'IE Report') {
       await transporter.sendMail({
         from: `Potentials Therapy Center <${process.env.GMAIL_USER}>`,
