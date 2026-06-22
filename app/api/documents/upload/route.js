@@ -139,7 +139,7 @@ if (deliveryTypes.includes('soft') && parentEmail) {
                   📍 Unit 2A, MIC Building, Bukidnon Street, Brgy. Ramon Magsaysay, Bago Bantay, Quezon City (Near SM North Annex)<br/>
                   📞 09752419349<br/>
                   📧 potentialstherapycenter@gmail.com<br/>
-                  🖥️ <a href="https://facebook.com/potentialstherapycenter" style="color: #0f4c81;">facebook.com/potentialstherapycenter</a>
+                  🖥️ <a href="https://facebook.com/potentialstherapycenter" style="color: #0f4c81;">facebook.com/potentialstherapycenter</a><br/>
                   🌐 <a href="https://potentialstherapycenter.com" style="color: #0f4c81;">potentialstherapycenter.com</a>
                 </p>
               </div>
