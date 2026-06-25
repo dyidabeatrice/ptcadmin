@@ -57,7 +57,7 @@ const SESSION_TYPES = {
 }
 
 const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
-const ROW_HEIGHT = 32
+const ROW_HEIGHT = compactMode ? 20 : 32
 
 function parseTime(str) {
   if (!str) return 0
@@ -144,6 +144,7 @@ export default function SchedulePage() {
   const [blockLabel, setBlockLabel] = useState('')
   const [savingBlock, setSavingBlock] = useState(false)
   const [specialtiesExpanded, setSpecialtiesExpanded] = useState(false)
+  const [compactMode, setCompactMode] = useState(false)
   const selectedWeekRef = useRef(null)
 
 
@@ -749,53 +750,55 @@ export default function SchedulePage() {
                             return null
                           })()}
                         </div>
-                        <div style={{ marginTop: '14px' }}>
+                        <div style={{ marginTop: compactMode ? '2px' : '14px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <div style={{ fontSize: '10px', fontWeight: '600', color: sc.color, lineHeight: '1.3' }}>{s.client_name}</div>
                           {needsWarning && <span style={{ fontSize: '15px' }}>⚠️</span>}
                         </div>
-                        <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap', marginTop: '2px' }}>
-                          <select value={s.status} onChange={e => updateStatus(s, e.target.value)}
-                            style={{ fontSize: '8px', padding: '1px 2px', borderRadius: '3px', border: '1px solid #ddd', cursor: 'pointer', background: 'white', color: '#444', maxWidth: '72px' }}>
-                            {[
-                              { value: 'Pencil', label: 'Pencil' },
-                              { value: 'Scheduled', label: 'Confirmed' },
-                              { value: 'Present', label: 'Present' },
-                              { value: 'Absent', label: 'Absent' },
-                              { value: 'Cancelled', label: 'No Show' },
-                            ].map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
-                          </select>
-                          {s.payment === 'Unpaid' ? (
-                            <button onClick={() => openPayModal(s)} style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#FCEBEB', color: '#791F1F', cursor: 'pointer', fontWeight: '500' }}>Unpaid</button>
-                          ) : (
-                            <button onClick={() => s.status === 'Absent' ? null : reversePayment(s)} disabled={s.status === 'Absent'} title={s.status === 'Absent' ? 'Payment moved to credit — cannot reverse' : 'Reverse payment'}
-                              style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#EAF3DE', color: s.status === 'Absent' ? '#aaa' : '#27500A', cursor: s.status === 'Absent' ? 'not-allowed' : 'pointer' }}>Paid ✓</button>
-                          )}
-                          <button onClick={async () => {
-                            const isMakeup = (s.notes || '').includes('makeup')
-                            await fetch('/api/sessions', {
-                              method: 'PATCH',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({
-                                action: 'update_notes',
-                                week_key: selectedWeek.key,
-                                rowIndex: s.index,
-                                notes: isMakeup ? '' : 'makeup'
-                              })
-                            })
-                            fetchSessions(selectedWeek.key)
-                          }} style={{ 
-                            fontSize: '8px', padding: '1px 4px', borderRadius: '3px', 
-                            border: (s.notes || '').includes('makeup') ? '1px solid #C9B8C4' : '1px solid #ddd', 
-                            background: (s.notes || '').includes('makeup') ? '#C9B8C4' : 'white', 
-                            color: (s.notes || '').includes('makeup') ? '#4a2d42' : '#999', 
-                            cursor: 'pointer', fontWeight: '600'
-                          }}>MU</button>
-                          <button onClick={() => setRemindModal(s)}
-                            style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: '1px solid #B5D4F4', background: '#E6F1FB', color: '#0C447C', cursor: 'pointer' }}>💬</button>
-                          <button onClick={() => deleteSession(s)} disabled={s.payment === 'Paid'}
-                            style={{ fontSize: '8px', padding: '1px 3px', borderRadius: '3px', border: '1px solid #fcc', background: s.payment === 'Paid' ? '#f5f5f5' : '#fff5f5', color: s.payment === 'Paid' ? '#ccc' : '#c00', cursor: s.payment === 'Paid' ? 'not-allowed' : 'pointer' }}>✕</button>
-                        </div>
+                        {!compactMode && (
+                          <div style={{ display: 'flex', gap: '2px', flexWrap: 'wrap', marginTop: '2px' }}>
+                                                  <select value={s.status} onChange={e => updateStatus(s, e.target.value)}
+                                                    style={{ fontSize: '8px', padding: '1px 2px', borderRadius: '3px', border: '1px solid #ddd', cursor: 'pointer', background: 'white', color: '#444', maxWidth: '72px' }}>
+                                                    {[
+                                                      { value: 'Pencil', label: 'Pencil' },
+                                                      { value: 'Scheduled', label: 'Confirmed' },
+                                                      { value: 'Present', label: 'Present' },
+                                                      { value: 'Absent', label: 'Absent' },
+                                                      { value: 'Cancelled', label: 'No Show' },
+                                                    ].map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
+                                                  </select>
+                                                  {s.payment === 'Unpaid' ? (
+                                                    <button onClick={() => openPayModal(s)} style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#FCEBEB', color: '#791F1F', cursor: 'pointer', fontWeight: '500' }}>Unpaid</button>
+                                                  ) : (
+                                                    <button onClick={() => s.status === 'Absent' ? null : reversePayment(s)} disabled={s.status === 'Absent'} title={s.status === 'Absent' ? 'Payment moved to credit — cannot reverse' : 'Reverse payment'}
+                                                      style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#EAF3DE', color: s.status === 'Absent' ? '#aaa' : '#27500A', cursor: s.status === 'Absent' ? 'not-allowed' : 'pointer' }}>Paid ✓</button>
+                                                  )}
+                                                  <button onClick={async () => {
+                                                    const isMakeup = (s.notes || '').includes('makeup')
+                                                    await fetch('/api/sessions', {
+                                                      method: 'PATCH',
+                                                      headers: { 'Content-Type': 'application/json' },
+                                                      body: JSON.stringify({
+                                                        action: 'update_notes',
+                                                        week_key: selectedWeek.key,
+                                                        rowIndex: s.index,
+                                                        notes: isMakeup ? '' : 'makeup'
+                                                      })
+                                                    })
+                                                    fetchSessions(selectedWeek.key)
+                                                  }} style={{ 
+                                                    fontSize: '8px', padding: '1px 4px', borderRadius: '3px', 
+                                                    border: (s.notes || '').includes('makeup') ? '1px solid #C9B8C4' : '1px solid #ddd', 
+                                                    background: (s.notes || '').includes('makeup') ? '#C9B8C4' : 'white', 
+                                                    color: (s.notes || '').includes('makeup') ? '#4a2d42' : '#999', 
+                                                    cursor: 'pointer', fontWeight: '600'
+                                                  }}>MU</button>
+                                                  <button onClick={() => setRemindModal(s)}
+                                                    style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: '1px solid #B5D4F4', background: '#E6F1FB', color: '#0C447C', cursor: 'pointer' }}>💬</button>
+                                                  <button onClick={() => deleteSession(s)} disabled={s.payment === 'Paid'}
+                                                    style={{ fontSize: '8px', padding: '1px 3px', borderRadius: '3px', border: '1px solid #fcc', background: s.payment === 'Paid' ? '#f5f5f5' : '#fff5f5', color: s.payment === 'Paid' ? '#ccc' : '#c00', cursor: s.payment === 'Paid' ? 'not-allowed' : 'pointer' }}>✕</button>
+                          </div>
+                        )}
                         </div>
                       </div>
                     )
@@ -1099,8 +1102,9 @@ export default function SchedulePage() {
         </div>
       </div>
 
-      {/* View toggle */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', padding: '4px', background: '#f0f0f0', borderRadius: '10px', width: 'fit-content' }}>
+        {/* View toggle */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'flex', gap: '4px', padding: '4px', background: '#f0f0f0', borderRadius: '10px', width: 'fit-content' }}>
           {[{ key: 'master', label: 'Master Template' }, { key: 'week', label: 'This Week' }].map(v => (
             <button key={v.key} onClick={() => { setViewMode(v.key); if (v.key === 'master') fetchMaster() }} style={{
             padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer',
@@ -1110,7 +1114,16 @@ export default function SchedulePage() {
             boxShadow: viewMode === v.key ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
           }}>{v.label}</button>
         ))}
-      </div>
+        </div>
+        <button onClick={() => setCompactMode(c => !c)} style={{
+          padding: '6px 14px', borderRadius: '8px', border: '1px solid #ddd',
+          background: compactMode ? '#0f4c81' : 'white',
+          color: compactMode ? 'white' : '#666',
+          cursor: 'pointer', fontSize: '12px', fontWeight: '500'
+        }}>
+          {compactMode ? '⊟ Compact ON' : '⊟ Compact'}
+        </button>
+        </div>
 
       {blockModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
