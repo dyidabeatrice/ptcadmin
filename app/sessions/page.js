@@ -57,7 +57,6 @@ const SESSION_TYPES = {
 }
 
 const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
-const ROW_HEIGHT = compactMode ? 20 : 32
 
 function parseTime(str) {
   if (!str) return 0
@@ -145,6 +144,7 @@ export default function SchedulePage() {
   const [savingBlock, setSavingBlock] = useState(false)
   const [specialtiesExpanded, setSpecialtiesExpanded] = useState(false)
   const [compactMode, setCompactMode] = useState(false)
+    const ROW_HEIGHT = compactMode ? 20 : 32
   const selectedWeekRef = useRef(null)
 
 
