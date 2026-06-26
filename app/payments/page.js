@@ -31,7 +31,7 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
   const [isPaid, setIsPaid] = useState(session.is_paid)
 
   const [deleted, setDeleted] = useState(false)
-  if (deleted) return <tr style={{ display: 'none' }}><td colSpan={11} /></tr>
+  if (deleted) return <tr style={{ display: 'none' }}><td colSpan={10} /></tr>
 
   useEffect(() => {
     setMop(session.mop || '')
@@ -412,7 +412,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ background: '#f0f4f8' }}>
-                        {['Time', 'Client', 'Type of Service', 'MOP', 'Ref No.', 'Total', 'Cut', 'Center', 'Comments', 'Status', ''].map(h => (
+                        {['Time', 'Client', 'Type of Service', 'MOP', 'Ref No.', 'Total', 'Cut', 'Center', 'Comments', 'Status'].map(h => (
                         <th key={h} style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0', whiteSpace: 'nowrap', fontSize: '12px' }}>{h}</th>
                       ))}
                     </tr>
@@ -466,7 +466,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                             <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>₱{dateTotal.toLocaleString()}</td>
                             <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#1D9E75' }}>₱{dateCut.toLocaleString()}</td>
                             <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#633806' }}>₱{dateCenter.toLocaleString()}</td>
-                            <td colSpan={2} />
+                            <td colSpan={1} />
                           </tr>
                         ]
                       }
@@ -480,7 +480,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                         return (
                           <tr key={`period-${period}`} style={{ background: '#fffbe6', borderTop: '2px solid #fcc200', borderBottom: '2px solid #fcc200' }}>
                             <td colSpan={5} style={{ padding: '6px 10px', fontSize: '11px', color: '#0f4c81' }}>{periodLabel}</td>
-                            <td colSpan={2} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>₱{periodCut.toLocaleString()}</td>
+                            <td colSpan={1} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>₱{periodCut.toLocaleString()}</td>
                             <td colSpan={3} style={{ padding: '6px 10px' }}>
                               {release ? (
                                 <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A', fontWeight: '500' }}>
@@ -516,7 +516,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                             <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: 'white' }}>₱{mTotal.toLocaleString()}</td>
                             <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: '#97C459' }}>₱{mCut.toLocaleString()}</td>
                             <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: '#fcc200' }}>₱{mCenter.toLocaleString()}</td>
-                            <td colSpan={2} />
+                            <td colSpan={1} />
                           </tr>
                         </>
                       )
