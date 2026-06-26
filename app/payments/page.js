@@ -465,8 +465,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                             <td colSpan={5} style={{ padding: '6px 10px', fontSize: '12px', color: '#666', fontStyle: 'italic' }}>{date} subtotal</td>
                             <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>₱{dateTotal.toLocaleString()}</td>
                             <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#1D9E75' }}>₱{dateCut.toLocaleString()}</td>
-                            <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#633806' }}>₱{dateCenter.toLocaleString()}</td>
-                            <td colSpan={1} />
+                            <td colSpan={3} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#633806' }}>₱{dateCenter.toLocaleString()}</td>
                           </tr>
                         ]
                       }
@@ -516,7 +515,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                             <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: 'white' }}>₱{mTotal.toLocaleString()}</td>
                             <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: '#97C459' }}>₱{mCut.toLocaleString()}</td>
                             <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: '#fcc200' }}>₱{mCenter.toLocaleString()}</td>
-                            <td colSpan={1} />
+                            <td colSpan={2} />
                           </tr>
                         </>
                       )
