@@ -508,6 +508,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                         <>
                           {period1Dates.flatMap(renderDateRows)}
                           {renderPeriodRow(1)}
+                          <tr key="separator-1"><td colSpan={10} style={{ padding: '6px', background: '#FCEBEB', borderTop: '1px solid #F09595', borderBottom: '1px solid #F09595' }}></td></tr>
                           {period2Dates.flatMap(renderDateRows)}
                           {renderPeriodRow(2)}
                           <tr style={{ background: '#0f4c81', borderTop: '3px solid #fcc200' }}>
