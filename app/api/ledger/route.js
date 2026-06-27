@@ -167,7 +167,7 @@ export async function GET() {
     }
 
 // Fetch IE reports from payments sheet
-const ieReports = payRows.filter(r => r && r[0] && (r[8] === 'ie_report' || r[8] === 'supervisor_fee'))
+const ieReports = payRows.filter(r => r && r[0] && (r[8] === 'ie_report'))
 ieReports.forEach(row => {
   const therapistName = row[2]
   const therapistInfo = therapistMap[therapistName]
@@ -196,6 +196,37 @@ ieReports.forEach(row => {
     therapist_level: level,
     is_intern: false,
     is_ie_report: true
+  })
+})
+
+// Fetch supervisor fees from payments sheet
+const supervisorFees = payRows.filter(r => r && r[0] && r[8] === 'supervisor_fee')
+supervisorFees.forEach(row => {
+  const therapistName = row[2]
+  const customCut = row[12] !== undefined && row[12] !== '' ? parseFloat(row[12]) : 0
+  allSessions.push({
+    id: row[0],
+    week_key: null,
+    index: null,
+    client_name: row[1],
+    therapist: therapistName,
+    date: row[7],
+    day: '',
+    time_start: '',
+    time_end: '',
+    session_type: 'SUPERVISOR FEE',
+    status: 'Present',
+    is_paid: true,
+    mop: row[5] || '',
+    reference: row[9] || '',
+    comments: row[11] || '',
+    payment_id: row[0],
+    total: 0,
+    therapist_cut: customCut,
+    center: 0,
+    therapist_level: '',
+    is_intern: false,
+    is_ie_report: false
   })
 })
 
