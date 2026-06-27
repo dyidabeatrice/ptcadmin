@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from 'react'
 
 const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
-const VERIFIERS = ['DUANE', 'KAMYLLE']
 
 function getRowColor(session) {
   if (!session.is_paid) return '#f99c9c'
@@ -236,7 +235,7 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
             ['PLAYSCHOOL','PLAYSCHOOL'],['PR','PR'],['PR-RUSHED','PR-RUSHED'],['IE REPORT','IE REPORT'],
             ['Cancellation Fee','No Show Fee'],
             ['OT INTERN SESSION','OT INTERN SESSION'],['OT INTERN IE','OT INTERN IE'],
-            ['ST INTERN SESSION','ST INTERN SESSION'],['ST INTERN IE','ST INTERN IE'],['PR INTERN','PR INTERN']
+            ['ST INTERN SESSION','ST INTERN SESSION'],['ST INTERN IE','ST INTERN IE'],['PR INTERN','PR INTERN'],
             ['SUPERVISOR FEE','SUPERVISOR FEE']
           ].map(([val, label]) => (
             <option key={val} value={val}>{label}</option>
