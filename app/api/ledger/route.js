@@ -167,7 +167,7 @@ export async function GET() {
     }
 
 // Fetch IE reports from payments sheet
-const ieReports = payRows.filter(r => r && r[0] && r[8] === 'ie_report')
+const ieReports = payRows.filter(r => r && r[0] && (r[8] === 'ie_report' || r[8] === 'supervisor_fee'))
 ieReports.forEach(row => {
   const therapistName = row[2]
   const therapistInfo = therapistMap[therapistName]
