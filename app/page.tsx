@@ -8,6 +8,7 @@ export default function HomePage() {
   const [stepIndex, setStepIndex] = useState(0)
   const [mobOpen, setMobOpen] = useState(0)
   const slideState = useRef<Record<string, number>>({ clinic: 1, staff: 1 })
+  const [facilityIndex, setFacilityIndex] = useState(0)
   const updateSlideshow = (id: string, index: number) => {
     slideState.current[id] = index
     const slidesEl = document.getElementById(`${id}-slides`)
@@ -331,22 +332,43 @@ export default function HomePage() {
             <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>Our Facility</div>
             <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '3px' }}>
-            {['/clinic-new1.jpeg', '/clinic-new2.jpeg', '/clinic-new3.jpeg', '/clinic-new4.jpeg'].map((imgSrc, i) => (
-              <div key={i} onClick={() => setLightbox(imgSrc)}
-                style={{ height: '220px', borderRadius: '0px', overflow: 'hidden', cursor: 'zoom-in' }}>
-                <img src={imgSrc} alt="Our Facility" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s ease' }}
-                  onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} />
-              </div>
-            ))}
+          <div style={{ position: 'relative' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '3px' }}>
+              {['/clinic-new1.jpeg', '/clinic-new2.jpg', '/clinic-new3.jpg', '/clinic-new4.jpg', '/clinic-new5.jpg', '/clinic-new6.jpg', '/clinic-new7.jpg']
+                .slice(facilityIndex, facilityIndex + 4)
+                .concat(
+                  facilityIndex + 4 > 7
+                    ? ['/clinic-new1.jpeg', '/clinic-new2.jpeg', '/clinic-new3.jpeg', '/clinic-new4.jpeg', '/clinic-new5.jpeg', '/clinic-new6.jpeg'].slice(0, (facilityIndex + 4) % 7)
+                    : []
+                )
+                .map((imgSrc, i) => (
+                  <div key={i} onClick={() => setLightbox(imgSrc)}
+                    style={{ height: '220px', overflow: 'hidden', cursor: 'zoom-in' }}>
+                    <img src={imgSrc} alt="Our Facility" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s ease' }}
+                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} />
+                  </div>
+                ))}
+            </div>
+            <button onClick={() => setFacilityIndex(i => (i - 1 + 7) % 7)} style={{
+              position: 'absolute', left: '-16px', top: '50%', transform: 'translateY(-50%)',
+              width: '32px', height: '32px', borderRadius: '50%', background: 'white',
+              border: '1px solid #e0e0e0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.1)', zIndex: 2
+            }}>‹</button>
+            <button onClick={() => setFacilityIndex(i => (i + 1) % 7)} style={{
+              position: 'absolute', right: '-16px', top: '50%', transform: 'translateY(-50%)',
+              width: '32px', height: '32px', borderRadius: '50%', background: 'white',
+              border: '1px solid #e0e0e0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.1)', zIndex: 2
+            }}>›</button>
           </div>
           {lightbox && (
             <div onClick={() => setLightbox(null)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}>
               <img src={lightbox} alt="Facility" style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px' }} />
             </div>
           )}
-        </div>
+</div>
 
       {/* Our Team — Auto Scroll Strip */}
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
