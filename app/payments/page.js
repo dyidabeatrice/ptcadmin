@@ -1066,6 +1066,8 @@ export default function PaymentsPage() {
   const [advanceForm, setAdvanceForm] = useState({ client_name: '', amount: '', mop: 'Cash', reference: '', notes: '' })
   const [ieReportModal, setIeReportModal] = useState(false)
   const [ieReportForm, setIeReportForm] = useState({ client_name: '', therapist: '' })
+  const [supervisorModal, setSupervisorModal] = useState(false)
+  const [supervisorForm, setSupervisorForm] = useState({ therapist: '', amount: '', notes: '' })
   const [refundModal, setRefundModal] = useState(null)
   const [refundAmount, setRefundAmount] = useState('')
   const [saving, setSaving] = useState(false)
@@ -1239,6 +1241,7 @@ export default function PaymentsPage() {
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
           <button onClick={() => setAdvanceModal(true)} style={{ padding: '9px 16px', borderRadius: '8px', border: '1px solid #1D9E75', cursor: 'pointer', fontSize: '13px', background: '#EAF3DE', color: '#27500A', fontWeight: '500' }}>+ Advance / Partial Payment</button>
           <button onClick={() => setIeReportModal(true)} style={{ background: 'white', border: '1px solid #0f4c81', color: '#0f4c81', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>+ IE Report by Therapist</button>
+          <button onClick={() => setSupervisorModal(true)} style={{ background: 'white', border: '1px solid #1D9E75', color: '#1D9E75', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '500' }}>+ Supervisor Fee</button>
         </div>
       </div>
 
@@ -1357,6 +1360,63 @@ export default function PaymentsPage() {
                 await fetch('/api/payments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'log', client_name: ieReportForm.client_name, therapist: ieReportForm.therapist, session_id: `IE-REPORT-${Date.now()}`, amount: 0, mop: 'N/A', session_type: 'IE REPORT', date: today, payment_type: 'ie_report', reference: '' }) })
                 setIeReportModal(false); setIeReportForm({ client_name: '', therapist: '' }); fetchAll()
               }} disabled={!ieReportForm.client_name || !ieReportForm.therapist} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500' }}>Record IE Report</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Supervisor modal */}
+      {supervisorModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>
+            <h3 style={{ margin: '0 0 1rem', color: '#0f4c81' }}>Record Supervisor Fee</h3>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Therapist</label>
+              <input value={supervisorForm.therapist} onChange={e => setSupervisorForm({ ...supervisorForm, therapist: e.target.value })}
+                list="sup-therapist-list" placeholder="Type or select therapist..."
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+              <datalist id="sup-therapist-list">{[...new Set(therapists.map(t => t.name))].sort().map(t => <option key={t} value={t} />)}</datalist>
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Amount (₱)</label>
+              <input type="number" value={supervisorForm.amount} onChange={e => setSupervisorForm({ ...supervisorForm, amount: e.target.value })}
+                placeholder="Enter amount"
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '16px', fontWeight: '500', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Notes (optional)</label>
+              <input value={supervisorForm.notes} onChange={e => setSupervisorForm({ ...supervisorForm, notes: e.target.value })}
+                placeholder="e.g. June supervision"
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => { setSupervisorModal(false); setSupervisorForm({ therapist: '', amount: '', notes: '' }) }}
+                style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={async () => {
+                if (!supervisorForm.therapist || !supervisorForm.amount) return alert('Please fill in all fields')
+                const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
+                await fetch('/api/payments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+                  action: 'log',
+                  client_name: '-',
+                  therapist: supervisorForm.therapist,
+                  session_id: `SUPERVISOR-${Date.now()}`,
+                  amount: 0,
+                  mop: 'N/A',
+                  session_type: 'SUPERVISOR FEE',
+                  date: today,
+                  payment_type: 'supervisor_fee',
+                  reference: '',
+                  custom_cut: Number(supervisorForm.amount),
+                  custom_center: null,
+                  custom_notes: supervisorForm.notes || ''
+                })})
+                setSupervisorModal(false)
+                setSupervisorForm({ therapist: '', amount: '', notes: '' })
+                fetchAll()
+              }} disabled={!supervisorForm.therapist || !supervisorForm.amount}
+                style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: !supervisorForm.therapist || !supervisorForm.amount ? 0.5 : 1 }}>
+                Record ₱{Number(supervisorForm.amount || 0).toLocaleString()}
+              </button>
             </div>
           </div>
         </div>
