@@ -25,6 +25,7 @@ const RATES = {
   'ST INTERN SESSION': { full: 600, levels: { 'JUNIOR 1': 360, 'JUNIOR 2': 360, 'JUNIOR 3': 360, 'SENIOR 1': 360, 'SENIOR 2': 360 } },
   'ST INTERN IE':      { full: 800, levels: { 'JUNIOR 1': 460, 'JUNIOR 2': 460, 'JUNIOR 3': 460, 'SENIOR 1': 460, 'SENIOR 2': 460 } },
   'PR INTERN':         { full: 300, levels: { 'JUNIOR 1': 200, 'JUNIOR 2': 200, 'JUNIOR 3': 200, 'SENIOR 1': 200, 'SENIOR 2': 200 } },
+  'SUPERVISOR FEE':    { full: 0, levels: { 'JUNIOR 1': 0, 'JUNIOR 2': 0, 'JUNIOR 3': 0, 'SENIOR 1': 0, 'SENIOR 2': 0 } },
 }
 
 function parseDate(dateStr) {
