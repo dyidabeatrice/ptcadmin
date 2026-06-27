@@ -1375,7 +1375,7 @@ export default function PaymentsPage() {
               <input value={supervisorForm.therapist} onChange={e => setSupervisorForm({ ...supervisorForm, therapist: e.target.value })}
                 list="sup-therapist-list" placeholder="Type or select therapist..."
                 style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
-              <datalist id="sup-therapist-list">{[...new Set(therapists.map(t => t.name))].sort().map(t => <option key={t} value={t} />)}</datalist>
+<datalist id="sup-therapist-list">{[...new Set(clients.flatMap(c => (c.schedule || '').split(';').map(s => s.split('|')[0]).filter(Boolean)))].sort().map(t => <option key={t} value={t} />)}</datalist>
             </div>
             <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Amount (₱)</label>
