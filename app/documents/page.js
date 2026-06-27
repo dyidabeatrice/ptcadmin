@@ -207,7 +207,7 @@ export default function DocumentsPage() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <h1 style={{ color: '#0f4c81', margin: '0 0 4px' }}>Documents</h1>
+          <h1 style={{ color: '#0f4c81', margin: '0 0 4px' }}>Reports</h1>
           <p style={{ margin: 0, fontSize: '13px', color: '#999' }}>Track document requests and deadlines</p>
         </div>
         <button onClick={() => setShowForm(true)} style={{
