@@ -174,7 +174,7 @@ export default function SchedulePage() {
     const LABEL_OVERRIDES = { 'Cancellation Fee': 'No Show' }
     return (maps[specialty] || maps.OT).map(v => ({
       value: v,
-      label: `${v} ${SESSION_TYPE_RATES[v] !== undefined ? `(₱${SESSION_TYPE_RATES[v].toLocaleString()})` : ''}` }))
+      label: `${LABEL_OVERRIDES[v] || v} ${SESSION_TYPE_RATES[v] !== undefined ? `(₱${SESSION_TYPE_RATES[v].toLocaleString()})` : ''}` }))
   }
 
   useEffect(() => {
