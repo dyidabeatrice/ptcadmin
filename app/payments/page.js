@@ -237,6 +237,7 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
             ['Cancellation Fee','No Show Fee'],
             ['OT INTERN SESSION','OT INTERN SESSION'],['OT INTERN IE','OT INTERN IE'],
             ['ST INTERN SESSION','ST INTERN SESSION'],['ST INTERN IE','ST INTERN IE'],['PR INTERN','PR INTERN']
+            ['SUPERVISOR FEE','SUPERVISOR FEE']
           ].map(([val, label]) => (
             <option key={val} value={val}>{label}</option>
           ))}
@@ -613,7 +614,7 @@ function OutstandingByDayTab({ clients, onSettle }) {
                 <select value={payForm.session_type || payModal.session_type || ''} 
                   onChange={e => setPayForm({ ...payForm, session_type: e.target.value })}
                   style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
-                  {['OT SESSION','OT-IE','OT-FE','SPECIALIZED OT TX','ST SESSION','ST-IE','ST-FE','SPECIALIZED ST TX','PT SESSION','PT-IE','PT FE','SPED SESSION','SPED IE','SPED FE','PLAYSCHOOL','PR','PR-RUSHED','IE REPORT','Cancellation Fee','OT INTERN SESSION','OT INTERN IE','ST INTERN SESSION','ST INTERN IE','PR INTERN', 'SUPERVISOR FEE'].map(t => (
+                  {['OT SESSION','OT-IE','OT-FE','SPECIALIZED OT TX','ST SESSION','ST-IE','ST-FE','SPECIALIZED ST TX','PT SESSION','PT-IE','PT FE','SPED SESSION','SPED IE','SPED FE','PLAYSCHOOL','PR','PR-RUSHED','IE REPORT','Cancellation Fee','OT INTERN SESSION','OT INTERN IE','ST INTERN SESSION','ST INTERN IE','PR INTERN'].map(t => (
                     <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
