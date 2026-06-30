@@ -2,6 +2,18 @@
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 
+const NAV_LINKS = [
+  { href: '/dashboard', label: 'Dashboard' },
+  { href: '/tasks', label: 'To-do' },
+  { href: '/clients', label: 'Clients' },
+  { href: '/sessions', label: 'Schedule' },
+  { href: '/payments', label: 'Payments' },
+  { href: '/documents', label: 'Reports' },
+  { href: '/messages', label: 'Messages' },
+  { href: '/therapists', label: 'Therapists' },
+  { href: '/help', label: 'Help' },
+]
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isPublicPage = ['/', '/login', '/privacy'].includes(pathname) || pathname.startsWith('/therapist/')
@@ -12,11 +24,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
         <title>Potentials Therapy Center</title>
         <link rel="icon" href="/favicon.ico" />
-        <style>{`
-          * { box-sizing: border-box; }
-          body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-          input, select, button, textarea { font-family: inherit; }
-        `}</style>
 
         <meta name="facebook-domain-verification" content="87rzobk3xkzrf5ndn7cdaiovyodrtb" />
 
@@ -45,17 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/dashboard" style={{ color: '#fcc200', fontWeight: '700', textDecoration: 'none', fontSize: '15px', flexShrink: 0 }}>PTC</Link>
 
            <div className="desktop-links" style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, marginLeft: '1rem' }}>
-              {[
-                { href: '/dashboard', label: 'Dashboard' },
-                { href: '/tasks', label: 'To-do' },
-                { href: '/clients', label: 'Clients' },
-                { href: '/sessions', label: 'Schedule' },
-                { href: '/payments', label: 'Payments' },
-                { href: '/documents', label: 'Reports' },
-                { href: '/messages', label: 'Messages' },
-                { href: '/therapists', label: 'Therapists' },
-                { href: '/help', label: 'Help' },
-              ].map(l => (
+              {NAV_LINKS.map(l => (
                 <Link key={l.href} href={l.href} style={{
                   color: pathname === l.href ? '#fcc200' : 'rgba(255,255,255,0.8)',
                   textDecoration: 'none', fontSize: '13px',
@@ -103,17 +100,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             background: '#0f4c81', zIndex: 49, padding: '8px 0',
             boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
           }}>
-            {[
-              { href: '/dashboard', label: 'Dashboard' },
-              { href: '/tasks', label: 'To-do' },
-              { href: '/clients', label: 'Clients' },
-              { href: '/sessions', label: 'Schedule' },
-              { href: '/payments', label: 'Payments' },
-              { href: '/documents', label: 'Reports' },
-              { href: '/messages', label: 'Messages' },
-              { href: '/therapists', label: 'Therapists' },
-              { href: '/help', label: 'Help' },
-            ].map(l => (
+            {NAV_LINKS.map(l => (
               <Link key={l.href} href={l.href}
                 onClick={() => {
                   const menu = document.getElementById('mobile-menu')
