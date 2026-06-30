@@ -24,8 +24,7 @@ export async function POST(request) {
     cookieStore.set('ptc_therapist_auth', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 365
+      sameSite: 'lax'
     })
 
     return Response.json({ success: true, name, role: 'therapist' })
