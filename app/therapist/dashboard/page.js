@@ -187,14 +187,6 @@ export default function TherapistDashboard() {
         if (!b.deadline) return -1
         return new Date(a.deadline) - new Date(b.deadline)
       })
-  const today = new Date()
-
-  function daysUntil(deadline) {
-    if (!deadline) return null
-    const d = new Date(deadline)
-    const diff = Math.ceil((d - today) / (1000 * 60 * 60 * 24))
-    return diff
-  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8f9fa', fontFamily: 'sans-serif' }}>

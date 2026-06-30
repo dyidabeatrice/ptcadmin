@@ -39,20 +39,6 @@ function getWeekDatesMap(weekKey) {
   return map
 }
 
-// Builds a map of { Monday: "Jun 1, 2026", Tuesday: "Jun 2, 2026", ... }
-// for a given week_YYYY_MM_DD key.
-function getWeekDatesMap(weekKey) {
-  const parts = weekKey.replace('week_', '').split('_')
-  const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
-  const map = {}
-  DAYS.forEach((day, i) => {
-    const d = new Date(monday)
-    d.setDate(d.getDate() + i)
-    map[day] = d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
-  })
-  return map
-}
-
 function getTherapistKey(therapist, therapistData) {
   const t = therapistData.find(x => x.name === therapist)
   if (!t) return 'OT'
