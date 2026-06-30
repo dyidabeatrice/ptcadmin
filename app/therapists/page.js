@@ -30,6 +30,35 @@ function buildSlots() {
 }
 buildSlots()
 
+function DayRow({ day, timeStart, timeEnd, onDayChange, onStartChange, onEndChange, onRemove, removeDisabled }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '8px', alignItems: 'center', background: '#f8f9fa', padding: '10px', borderRadius: '8px', border: '1px solid #eee' }}>
+      <select value={day} onChange={e => onDayChange(e.target.value)}
+        style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' }}>
+        <option value="">Day...</option>
+        {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
+      </select>
+      <select value={timeStart} onChange={e => onStartChange(e.target.value)}
+        style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
+        <option value="">Start...</option>
+        {ALL_TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+      </select>
+      <select value={timeEnd} onChange={e => onEndChange(e.target.value)}
+        style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
+        <option value="">End...</option>
+        {ALL_TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+      </select>
+      <button
+        onClick={onRemove}
+        disabled={removeDisabled}
+        title={removeDisabled ? 'Must have at least one day' : 'Remove this day'}
+        style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #fcc', background: removeDisabled ? '#f9f9f9' : '#fff5f5', color: removeDisabled ? '#ccc' : '#c00', cursor: removeDisabled ? 'not-allowed' : 'pointer', fontSize: '13px' }}>
+        ✕
+      </button>
+    </div>
+  )
+}
+
 function EditModal({ editForm, setEditForm, editSaving, closeEdit, addEditDay, updateEditDay, markDeleteDay, handleEditSave }) {
   if (!editForm) return null
   const activeDays = editForm.days.filter(d => !d._deleted)
@@ -77,30 +106,17 @@ function EditModal({ editForm, setEditForm, editSaving, closeEdit, addEditDay, u
             {editForm.days.map((d, i) => {
               if (d._deleted) return null
               return (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '8px', alignItems: 'center', background: '#f8f9fa', padding: '10px', borderRadius: '8px', border: '1px solid #eee' }}>
-                  <select value={d.day} onChange={e => updateEditDay(i, 'day', e.target.value)}
-                    style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' }}>
-                    <option value="">Day...</option>
-                    {DAYS.map(day => <option key={day} value={day}>{day}</option>)}
-                  </select>
-                  <select value={d.time_start} onChange={e => updateEditDay(i, 'time_start', e.target.value)}
-                    style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
-                    <option value="">Start...</option>
-                    {ALL_TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  <select value={d.time_end} onChange={e => updateEditDay(i, 'time_end', e.target.value)}
-                    style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
-                    <option value="">End...</option>
-                    {ALL_TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  <button
-                    onClick={() => markDeleteDay(i)}
-                    disabled={activeDays.length === 1}
-                    title={activeDays.length === 1 ? 'Must have at least one day' : 'Remove this day'}
-                    style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #fcc', background: activeDays.length === 1 ? '#f9f9f9' : '#fff5f5', color: activeDays.length === 1 ? '#ccc' : '#c00', cursor: activeDays.length === 1 ? 'not-allowed' : 'pointer', fontSize: '13px' }}>
-                    ✕
-                  </button>
-                </div>
+                <DayRow
+                  key={i}
+                  day={d.day}
+                  timeStart={d.time_start}
+                  timeEnd={d.time_end}
+                  onDayChange={v => updateEditDay(i, 'day', v)}
+                  onStartChange={v => updateEditDay(i, 'time_start', v)}
+                  onEndChange={v => updateEditDay(i, 'time_end', v)}
+                  onRemove={() => markDeleteDay(i)}
+                  removeDisabled={activeDays.length === 1}
+                />
               )
             })}
           </div>
@@ -477,26 +493,17 @@ export default function TherapistsPage() {
                       style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '6px', border: '1px solid #0f4c81', background: 'white', color: '#0f4c81', cursor: 'pointer' }}>+ Add day</button>
                   </div>
                   {form.days.map((d, i) => (
-                    <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                      <select value={d.day} onChange={e => { const days = [...form.days]; days[i] = { ...days[i], day: e.target.value }; setForm({ ...form, days }) }}
-                        style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' }}>
-                        <option value="">Day...</option>
-                        {DAYS.map(day => <option key={day} value={day}>{day}</option>)}
-                      </select>
-                      <select value={d.time_start} onChange={e => { const days = [...form.days]; days[i] = { ...days[i], time_start: e.target.value }; setForm({ ...form, days }) }}
-                        style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
-                        <option value="">Start...</option>
-                        {ALL_TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                      <select value={d.time_end} onChange={e => { const days = [...form.days]; days[i] = { ...days[i], time_end: e.target.value }; setForm({ ...form, days }) }}
-                        style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
-                        <option value="">End...</option>
-                        {ALL_TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                      <button onClick={() => { const days = form.days.filter((_, j) => j !== i); setForm({ ...form, days: days.length ? days : [{ day: '', time_start: '', time_end: '' }] }) }}
-                        disabled={form.days.length === 1}
-                        style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #fcc', background: form.days.length === 1 ? '#f9f9f9' : '#fff5f5', color: form.days.length === 1 ? '#ccc' : '#c00', cursor: form.days.length === 1 ? 'not-allowed' : 'pointer' }}>✕</button>
-                    </div>
+                    <DayRow
+                      key={i}
+                      day={d.day}
+                      timeStart={d.time_start}
+                      timeEnd={d.time_end}
+                      onDayChange={v => { const days = [...form.days]; days[i] = { ...days[i], day: v }; setForm({ ...form, days }) }}
+                      onStartChange={v => { const days = [...form.days]; days[i] = { ...days[i], time_start: v }; setForm({ ...form, days }) }}
+                      onEndChange={v => { const days = [...form.days]; days[i] = { ...days[i], time_end: v }; setForm({ ...form, days }) }}
+                      onRemove={() => { const days = form.days.filter((_, j) => j !== i); setForm({ ...form, days: days.length ? days : [{ day: '', time_start: '', time_end: '' }] }) }}
+                      removeDisabled={form.days.length === 1}
+                    />
                   ))}
                 </div>
 
