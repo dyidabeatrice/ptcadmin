@@ -83,10 +83,12 @@ export async function GET() {
       .filter(t => t.startsWith('week_'))
       .sort()
 
-    // Collect all Present/Cancelled sessions
+    // Collect all Present/Cancelled sessions — fetch all weeks in parallel instead of one at a time
     const allSessions = []
-    for (const weekKey of weekSheets) {
-      const data = await getSheetData(weekKey)
+    const weekDataResults = await Promise.all(weekSheets.map(weekKey => getSheetData(weekKey)))
+
+    weekSheets.forEach((weekKey, weekIdx) => {
+      const data = weekDataResults[weekIdx]
       const [, ...rows] = data
       rows.filter(r => r && r[0] && (r[8] === 'Present' || r[8] === 'Cancelled')).forEach(row => {
         const sessionId = row[0]
@@ -130,7 +132,7 @@ export async function GET() {
           is_intern: therapistInfo?.is_intern || false
         })
       })
-    }
+    })
 
 // Fetch IE reports from payments sheet
 const ieReports = payRows.filter(r => r && r[0] && (r[8] === 'ie_report'))
