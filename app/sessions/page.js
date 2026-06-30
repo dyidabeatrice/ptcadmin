@@ -46,6 +46,61 @@ function getTherapistKey(therapist, therapistData) {
   return t.specialty
 }
 
+// Computes free (1+ hour) recurring slots in the Master Template for
+// therapists matching the given specialty (or all, if 'ALL').
+function computeFreeSlots(specialty, master, blockedSlots, therapistData) {
+  const results = [] // { therapist, day, start, end, isOpen }
+
+  const therapistNames = [...new Set(
+    therapistData
+      .filter(t => specialty === 'ALL' || t.specialty === specialty)
+      .map(t => t.name)
+  )]
+
+  therapistNames.forEach(therapist => {
+    DAYS.forEach(day => {
+      const entry = therapistData.find(t => t.name === therapist && t.day === day)
+      if (!entry) return // doesn't work this day
+
+      const workStart = parseTime(entry.time_start)
+      const workEnd = parseTime(entry.time_end)
+
+      const bookedRanges = master
+        .filter(s => s.therapist === therapist && s.day === day)
+        .map(s => [parseTime(s.time_start), parseTime(s.time_end)])
+
+      const blocked = blockedSlots.filter(b => b.therapist === therapist && b.day === day)
+      const blockedRanges = blocked
+        .filter(b => b.type === 'blocked' || b.type === 'admin')
+        .map(b => [parseTime(b.time_start), parseTime(b.time_end)])
+      const openRanges = blocked
+        .filter(b => b.type === 'open')
+        .map(b => [parseTime(b.time_start), parseTime(b.time_end)])
+
+      const occupied = [...bookedRanges, ...blockedRanges].sort((a, b) => a[0] - b[0])
+
+      let cursor = workStart
+      occupied.forEach(([start, end]) => {
+        if (start > cursor) {
+          results.push(buildGapIfLongEnough(cursor, start, therapist, day, openRanges))
+        }
+        cursor = Math.max(cursor, end)
+      })
+      if (cursor < workEnd) {
+        results.push(buildGapIfLongEnough(cursor, workEnd, therapist, day, openRanges))
+      }
+    })
+  })
+
+  return results.filter(Boolean)
+}
+
+function buildGapIfLongEnough(start, end, therapist, day, openRanges) {
+  if (end - start < 60) return null
+  const isOpen = openRanges.some(([os, oe]) => start >= os && end <= oe)
+  return { therapist, day, start: formatTime(start), end: formatTime(end), isOpen }
+}
+
 function getSessionColor(session) {
   const paid = session.payment === 'Paid'
   const status = session.status
@@ -99,6 +154,8 @@ export default function SchedulePage() {
   const [blockLabel, setBlockLabel] = useState('')
   const [savingBlock, setSavingBlock] = useState(false)
   const [specialtiesExpanded, setSpecialtiesExpanded] = useState(false)
+  const [freeSlotsModal, setFreeSlotsModal] = useState(false)
+  const [freeSlotsSpecialty, setFreeSlotsSpecialty] = useState('ALL')
   const selectedWeekRef = useRef(null)
 
 
@@ -1008,17 +1065,88 @@ export default function SchedulePage() {
       </div>
 
       {/* View toggle */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '1.5rem', padding: '4px', background: '#f0f0f0', borderRadius: '10px', width: 'fit-content' }}>
-          {[{ key: 'master', label: 'Master Template' }, { key: 'week', label: 'This Week' }].map(v => (
-            <button key={v.key} onClick={() => { setViewMode(v.key); if (v.key === 'master') fetchMaster() }} style={{
-            padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer',
-            fontSize: '13px', fontWeight: '500',
-            background: viewMode === v.key ? 'white' : 'transparent',
-            color: viewMode === v.key ? '#0f4c81' : '#666',
-            boxShadow: viewMode === v.key ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
-          }}>{v.label}</button>
-        ))}
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '4px', padding: '4px', background: '#f0f0f0', borderRadius: '10px', width: 'fit-content' }}>
+            {[{ key: 'master', label: 'Master Template' }, { key: 'week', label: 'This Week' }].map(v => (
+              <button key={v.key} onClick={() => { setViewMode(v.key); if (v.key === 'master') fetchMaster() }} style={{
+              padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+              fontSize: '13px', fontWeight: '500',
+              background: viewMode === v.key ? 'white' : 'transparent',
+              color: viewMode === v.key ? '#0f4c81' : '#666',
+              boxShadow: viewMode === v.key ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+            }}>{v.label}</button>
+          ))}
+        </div>
+        {viewMode === 'master' && (
+          <button onClick={() => setFreeSlotsModal(true)} style={{
+            padding: '9px 18px', borderRadius: '8px', border: '1px solid #1D9E75',
+            background: '#EAF3DE', color: '#1D9E75', cursor: 'pointer', fontSize: '13px', fontWeight: '500'
+          }}>🔍 Available slots</button>
+        )}
       </div>
+
+      {freeSlotsModal && (() => {
+        const freeSlots = computeFreeSlots(freeSlotsSpecialty, master, blockedSlots, therapistData)
+        const byTherapist = {}
+        freeSlots.forEach(s => {
+          if (!byTherapist[s.therapist]) byTherapist[s.therapist] = []
+          byTherapist[s.therapist].push(s)
+        })
+        const therapistNames = Object.keys(byTherapist).sort()
+
+        return (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '480px', maxWidth: '90vw', maxHeight: '85vh', overflowY: 'auto' }}>
+              <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>🔍 Available slots</h3>
+              <p style={{ margin: '0 0 1rem', fontSize: '12px', color: '#999' }}>Recurring open slots in the Master Template (1+ hour gaps)</p>
+
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Specialty</label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {['ALL', 'OT', 'ST', 'PT', 'SPED'].map(s => (
+                    <button key={s} onClick={() => setFreeSlotsSpecialty(s)} style={{
+                      padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
+                      border: freeSlotsSpecialty === s ? '2px solid #1D9E75' : '1px solid #ddd',
+                      background: freeSlotsSpecialty === s ? '#EAF3DE' : 'white',
+                      color: freeSlotsSpecialty === s ? '#1D9E75' : '#666',
+                      fontWeight: freeSlotsSpecialty === s ? '500' : '400'
+                    }}>{s === 'ALL' ? 'All' : s}</button>
+                  ))}
+                </div>
+              </div>
+
+              {therapistNames.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#999', fontSize: '13px' }}>
+                  No open 1+ hour slots found for this specialty.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {therapistNames.map(therapist => (
+                    <div key={therapist} style={{ background: '#f8f9fa', borderRadius: '8px', padding: '10px 14px', border: '1px solid #e0e0e0' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f4c81', marginBottom: '6px' }}>{therapist}</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        {byTherapist[therapist].map((s, i) => (
+                          <div key={i} style={{ fontSize: '12px', color: '#444', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ minWidth: '70px', fontWeight: '500' }}>{s.day}</span>
+                            <span>{s.start} – {s.end}</span>
+                            {s.isOpen && (
+                              <span style={{ fontSize: '10px', padding: '1px 7px', borderRadius: '8px', background: '#085041', color: 'white' }}>OPEN FOR DECKING</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+                <button onClick={() => setFreeSlotsModal(false)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Close</button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {blockModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
