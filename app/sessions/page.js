@@ -1011,6 +1011,7 @@ export default function SchedulePage() {
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
         {therapists.map(therapist => {
           const therapistEntry = therapistData.find(t => t.name === therapist && t.day === day)
+            || therapistData.find(t => t.name === therapist)
           const specialty = therapistEntry?.specialty || ''
           const therapistSessions = daySessions.filter(s => s.therapist === therapist)
 
