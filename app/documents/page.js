@@ -69,7 +69,6 @@ export default function DocumentsPage() {
 
   function getTherapistEmail(therapistName) {
     const t = therapists.find(x => x.name === therapistName)
-    console.log('Looking for:', therapistName, 'Found:', t, 'Email:', t?.email)
     return t?.email || ''
   }
 

@@ -85,7 +85,6 @@ function TherapistRows({ therapists, setTherapists, therapistData }) {
   function getTherapistsForDay(day) {
     if (!day) return []
     const filtered = therapistData.filter(t => t.day === day)
-    console.log('therapists for day', day, filtered)
     return [...new Set(filtered.map(t => t.name))].sort()
   }
 
@@ -266,9 +265,9 @@ function ClientForm({ data, setData, onSave, onClose, title, saving, therapistDa
               style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Facebook account (PSID or profile link)</label>
-            <input value={data.fb_account} onChange={e => setData({ ...data, fb_account: e.target.value })}
-              placeholder="e.g. facebook.com/parentname or PSID number"
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>PSID (auto-filled when client messages the page)</label>
+            <input value={data.psid || ''} onChange={e => setData({ ...data, psid: e.target.value })}
+              placeholder="Numeric PSID — only needed if auto-match fails"
               style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
@@ -484,7 +483,6 @@ export default function ClientsPage() {
       )}
 
       {showForm && <ClientForm data={form} setData={setForm} onSave={handleAdd} onClose={() => setShowForm(false)} title="New client" saving={saving} therapistData={therapistData} clients={clients} />}
-      {editClient && console.log('editClient:', JSON.stringify(editClient))}
       {editClient && <ClientForm data={editClient} setData={setEditClient} onSave={handleEdit} onClose={() => setEditClient(null)} title="Edit client" saving={saving} therapistData={therapistData} clients={clients} />}
 
       {deleteConfirm && (

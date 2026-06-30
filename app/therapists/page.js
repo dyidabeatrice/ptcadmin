@@ -30,6 +30,93 @@ function buildSlots() {
 }
 buildSlots()
 
+function EditModal({ editForm, setEditForm, editSaving, closeEdit, addEditDay, updateEditDay, markDeleteDay, handleEditSave }) {
+  if (!editForm) return null
+  const activeDays = editForm.days.filter(d => !d._deleted)
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+      <div style={{ background: 'white', borderRadius: '14px', padding: '2rem', width: '520px', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+        <h3 style={{ margin: '0 0 1.5rem', color: '#0f4c81', fontSize: '18px' }}>Edit therapist</h3>
+
+        <div style={{ marginBottom: '16px', fontSize: '14px', color: '#333' }}>
+          <span style={{ color: '#999', fontSize: '12px' }}>Name: </span><strong>{editForm.name}</strong>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+          <div>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Specialty</label>
+            <select value={editForm.specialty} onChange={e => setEditForm({ ...editForm, specialty: e.target.value })}
+              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' }}>
+              {['OT','ST','PT','SPED'].map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Level</label>
+            <select value={editForm.level} onChange={e => setEditForm({ ...editForm, level: e.target.value })}
+              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
+              {LEVELS.map(l => <option key={l} value={l}>{l || '— none —'}</option>)}
+            </select>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '20px' }}>
+            <input type="checkbox" id="edit_intern" checked={editForm.is_intern}
+              onChange={e => setEditForm({ ...editForm, is_intern: e.target.checked })} />
+            <label htmlFor="edit_intern" style={{ fontSize: '13px', color: '#666', cursor: 'pointer' }}>Intern</label>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '16px', fontSize: '14px', color: '#333' }}>
+          <span style={{ color: '#999', fontSize: '12px' }}>Specialized Therapy: </span><strong>{editForm.specialized_therapies || '— none —'}</strong>
+        </div>
+
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <label style={{ fontSize: '12px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Working Days</label>
+            <button onClick={addEditDay} style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '6px', border: '1px solid #0f4c81', background: 'white', color: '#0f4c81', cursor: 'pointer' }}>+ Add day</button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {editForm.days.map((d, i) => {
+              if (d._deleted) return null
+              return (
+                <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '8px', alignItems: 'center', background: '#f8f9fa', padding: '10px', borderRadius: '8px', border: '1px solid #eee' }}>
+                  <select value={d.day} onChange={e => updateEditDay(i, 'day', e.target.value)}
+                    style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' }}>
+                    <option value="">Day...</option>
+                    {DAYS.map(day => <option key={day} value={day}>{day}</option>)}
+                  </select>
+                  <select value={d.time_start} onChange={e => updateEditDay(i, 'time_start', e.target.value)}
+                    style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
+                    <option value="">Start...</option>
+                    {ALL_TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <select value={d.time_end} onChange={e => updateEditDay(i, 'time_end', e.target.value)}
+                    style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
+                    <option value="">End...</option>
+                    {ALL_TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <button
+                    onClick={() => markDeleteDay(i)}
+                    disabled={activeDays.length === 1}
+                    title={activeDays.length === 1 ? 'Must have at least one day' : 'Remove this day'}
+                    style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #fcc', background: activeDays.length === 1 ? '#f9f9f9' : '#fff5f5', color: activeDays.length === 1 ? '#ccc' : '#c00', cursor: activeDays.length === 1 ? 'not-allowed' : 'pointer', fontSize: '13px' }}>
+                    ✕
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+          <button onClick={closeEdit} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white', fontSize: '14px' }}>Cancel</button>
+          <button onClick={handleEditSave} disabled={editSaving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500', fontSize: '14px' }}>
+            {editSaving ? 'Saving...' : 'Save changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function TherapistsPage() {
   const [therapists, setTherapists] = useState([])
   const [master, setMaster] = useState([])
@@ -252,104 +339,22 @@ export default function TherapistsPage() {
   const therapistClients = selectedTherapist ? getTherapistClients(selectedTherapist) : {}
   const totalClients = selectedTherapist ? [...new Set(Object.values(therapistClients).flat().map(s => s.client_name))].length : 0
 
-  // ── EDIT MODAL ─────────────────────────────────────────────────────────────
-  const EditModal = () => {
-    if (!editForm) return null
-    const activeDays = editForm.days.filter(d => !d._deleted)
-    return (
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-        <div style={{ background: 'white', borderRadius: '14px', padding: '2rem', width: '520px', maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
-          <h3 style={{ margin: '0 0 1.5rem', color: '#0f4c81', fontSize: '18px' }}>Edit therapist</h3>
-
-          {/* Name */}
-          <div style={{ marginBottom: '16px', fontSize: '14px', color: '#333' }}>
-            <span style={{ color: '#999', fontSize: '12px' }}>Name: </span><strong>{editForm.name}</strong>
-          </div>
-
-          {/* Specialty + Intern + Level */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '20px' }}>
-            <div>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Specialty</label>
-              <select value={editForm.specialty} onChange={e => setEditForm({ ...editForm, specialty: e.target.value })}
-                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' }}>
-                {['OT','ST','PT','SPED'].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Level</label>
-              <select value={editForm.level} onChange={e => setEditForm({ ...editForm, level: e.target.value })}
-                style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
-                {LEVELS.map(l => <option key={l} value={l}>{l || '— none —'}</option>)}
-              </select>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '20px' }}>
-              <input type="checkbox" id="edit_intern" checked={editForm.is_intern}
-                onChange={e => setEditForm({ ...editForm, is_intern: e.target.checked })} />
-              <label htmlFor="edit_intern" style={{ fontSize: '13px', color: '#666', cursor: 'pointer' }}>Intern</label>
-            </div>
-          </div>
-
-          {/* Specialized Therapies */}
-          <div style={{ marginBottom: '16px', fontSize: '14px', color: '#333' }}>
-            <span style={{ color: '#999', fontSize: '12px' }}>Specialized Therapy: </span><strong>{editForm.specialized_therapies || '— none —'}</strong>
-          </div>
-
-          {/* Days */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <label style={{ fontSize: '12px', color: '#666', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Working Days</label>
-              <button onClick={addEditDay} style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '6px', border: '1px solid #0f4c81', background: 'white', color: '#0f4c81', cursor: 'pointer' }}>+ Add day</button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {editForm.days.map((d, i) => {
-                if (d._deleted) return null
-                return (
-                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: '8px', alignItems: 'center', background: '#f8f9fa', padding: '10px', borderRadius: '8px', border: '1px solid #eee' }}>
-                    <select value={d.day} onChange={e => updateEditDay(i, 'day', e.target.value)}
-                      style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px' }}>
-                      <option value="">Day...</option>
-                      {DAYS.map(day => <option key={day} value={day}>{day}</option>)}
-                    </select>
-                    <select value={d.time_start} onChange={e => updateEditDay(i, 'time_start', e.target.value)}
-                      style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
-                      <option value="">Start...</option>
-                      {ALL_TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                    <select value={d.time_end} onChange={e => updateEditDay(i, 'time_end', e.target.value)}
-                      style={{ padding: '7px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
-                      <option value="">End...</option>
-                      {ALL_TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                    <button
-                      onClick={() => markDeleteDay(i)}
-                      disabled={activeDays.length === 1}
-                      title={activeDays.length === 1 ? 'Must have at least one day' : 'Remove this day'}
-                      style={{ padding: '6px 8px', borderRadius: '6px', border: '1px solid #fcc', background: activeDays.length === 1 ? '#f9f9f9' : '#fff5f5', color: activeDays.length === 1 ? '#ccc' : '#c00', cursor: activeDays.length === 1 ? 'not-allowed' : 'pointer', fontSize: '13px' }}>
-                      ✕
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* Actions */}
-          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-            <button onClick={closeEdit} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white', fontSize: '14px' }}>Cancel</button>
-            <button onClick={handleEditSave} disabled={editSaving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500', fontSize: '14px' }}>
-              {editSaving ? 'Saving...' : 'Save changes'}
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   // ── RENDER ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
 
-      {editingTherapist && <EditModal />}
+      {editingTherapist && (
+        <EditModal
+          editForm={editForm}
+          setEditForm={setEditForm}
+          editSaving={editSaving}
+          closeEdit={closeEdit}
+          addEditDay={addEditDay}
+          updateEditDay={updateEditDay}
+          markDeleteDay={markDeleteDay}
+          handleEditSave={handleEditSave}
+        />
+      )}
 
       {selectedTherapist ? (
         <div>

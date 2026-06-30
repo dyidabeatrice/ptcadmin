@@ -334,13 +334,10 @@ export default function HomePage() {
           </div>
           <div style={{ position: 'relative' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '3px' }}>
-              {['/clinic-new1.jpeg', '/clinic-new2.jpg', '/clinic-new3.jpg', '/clinic-new4.jpg', '/clinic-new5.jpg', '/clinic-new6.jpg', '/clinic-new7.jpg']
-                .slice(facilityIndex, facilityIndex + 4)
-                .concat(
-                  facilityIndex + 4 > 7
-                    ? ['/clinic-new1.jpeg', '/clinic-new2.jpeg', '/clinic-new3.jpeg', '/clinic-new4.jpeg', '/clinic-new5.jpeg', '/clinic-new6.jpeg'].slice(0, (facilityIndex + 4) % 7)
-                    : []
-                )
+              {(() => {
+                const FACILITY_IMAGES = ['/clinic-new1.jpeg', '/clinic-new2.jpg', '/clinic-new3.jpg', '/clinic-new4.jpg', '/clinic-new5.jpg', '/clinic-new6.jpg', '/clinic-new7.jpg']
+                return [0, 1, 2, 3].map(offset => FACILITY_IMAGES[(facilityIndex + offset) % FACILITY_IMAGES.length])
+              })()
                 .map((imgSrc, i) => (
                   <div key={i} onClick={() => setLightbox(imgSrc)}
                     style={{ height: '220px', overflow: 'hidden', cursor: 'zoom-in' }}>

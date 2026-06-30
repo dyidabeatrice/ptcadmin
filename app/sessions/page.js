@@ -288,33 +288,6 @@ export default function SchedulePage() {
     if (bJson.success) setBlockedSlots(bJson.data)
     setSavingBlock(false)
   }
-  async function addBlock() {
-    if (!blockModal) return
-    if (blockType === 'admin' && !blockLabel.trim()) return alert('Please enter a label')
-    setSavingBlock(true)
-    const endMins = parseTime(blockModal.time_start) + blockDuration
-    const time_end = formatTime(endMins)
-    await fetch('/api/blocked', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        therapist: blockModal.therapist,
-        day: blockModal.day,
-        time_start: blockModal.time_start,
-        time_end,
-        type: blockType,
-        label: blockLabel
-      })
-    })
-    setBlockModal(null)
-    setBlockDuration(60)
-    setBlockType('blocked')
-    setBlockLabel('')
-    const bRes = await fetch('/api/blocked')
-    const bJson = await bRes.json()
-    if (bJson.success) setBlockedSlots(bJson.data)
-    setSavingBlock(false)
-  }
 
   async function fetchMaster(showLoading = false) {
     if (showLoading) setMasterLoading(true)
@@ -425,10 +398,6 @@ export default function SchedulePage() {
     }
     await fetch('/api/sessions', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rowIndex: session.index, week_key: selectedWeek.key }) })
     fetchSessions(selectedWeek.key)
-  }
-
-  async function confirmReschedule() {
-    if (!rescheduleForm.day || !rescheduleForm.therapist || !rescheduleForm.time_start || !rescheduleForm.time_end) return alert('Please fill in all fields')
   }
 
   async function addOneOff() {

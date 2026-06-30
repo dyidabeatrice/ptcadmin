@@ -150,7 +150,6 @@ export async function POST(request) {
             try {
               const { clientName, senderName: clientFbName } = await getClientByPsid(psid)
               const finalSenderName = senderName || clientFbName || ''
-              console.log('Saving pending payment:', { psid, clientName, finalSenderName })
               await savePendingPayment(psid, clientName, imageUrl, finalSenderName)
             } catch (imgError) {
               console.error('Image processing error:', imgError)
