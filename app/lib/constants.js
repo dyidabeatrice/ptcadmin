@@ -1,3 +1,10 @@
+// ⚠️ FEE/RATE CHANGES: This file controls backend calculations (what gets
+// charged, what therapists get paid, the Excel export). If you change a
+// rate or session type here, also update app/lib/sessionTypes.js — that
+// file controls what staff SEE in the dropdowns on Schedule/Payments pages.
+// The two files can't be merged (frontend vs backend code), so both need
+// to be updated together to avoid numbers not matching what's displayed.
+
 export const SPECIALTY_RATES = {
   OT: 1200,
   ST: 1300,

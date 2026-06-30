@@ -1,6 +1,11 @@
 // Shared session type definitions used across Sessions and Payments pages.
 // Each entry has the stored value (matches backend RATES keys), the display
 // label (handles renames like Cancellation Fee -> No Show), and the default amount.
+//
+// ⚠️ FEE/RATE CHANGES: This file is what staff SEE in dropdowns — it does
+// NOT control actual backend calculations. If you change a rate or session
+// type here, also update app/lib/constants.js, which is what the backend
+// actually uses to calculate charges/payouts/exports.
 
 export const SESSION_TYPES_BY_SPECIALTY = {
   OT: [
