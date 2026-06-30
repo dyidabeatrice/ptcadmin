@@ -1,4 +1,4 @@
-import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
+import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID, deleteSheetRow } from '../../lib/sheets'
 
 export async function GET() {
   try {
@@ -42,14 +42,7 @@ export async function POST(request) {
 export async function DELETE(request) {
   try {
     const { rowIndex } = await request.json()
-    const sheets = getGoogleSheets()
-    const sheetId = await getSheetId('blocked')
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: SPREADSHEET_ID,
-      requestBody: { requests: [{ deleteDimension: {
-        range: { sheetId, dimension: 'ROWS', startIndex: rowIndex + 1, endIndex: rowIndex + 2 }
-      }}]}
-    })
+    await deleteSheetRow('blocked', rowIndex)
     return Response.json({ success: true })
   } catch (error) {
     return Response.json({ success: false, error: error.message })

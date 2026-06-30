@@ -1,22 +1,16 @@
-import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
+import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID, deleteSheetRow } from '../../lib/sheets'
 
 async function syncToMaster(sheets, clientName, scheduleStr, isInactive) {
   const masterData = await getSheetData('masterschedule')
   const [, ...masterRows] = masterData
-  const sheetId = await getSheetId('masterschedule')
 
   const rowsToDelete = []
   masterRows.forEach((row, i) => {
-    if (row && row[1] === clientName) rowsToDelete.push(i + 1)
+    if (row && row[1] === clientName) rowsToDelete.push(i)
   })
 
   for (let i = rowsToDelete.length - 1; i >= 0; i--) {
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: SPREADSHEET_ID,
-      requestBody: { requests: [{ deleteDimension: {
-        range: { sheetId, dimension: 'ROWS', startIndex: rowsToDelete[i], endIndex: rowsToDelete[i] + 1 }
-      }}]}
-    })
+    await deleteSheetRow('masterschedule', rowsToDelete[i])
   }
 
   if (!isInactive && scheduleStr) {
@@ -103,13 +97,7 @@ export async function POST(request) {
       const { keep_id, keep_index, delete_index, delete_name, merged } = body
 
       // Step 1 — delete duplicate FIRST before index shifts
-      const clientSheetId = await getSheetId('clients')
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId: SPREADSHEET_ID,
-        requestBody: { requests: [{ deleteDimension: {
-          range: { sheetId: clientSheetId, dimension: 'ROWS', startIndex: delete_index + 1, endIndex: delete_index + 2 }
-        }}]}
-      })
+      await deleteSheetRow('clients', delete_index)
 
       // Step 2 — re-fetch to get correct index after deletion
       const freshData = await getSheetData('clients')
@@ -139,22 +127,16 @@ export async function POST(request) {
       // Step 4 — clear ALL master entries for both names
       const masterData = await getSheetData('masterschedule')
       const [, ...masterRows] = masterData
-      const masterSheetId = await getSheetId('masterschedule')
 
       const masterRowsToDelete = []
       masterRows.forEach((row, i) => {
         if (row && (row[1] === merged.name || row[1] === delete_name)) {
-          masterRowsToDelete.push(i + 1)
+          masterRowsToDelete.push(i)
         }
       })
 
       for (let i = masterRowsToDelete.length - 1; i >= 0; i--) {
-        await sheets.spreadsheets.batchUpdate({
-          spreadsheetId: SPREADSHEET_ID,
-          requestBody: { requests: [{ deleteDimension: {
-            range: { sheetId: masterSheetId, dimension: 'ROWS', startIndex: masterRowsToDelete[i], endIndex: masterRowsToDelete[i] + 1 }
-          }}]}
-        })
+        await deleteSheetRow('masterschedule', masterRowsToDelete[i])
       }
 
       // Step 5 — add merged schedule to master
@@ -277,14 +259,7 @@ export async function PATCH(request) {
 export async function DELETE(request) {
   try {
     const { index } = await request.json()
-    const sheets = getGoogleSheets()
-    const sheetId = await getSheetId('clients')
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: SPREADSHEET_ID,
-      requestBody: { requests: [{ deleteDimension: {
-        range: { sheetId, dimension: 'ROWS', startIndex: index + 1, endIndex: index + 2 }
-      }}]}
-    })
+    await deleteSheetRow('clients', index)
     return Response.json({ success: true })
   } catch (error) {
     return Response.json({ success: false, error: error.message })

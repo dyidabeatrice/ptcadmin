@@ -34,3 +34,24 @@ export function getGoogleSheets() {
 }
 
 export const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_SPREADSHEET_ID
+
+// Deletes a single row from a sheet. rowIndex is the 0-based data row
+// (i.e. the index used in your mapped objects, NOT counting the header row).
+export async function deleteSheetRow(sheetName, rowIndex) {
+  const sheets = getGoogleSheets()
+  const sheetId = await getSheetId(sheetName)
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: SPREADSHEET_ID,
+    requestBody: { requests: [{ deleteDimension: {
+      range: { sheetId, dimension: 'ROWS', startIndex: rowIndex + 1, endIndex: rowIndex + 2 }
+    }}]}
+  })
+}
+
+// Finds the 0-based data row index of the row whose first column (id) matches the given id.
+// Returns -1 if not found, matching Array.findIndex behavior.
+export async function findRowIndexById(sheetName, id) {
+  const data = await getSheetData(sheetName)
+  const [, ...rows] = data
+  return rows.findIndex(r => r && r[0] === id)
+}

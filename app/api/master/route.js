@@ -1,4 +1,4 @@
-import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
+import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID, deleteSheetRow } from '../../lib/sheets'
 
 async function syncClientSchedule(clientName, sheets) {
   const masterData = await getSheetData('masterschedule')
@@ -131,7 +131,6 @@ export async function DELETE(request) {
   try {
     const body = await request.json()
     const sheets = getGoogleSheets()
-    const sheetId = await getSheetId('masterschedule')
 
     // Get client name before deleting
     const masterData = await getSheetData('masterschedule')
@@ -139,12 +138,7 @@ export async function DELETE(request) {
     const row = rows[body.index]
     const clientName = row?.[1]
 
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: SPREADSHEET_ID,
-      requestBody: { requests: [{ deleteDimension: {
-        range: { sheetId, dimension: 'ROWS', startIndex: body.index + 1, endIndex: body.index + 2 }
-      }}]}
-    })
+    await deleteSheetRow('masterschedule', body.index)
 
     if (clientName) await syncClientSchedule(clientName, sheets)
     return Response.json({ success: true })

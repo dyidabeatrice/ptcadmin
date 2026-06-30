@@ -1,4 +1,4 @@
-import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
+import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID, deleteSheetRow, findRowIndexById } from '../../lib/sheets'
 import { formatPHDate } from '../../lib/dates'
 
 export async function GET() {
@@ -49,18 +49,9 @@ export async function POST(request) {
 export async function DELETE(request) {
   try {
     const { id } = await request.json()
-    const sheets = getGoogleSheets()
-    const data = await getSheetData('tasks')
-    const [, ...rows] = data
-    const index = rows.findIndex(r => r && r[0] === id)
+    const index = await findRowIndexById('tasks', id)
     if (index === -1) return Response.json({ success: false, error: 'Not found' })
-    const sheetId = await getSheetId('tasks')
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: SPREADSHEET_ID,
-      requestBody: { requests: [{ deleteDimension: {
-        range: { sheetId, dimension: 'ROWS', startIndex: index + 1, endIndex: index + 2 }
-      }}]}
-    })
+    await deleteSheetRow('tasks', index)
     return Response.json({ success: true })
   } catch (error) {
     return Response.json({ success: false, error: error.message })

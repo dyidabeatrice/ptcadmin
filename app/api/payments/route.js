@@ -1,4 +1,4 @@
-import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
+import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID, deleteSheetRow, findRowIndexById } from '../../lib/sheets'
 
 export async function GET(request) {
   try {
@@ -116,9 +116,7 @@ export async function PATCH(request) {
     const sheets = getGoogleSheets()
 
     if (body.action === 'verify') {
-      const data = await getSheetData('payments')
-      const [, ...rows] = data
-      const rowIndex = rows.findIndex(r => r && r[0] === body.id)
+      const rowIndex = await findRowIndexById('payments', body.id)
       if (rowIndex === -1) return Response.json({ success: false, error: 'Payment not found' })
       await sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
@@ -130,9 +128,7 @@ export async function PATCH(request) {
     }
 
     if (body.action === 'update_session_type') {
-      const data = await getSheetData('payments')
-      const [, ...rows] = data
-      const rowIndex = rows.findIndex(r => r && r[0] === body.id)
+      const rowIndex = await findRowIndexById('payments', body.id)
       if (rowIndex === -1) return Response.json({ success: false, error: 'Payment not found' })
       await sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
@@ -159,9 +155,7 @@ export async function PATCH(request) {
     }
 
     if (body.action === 'update_mop') {
-      const payData = await getSheetData('payments')
-      const [, ...payRows] = payData
-      const index = payRows.findIndex(r => r && r[0] === body.id)
+      const index = await findRowIndexById('payments', body.id)
       if (index === -1) return Response.json({ success: false, error: 'Not found' })
       const sheetRow = index + 2
       await sheets.spreadsheets.values.update({
@@ -180,9 +174,7 @@ export async function PATCH(request) {
     }
 
     if (body.action === 'update_amounts') {
-      const payData = await getSheetData('payments')
-      const [, ...payRows] = payData
-      const index = payRows.findIndex(r => r && r[0] === body.id)
+      const index = await findRowIndexById('payments', body.id)
       if (index === -1) return Response.json({ success: false, error: 'Not found' })
       await sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
@@ -200,9 +192,7 @@ export async function PATCH(request) {
     }
 
     if (body.action === 'update_comments') {
-      const payData = await getSheetData('payments')
-      const [, ...payRows] = payData
-      const index = payRows.findIndex(r => r && r[0] === body.id)
+      const index = await findRowIndexById('payments', body.id)
       if (index === -1) return Response.json({ success: false, error: 'Not found' })
       await sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
@@ -222,10 +212,8 @@ export async function PATCH(request) {
 export async function DELETE(request) {
   try {
     const { session_id } = await request.json()
-    const sheets = getGoogleSheets()
     const data = await getSheetData('payments')
     const [, ...rows] = data
-    const sheetId = await getSheetId('payments')
 
     const toDelete = rows
       .map((r, i) => ({ r, i }))
@@ -233,12 +221,7 @@ export async function DELETE(request) {
       .sort((a, b) => b.i - a.i)
 
     for (const { i } of toDelete) {
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId: SPREADSHEET_ID,
-        requestBody: { requests: [{ deleteDimension: {
-          range: { sheetId, dimension: 'ROWS', startIndex: i + 1, endIndex: i + 2 }
-        }}]}
-      })
+      await deleteSheetRow('payments', i)
     }
 
     return Response.json({ success: true })

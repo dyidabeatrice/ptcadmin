@@ -1,4 +1,4 @@
-import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
+import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID, deleteSheetRow } from '../../lib/sheets'
 import nodemailer from 'nodemailer'
 import { formatPHDate } from '../../lib/dates'
 
@@ -190,14 +190,7 @@ export async function PATCH(request) {
 export async function DELETE(request) {
   try {
     const { index } = await request.json()
-    const sheets = getGoogleSheets()
-    const sheetId = await getSheetId('reports')
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: SPREADSHEET_ID,
-      requestBody: { requests: [{ deleteDimension: {
-        range: { sheetId, dimension: 'ROWS', startIndex: index + 1, endIndex: index + 2 }
-      }}]}
-    })
+    await deleteSheetRow('reports', index)
     return Response.json({ success: true })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
