@@ -161,8 +161,9 @@ export default function TherapistDashboard() {
     await fetchSessions(week.key, therapistName)
   }
 
-  function logout() {
+  async function logout() {
     sessionStorage.removeItem('therapist_name')
+    await fetch('/api/therapist/auth', { method: 'DELETE' })
     router.push('/therapist/login')
   }
 

@@ -1,3 +1,4 @@
+import { cookies } from 'next/headers'
 import { getSheetData } from '../../../lib/sheets'
 import { signToken } from '../../../lib/auth'
 
@@ -18,10 +19,25 @@ export async function POST(request) {
     }
 
     const token = signToken({ role: 'therapist', name })
-    return Response.json({ success: true, name, role: 'therapist', token })
+
+    const cookieStore = await cookies()
+    cookieStore.set('ptc_therapist_auth', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 365
+    })
+
+    return Response.json({ success: true, name, role: 'therapist' })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
   }
+}
+
+export async function DELETE() {
+  const cookieStore = await cookies()
+  cookieStore.delete('ptc_therapist_auth')
+  return Response.json({ success: true })
 }
 
 export async function GET(request) {

@@ -1,9 +1,15 @@
 import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../../lib/sheets'
 import { formatPHDate } from '../../../lib/dates'
 import { buildEmailHTML, sendClinicEmail } from '../../../lib/email'
+import { getTherapistFromCookie } from '../../../lib/auth'
 
 export async function POST(request) {
   try {
+    const loggedInTherapist = await getTherapistFromCookie()
+    if (!loggedInTherapist) {
+      return Response.json({ success: false, error: 'You must be logged in as a therapist to upload reports.' })
+    }
+
     const formData = await request.formData()
     const file = formData.get('file')
     const reportId = formData.get('report_id')
@@ -20,6 +26,10 @@ export async function POST(request) {
     const reportRow = rows[index]
     const clientName = reportRow[1]
     const therapistName = reportRow[2]
+
+    if (therapistName !== loggedInTherapist) {
+      return Response.json({ success: false, error: 'This report is not assigned to you, so you cannot upload it.' })
+    }
     const parentEmail = reportRow[3]
     const docType = reportRow[6]
     const delivery = reportRow[11] || 'soft'
