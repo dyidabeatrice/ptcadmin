@@ -8,7 +8,7 @@ export default function PrivacyPolicy() {
 
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ color: '#0f4c81', fontSize: '28px', fontWeight: '600', marginBottom: '8px' }}>Privacy Policy</h1>
-        <p style={{ color: '#999', fontSize: '14px' }}>Potentials Therapy Center · Last updated: April 2026</p>
+        <p style={{ color: '#999', fontSize: '14px' }}>Potentials Therapy Center · Last updated: June 2026</p>
       </div>
 
       <div style={{ background: '#E6F1FB', borderRadius: '10px', padding: '1rem 1.25rem', marginBottom: '2rem', fontSize: '14px', color: '#0C447C' }}>
@@ -54,7 +54,7 @@ export default function PrivacyPolicy() {
 
       <section style={{ marginBottom: '2rem' }}>
         <h2 style={{ color: '#0f4c81', fontSize: '20px', fontWeight: '500', marginBottom: '12px' }}>Data Storage</h2>
-        <p>Your information is stored securely in Google Sheets accessible only to authorized Potentials Therapy Center staff. We do not store any data on third-party servers beyond what is necessary for Google Workspace and Facebook Messenger to function.</p>
+        <p>Your information is stored securely in Google Sheets accessible only to authorized Potentials Therapy Center staff. We do not store any data on third-party servers beyond what is necessary for Google Workspace and Facebook Messenger to function. Payment screenshots sent via Messenger remain hosted on Facebook's servers — we store only a reference link, not a copy of the image.</p>
       </section>
 
       <section style={{ marginBottom: '2rem' }}>

@@ -262,6 +262,23 @@ export default function HelpPage() {
             <Note type="info">The client's schedule on the Clients page is automatically updated whenever you add, move, or remove a slot on the Master Template.</Note>
           </SubSection>
 
+          <SubSection title="Finding available slots for new clients">
+            <p>In Master Template view, click <strong>Available slots</strong> at the top to quickly find open recurring time slots — useful when a new client calls and you need to offer them a time.</p>
+            <Step num={1}>Click <strong>Available slots</strong>.</Step>
+            <Step num={2}>Choose a specialty (OT, ST, PT, SPED, or All).</Step>
+            <Step num={3}>Review the list of therapists with open 1+ hour gaps in their recurring schedule, grouped by day.</Step>
+            <Note type="tip">Slots marked <strong>OPEN FOR DECKING</strong> are ones a therapist has specifically flagged as available — these are usually the best options to offer first.</Note>
+          </SubSection>
+
+          <SubSection title="Simple View">
+            <p>Toggle to <strong>Simple View</strong> at the top of the Schedule page for a simpler, list-style layout — closer to a spreadsheet, with therapists as columns and sessions listed underneath.</p>
+            <Step num={1}>Tap any client's name to open their session actions.</Step>
+            <Step num={2}>From there you can change their status, session type, record a payment, send a reminder, or delete the session — same actions as the regular grid view.</Step>
+            <Step num={3}>Tap the name again (or another name) to close it.</Step>
+            <Note type="info">Sessions at the same time slot with the same therapist (group sessions) are shown together in one box.</Note>
+            <Note type="warning">Simple View doesn't support click to add a new session, or drag-and-drop rescheduling, switch to This Week view.</Note>
+          </SubSection>
+
         </Section></div>
 
         {/* PAYMENTS */}
