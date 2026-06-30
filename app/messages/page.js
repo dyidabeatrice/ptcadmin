@@ -80,6 +80,17 @@ async function fetchClients() {
     fetchMessages()
   }
 
+  async function markViberSent(msg) {
+    const messageToSend = editingId === msg.id ? editText : msg.message
+    await fetch('/api/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'send', id: msg.id, message: messageToSend, skip_messenger: true })
+    })
+    setEditingId(null)
+    fetchMessages()
+  }
+
   async function saveEdit(msg) {
     await fetch('/api/messages', {
       method: 'POST',
@@ -255,7 +266,13 @@ async function fetchClients() {
                           }}>{isSending ? 'Sending...' : 'Send via Messenger'}</button>
                         ) : msg.phone ? (
                           <a href={`viber://chat?number=+${msg.phone.replace(/\s+/g, '').replace(/^\+/, '')}`}
-                            onClick={() => sendMessage(msg)}
+                            onClick={() => {
+                              setTimeout(() => {
+                                if (confirm(`Did you send this message to ${msg.client_name} in Viber?`)) {
+                                  markViberSent(msg)
+                                }
+                              }, 800)
+                            }}
                             style={{
                               padding: '6px 16px', borderRadius: '6px', border: 'none',
                               background: '#7360F2', color: 'white',

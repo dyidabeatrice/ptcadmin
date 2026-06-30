@@ -85,8 +85,8 @@ export async function POST(request) {
       if (rowIndex === -1) return Response.json({ success: false, error: 'Message not found' })
 
       const psid = rows[rowIndex][2]
-      
-      if (psid) {
+
+      if (psid && !body.skip_messenger) {
         const result = await sendTaggedMessage(psid, body.message)
         if (result.error) return Response.json({ success: false, error: result.error.message })
       }
