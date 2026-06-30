@@ -1,5 +1,5 @@
 import { getSheetData } from '../../../lib/sheets'
-import jwt from 'jsonwebtoken'
+import { signToken } from '../../../lib/auth'
 
 export async function POST(request) {
   try {
@@ -17,14 +17,7 @@ export async function POST(request) {
       return Response.json({ success: false, error: 'This account has been disabled. Please contact the clinic.' })
     }
 
-    if (!process.env.JWT_SECRET) {
-      throw new Error('JWT_SECRET environment variable is required')
-    }
-    const token = jwt.sign(
-      { role: 'therapist', name },
-      process.env.JWT_SECRET,
-      { expiresIn: '365d' }
-    )
+    const token = signToken({ role: 'therapist', name })
     return Response.json({ success: true, name, role: 'therapist', token })
   } catch (error) {
     return Response.json({ success: false, error: error.message })

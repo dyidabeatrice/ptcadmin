@@ -1,12 +1,7 @@
 import { cookies } from 'next/headers'
-import jwt from 'jsonwebtoken'
+import { signToken } from '../../lib/auth'
 
 const STAFF_PASSWORD = process.env.STAFF_PASSWORD
-const JWT_SECRET = process.env.JWT_SECRET
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required')
-}
 
 export async function POST(request) {
   try {
@@ -20,11 +15,7 @@ export async function POST(request) {
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 365
       })
-      const token = jwt.sign(
-        { role: 'admin' },
-        JWT_SECRET,
-        { expiresIn: '365d' }
-      )
+      const token = signToken({ role: 'admin' })
       return Response.json({ success: true, role: 'admin', token })
     }
     return Response.json({ success: false })
