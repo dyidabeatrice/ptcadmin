@@ -1,5 +1,6 @@
 import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
 import nodemailer from 'nodemailer'
+import { formatPHDate } from '../../lib/dates'
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -81,9 +82,7 @@ export async function POST(request) {
 
     if (body.action === 'add') {
       const id = Date.now().toString()
-      const requestDate = new Date().toLocaleDateString('en-PH', {
-        timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric'
-      })
+      const requestDate = formatPHDate()
 
       await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,

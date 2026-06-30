@@ -1,4 +1,5 @@
 import { getSheetData, getGoogleSheets, SPREADSHEET_ID, getSheetId } from '../../lib/sheets'
+import { formatPHDateTime } from '../../lib/dates'
 
 const PAGE_ACCESS_TOKEN = process.env.META_PAGE_ACCESS_TOKEN
 
@@ -63,10 +64,7 @@ export async function POST(request) {
 
     if (body.action === 'create_draft') {
       const id = Date.now().toString()
-      const createdAt = new Date().toLocaleDateString('en-PH', {
-        timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-      })
+      const createdAt = formatPHDateTime()
       await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
         range: 'messages',
@@ -93,10 +91,7 @@ export async function POST(request) {
         if (result.error) return Response.json({ success: false, error: result.error.message })
       }
 
-      const sentAt = new Date().toLocaleDateString('en-PH', {
-        timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-      })
+      const sentAt = formatPHDateTime()
 
       await sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,

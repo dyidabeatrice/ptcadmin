@@ -1,4 +1,5 @@
 import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
+import { formatPHDate } from '../../lib/dates'
 
 async function getClientRow(clientName) {
   const data = await getSheetData('clients')
@@ -67,7 +68,7 @@ export async function POST(request) {
   try {
     const body = await request.json()
     const sheets = getGoogleSheets()
-    const today = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
+    const now = formatPHDate()
 
     if (body.action === 'add_credit') {
       const result = await updateClientBalances(body.client_name, body.amount, 0)

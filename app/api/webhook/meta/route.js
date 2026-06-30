@@ -1,4 +1,5 @@
-import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../../lib/sheets'
+import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../../lib/sheets'
+import { formatPHDateTime } from '../../../lib/dates'
 
 const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN
 const PAGE_ACCESS_TOKEN = process.env.META_PAGE_ACCESS_TOKEN
@@ -115,10 +116,7 @@ async function getClientByPsid(psid) {
 
 async function savePendingPayment(psid, clientName, imageUrl, senderName) {
   const sheets = getGoogleSheets()
-  const now = new Date().toLocaleDateString('en-US', {
-    timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  })
+  const now = formatPHDateTime()
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: SPREADSHEET_ID,

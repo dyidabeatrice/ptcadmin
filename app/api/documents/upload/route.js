@@ -1,5 +1,6 @@
 import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../../lib/sheets'
 import nodemailer from 'nodemailer'
+import { formatPHDate } from '../../../lib/dates'
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -39,9 +40,7 @@ export async function POST(request) {
     // Convert file to buffer for email attachment
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    const now = new Date().toLocaleDateString('en-US', {
-      timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric'
-    })
+    const now = formatPHDate()
 
     // Mark as uploaded in sheet
     const sheets = getGoogleSheets()

@@ -1,5 +1,6 @@
 import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
 import { SPECIALTY_RATES, getDefaultSessionType } from '../../lib/constants'
+import { formatPHDate, formatPHDateTime } from '../../lib/dates'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
@@ -152,9 +153,7 @@ export async function PATCH(request) {
           const deadline = new Date(sessionDate)
           deadline.setMonth(deadline.getMonth() + 6)
           const deadlineStr = deadline.toISOString().split('T')[0]
-          const today = new Date().toLocaleDateString('en-PH', {
-            timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric'
-          })
+          const today = formatPHDate()
           await sheets.spreadsheets.values.append({
             spreadsheetId: SPREADSHEET_ID,
             range: 'reports',
@@ -274,9 +273,7 @@ if (body.action === 'status') {
         }
       }
 
-      const payDate = new Date().toLocaleDateString('en-PH', {
-        timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric'
-      })
+      const today = formatPHDate()
 
       // Log unpaid present sessions
       if (newStatus === 'Present' && oldStatus !== 'Present' && !isPaid) {
@@ -354,10 +351,7 @@ if (body.action === 'status') {
       }
 
       // Log to payments sheet FIRST before any credits calls
-      const payDate = body.date || new Date().toLocaleDateString('en-US', {
-        timeZone: 'Asia/Manila',
-        year: 'numeric', month: 'short', day: 'numeric'
-      })
+      const payDate = body.date || formatPHDate()
       await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
         range: 'payments',
@@ -390,7 +384,7 @@ if (body.action === 'status') {
             body.client_name,
             body.therapist,
             `Send clinic policies to carer of ${body.client_name}`,
-            new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
+            formatPHDate()
           ]]}
         })
       }
@@ -405,9 +399,7 @@ if (body.action === 'status') {
           const deadline = new Date(sessionDate)
           deadline.setMonth(deadline.getMonth() + 6)
           const deadlineStr = deadline.toISOString().split('T')[0]
-          const sessionDateFormatted = body.date || new Date().toLocaleDateString('en-PH', {
-            timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric'
-          })
+          const sessionDateFormatted = body.date || formatPHDate()
           await sheets.spreadsheets.values.append({
             spreadsheetId: SPREADSHEET_ID,
             range: 'reports',

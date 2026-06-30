@@ -1,13 +1,6 @@
 import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
 import { RATES } from '../../lib/constants'
-
-function parseDate(dateStr) {
-  if (!dateStr) return null
-  const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
-  const parts = dateStr.replace(',', '').split(' ')
-  if (parts.length !== 3) return null
-  return new Date(parseInt(parts[2]), months[parts[0]], parseInt(parts[1]))
-}
+import { parsePHDate } from '../../lib/dates'
 
 function calcRates(sessionType, level, recordedAmount, isIntern, comments) {
   const type = sessionType?.toUpperCase().trim()
@@ -257,7 +250,7 @@ supervisorFees.forEach(row => {
 
     if (!ledger[therapist]) ledger[therapist] = {}
 
-      const d = parseDate(s.date)
+      const d = parsePHDate(s.date)
       if (!d) return
       const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
       const monthLabel = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })

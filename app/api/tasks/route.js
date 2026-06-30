@@ -1,4 +1,5 @@
 import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
+import { formatPHDate } from '../../lib/dates'
 
 export async function GET() {
   try {
@@ -23,9 +24,7 @@ export async function POST(request) {
     const body = await request.json()
     const sheets = getGoogleSheets()
     const id = Date.now().toString()
-    const now = new Date().toLocaleDateString('en-US', {
-      timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric'
-    })
+    const now = formatPHDate()
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
       range: 'tasks',

@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx'
 import { RATES } from '../../lib/constants'
+import { parsePHDate } from '../../lib/dates'
 
 export async function GET(request) {
   try {
@@ -57,13 +58,7 @@ export async function GET(request) {
       if (allSessions.length === 0) continue
 
       // Sort by date
-      const parseDate = (d) => {
-        if (!d) return new Date(0)
-        const months = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
-        const p = d.replace(',','').split(' ')
-        return p.length !== 3 ? new Date(0) : new Date(parseInt(p[2]), months[p[0]], parseInt(p[1]))
-      }
-      allSessions.sort((a, b) => parseDate(a.date) - parseDate(b.date))
+      allSessions.sort((a, b) => (parsePHDate(a.date) || new Date(0)) - (parsePHDate(b.date) || new Date(0)))
 
       if (therapistName === 'OT INTERNS') {
         internSessions.OT.push(...allSessions)
