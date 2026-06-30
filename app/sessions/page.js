@@ -156,6 +156,7 @@ export default function SchedulePage() {
   const [specialtiesExpanded, setSpecialtiesExpanded] = useState(false)
   const [freeSlotsModal, setFreeSlotsModal] = useState(false)
   const [freeSlotsSpecialty, setFreeSlotsSpecialty] = useState('ALL')
+  const [simpleExpandedId, setSimpleExpandedId] = useState(null)
   const selectedWeekRef = useRef(null)
 
 
@@ -988,6 +989,78 @@ export default function SchedulePage() {
     )
   }  
 
+  function renderSimpleDay(day) {
+    const daySessions = sessions.filter(s => s.day === day)
+    if (daySessions.length === 0) {
+      return (
+        <div style={{ padding: '1.5rem', textAlign: 'center', color: '#999', fontSize: '13px' }}>
+          No sessions for {day}
+        </div>
+      )
+    }
+
+    const therapistsByStartTime = ['8:00 AM', '8:15 AM', '8:30 AM', '8:45 AM'].flatMap(startTime =>
+      [...new Set(therapistData.filter(t => t.day === day && t.time_start === startTime).map(t => t.name))].sort()
+    )
+    const oneOffTherapists = [...new Set(daySessions.map(s => s.therapist))].filter(t => !therapistsByStartTime.includes(t)).sort()
+    const therapists = therapistsByStartTime.length > 0
+      ? [...therapistsByStartTime, ...oneOffTherapists]
+      : [...new Set(daySessions.map(s => s.therapist))].sort()
+
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(therapists.length, 4)}, minmax(180px, 1fr))`, gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+        {therapists.map(therapist => {
+          const therapistEntry = therapistData.find(t => t.name === therapist && t.day === day)
+          const specialty = therapistEntry?.specialty || ''
+          const therapistSessions = daySessions.filter(s => s.therapist === therapist)
+
+          // Group sessions by exact time_start (group sessions share a slot)
+          const byTime = {}
+          therapistSessions.forEach(s => {
+            if (!byTime[s.time_start]) byTime[s.time_start] = []
+            byTime[s.time_start].push(s)
+          })
+          const sortedTimes = Object.keys(byTime).sort((a, b) => parseTime(a) - parseTime(b))
+
+          return (
+            <div key={therapist} style={{ flexShrink: 0 }}>
+              <div style={{ fontSize: '12px', fontWeight: '500', color: '#666', padding: '4px 6px', background: '#f8f9fa', borderRadius: '8px 8px 0 0' }}>
+                {therapist}{specialty ? ` (${specialty})` : ''}
+              </div>
+              <div style={{ border: '1px solid #e0e0e0', borderTop: 'none', borderRadius: '0 0 8px 8px', overflow: 'hidden' }}>
+                {sortedTimes.map((time, ti) => {
+                  const group = byTime[time]
+                  return (
+                    <div key={time} style={{ padding: '7px 8px', borderBottom: ti < sortedTimes.length - 1 ? '1px solid #e0e0e0' : 'none' }}>
+                      <div style={{ fontSize: '11px', color: '#999', marginBottom: '3px' }}>
+                        {time}{group.length > 1 ? ` · group (${group.length})` : ''}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        {group.map(s => {
+                          const sc = getSessionColor(s)
+                          return (
+                            <div key={s.index} style={{
+                              display: 'flex', alignItems: 'center', gap: '6px',
+                              padding: '3px 6px', borderRadius: '4px',
+                              background: sc.bg, cursor: 'pointer'
+                            }}>
+                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: sc.border, flexShrink: 0 }} />
+                              <span style={{ fontSize: '12px', fontWeight: '500', color: sc.color }}>{s.client_name}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   // Week dates map
   const weekDatesMap = {}
   if (selectedWeek) {
@@ -1067,7 +1140,7 @@ export default function SchedulePage() {
       {/* View toggle */}
       <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', gap: '4px', padding: '4px', background: '#f0f0f0', borderRadius: '10px', width: 'fit-content' }}>
-            {[{ key: 'master', label: 'Master Template' }, { key: 'week', label: 'This Week' }].map(v => (
+            {[{ key: 'master', label: 'Master Template' }, { key: 'week', label: 'This Week' }, { key: 'simple', label: 'Simple View' }].map(v => (
               <button key={v.key} onClick={() => { setViewMode(v.key); if (v.key === 'master') fetchMaster() }} style={{
               padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer',
               fontSize: '13px', fontWeight: '500',
@@ -1446,6 +1519,15 @@ export default function SchedulePage() {
       ) : loading ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading...</div>
 
+      ) : viewMode === 'simple' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {DAYS.map(day => (
+            <div key={day} style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1rem' }}>
+              <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f4c81', marginBottom: '10px' }}>{day}</div>
+              {renderSimpleDay(day)}
+            </div>
+          ))}
+        </div>
       ) : viewMode === 'master' ? (
         masterLoading ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading master template...</div>
