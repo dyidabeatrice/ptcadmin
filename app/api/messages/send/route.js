@@ -1,26 +1,4 @@
-const PAGE_ACCESS_TOKEN = process.env.META_PAGE_ACCESS_TOKEN
-
-async function sendMessengerMessage(recipientId, message, quickReplies = null) {
-  const body = {
-    messaging_type: 'MESSAGE_TAG',
-    tag: 'CONFIRMED_EVENT_UPDATE',
-    recipient: { id: recipientId },
-    message: quickReplies ? {
-      text: message,
-      quick_replies: quickReplies
-    } : { text: message }
-  }
-
-  const res = await fetch(
-    `https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    }
-  )
-  return await res.json()
-}
+import { sendTaggedMessage } from '../../../lib/messenger'
 
 export async function POST(request) {
   try {
@@ -44,7 +22,7 @@ export async function POST(request) {
         }
       ]
 
-      const result = await sendMessengerMessage(psid, message, quickReplies)
+      const result = await sendTaggedMessage(psid, message, quickReplies)
 
       if (result.error) {
         return Response.json({ success: false, error: result.error.message })
@@ -58,7 +36,7 @@ export async function POST(request) {
 
       const message = `Good day! We regret to inform you that ${client_name}'s session on ${date} at ${time_start} will not push through due to ${therapist}'s absence. We will get in touch regarding rescheduling. We apologize for the inconvenience.`
 
-      const result = await sendMessengerMessage(psid, message)
+      const result = await sendTaggedMessage(psid, message)
 
       if (result.error) {
         return Response.json({ success: false, error: result.error.message })

@@ -1,44 +1,9 @@
 import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../../lib/sheets'
 import { formatPHDateTime } from '../../../lib/dates'
+import { sendTextMessage } from '../../../lib/messenger'
 
 const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN
 const PAGE_ACCESS_TOKEN = process.env.META_PAGE_ACCESS_TOKEN
-
-async function sendMessage(recipientId, message, quickReplies = null) {
-  const body = {
-    recipient: { id: recipientId },
-    message: quickReplies ? {
-      text: message,
-      quick_replies: quickReplies
-    } : { text: message }
-  }
-
-  await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  })
-}
-
-async function sendTemplateMessage(recipientId, templateName, components = null) {
-  const template = {
-    name: templateName,
-    language: { code: "en" }
-  }
-  if (components) template.components = components
-
-  const body = {
-    recipient: { id: recipientId },
-    messaging_type: "UTILITY",
-    message: { template }
-  }
-
-  await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  })
-}
 
 async function findSessionByPsid(psid) {
   const clientData = await getSheetData('clients')
@@ -200,7 +165,7 @@ export async function POST(request) {
           const result = await findSessionByPsid(psid)
 
           if (!result) {
-            await sendMessage(psid, "Thank you for your response! Our secretary will be in touch.")
+            await sendTextMessage(psid, "Thank you for your response! Our secretary will be in touch.")
             continue
           }
 
@@ -208,14 +173,14 @@ export async function POST(request) {
 
           if (payload === 'CONFIRM_YES') {
             await updateSessionStatus(weekKey, rowIndex, 'Scheduled')
-            await sendMessage(psid,
+            await sendTextMessage(psid,
               `Thank you! We have confirmed ${clientName}'s session tomorrow. See you then! 😊`
             )
           }
 
           if (payload === 'CONFIRM_NO') {
             await updateSessionStatus(weekKey, rowIndex, 'Absent')
-            await sendMessage(psid,
+            await sendTextMessage(psid,
               `Thank you for letting us know! Please share your availability for a make-up session and our secretary will get in touch. 🙏`
             )
           }
