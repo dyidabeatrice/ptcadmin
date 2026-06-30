@@ -231,7 +231,7 @@ export async function PATCH(request) {
 
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: `clients!B${sheetRow}:K${sheetRow}`,
+      range: `clients!B${sheetRow}:L${sheetRow}`,
       valueInputOption: 'RAW',
       requestBody: { values: [[
         body.name || '',
@@ -243,7 +243,8 @@ export async function PATCH(request) {
         body.schedule || '',
         body.status || 'active',
         body.credit_balance || 0,
-        body.outstanding_balance || 0
+        body.outstanding_balance || 0,
+        body.psid || ''
       ]]}
     })
 
