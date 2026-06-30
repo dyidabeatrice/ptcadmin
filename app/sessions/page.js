@@ -180,18 +180,23 @@ export default function SchedulePage() {
   useEffect(() => {
     initializePage()
 
-    const interval = setInterval(() => {
-      if (selectedWeekRef.current) fetchSessions(selectedWeekRef.current.key)
-    }, 30000)
+    let lastFetch = Date.now()
+    const MIN_GAP_MS = 5000 // avoid double-fetching if interval and focus land close together
 
-    const handleFocus = () => {
-      if (selectedWeekRef.current) fetchSessions(selectedWeekRef.current.key)
+    const refetch = () => {
+      if (!selectedWeekRef.current) return
+      const now = Date.now()
+      if (now - lastFetch < MIN_GAP_MS) return
+      lastFetch = now
+      fetchSessions(selectedWeekRef.current.key)
     }
-    window.addEventListener('focus', handleFocus)
+
+    const interval = setInterval(refetch, 30000)
+    window.addEventListener('focus', refetch)
 
     return () => {
       clearInterval(interval)
-      window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('focus', refetch)
     }
   }, [])
 

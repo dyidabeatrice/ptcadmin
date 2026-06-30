@@ -535,9 +535,7 @@ export default function DocumentsPage() {
                     <td style={{ padding: '10px 16px' }}>
                       {r.amount > 0 && r.status === 'Outstanding' && r.client_name && (
                         <button onClick={async () => {
-                          const clientRes = await fetch(`/api/clients`)
-                          const clientJson = await clientRes.json()
-                          const client = clientJson.success ? clientJson.data.find(c => c.name === r.client_name) : null
+                          const client = clients.find(c => c.name === r.client_name)
                           const psid = client?.psid || ''
                           const deadline = r.deadline ? ` on or before ${r.deadline}` : ''
                           const message = `Hi! This is a gentle reminder to settle your balance for your ${r.doc_type} request for ${r.client_name}${deadline}. Thank you.`
