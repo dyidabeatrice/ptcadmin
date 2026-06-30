@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
+import { ALL_SESSION_TYPE_OPTIONS } from '../lib/sessionTypes'
 
 const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
 
@@ -227,17 +228,7 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
       }}
       style={{ fontSize: '11px', padding: '3px 6px', borderRadius: '6px', border: '1px solid #B5D4F4', cursor: 'pointer', background: '#E6F1FB', color: '#0C447C' }}>
           <option value="">— type —</option>
-          {[
-            ['OT SESSION','OT SESSION'],['OT-IE','OT-IE'],['OT-FE','OT-FE'],['SPECIALIZED OT TX','SPECIALIZED OT TX'],
-            ['ST SESSION','ST SESSION'],['ST-IE','ST-IE'],['ST-FE','ST-FE'],['SPECIALIZED ST TX','SPECIALIZED ST TX'],
-            ['PT SESSION','PT SESSION'],['PT-IE','PT-IE'],['PT FE','PT FE'],
-            ['SPED SESSION','SPED SESSION'],['SPED IE','SPED IE'],['SPED FE','SPED FE'],
-            ['PLAYSCHOOL','PLAYSCHOOL'],['PR','PR'],['PR-RUSHED','PR-RUSHED'],['IE REPORT','IE REPORT'],
-            ['Cancellation Fee','No Show Fee'],
-            ['OT INTERN SESSION','OT INTERN SESSION'],['OT INTERN IE','OT INTERN IE'],
-            ['ST INTERN SESSION','ST INTERN SESSION'],['ST INTERN IE','ST INTERN IE'],['PR INTERN','PR INTERN'],
-            ['SUPERVISOR FEE','SUPERVISOR FEE']
-          ].map(([val, label]) => (
+          {ALL_SESSION_TYPE_OPTIONS.map(([val, label]) => (
             <option key={val} value={val}>{label}</option>
           ))}
         </select>
@@ -548,17 +539,7 @@ function SettleModal({ payModal, payForm, setPayForm, clientCredit, saving, onCl
             <select value={payForm.session_type || payModal.session_type || ''}
               onChange={e => setPayForm({ ...payForm, session_type: e.target.value })}
               style={{ width: '100%', padding: '6px 8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }}>
-              {[
-                ['OT SESSION','OT SESSION'],['OT-IE','OT-IE'],['OT-FE','OT-FE'],['SPECIALIZED OT TX','SPECIALIZED OT TX'],
-                ['ST SESSION','ST SESSION'],['ST-IE','ST-IE'],['ST-FE','ST-FE'],['SPECIALIZED ST TX','SPECIALIZED ST TX'],
-                ['PT SESSION','PT SESSION'],['PT-IE','PT-IE'],['PT FE','PT FE'],
-                ['SPED SESSION','SPED SESSION'],['SPED IE','SPED IE'],['SPED FE','SPED FE'],
-                ['PLAYSCHOOL','PLAYSCHOOL'],['PR','PR'],['PR-RUSHED','PR-RUSHED'],['IE REPORT','IE REPORT'],
-                ['Cancellation Fee','No Show Fee'],
-                ['OT INTERN SESSION','OT INTERN SESSION'],['OT INTERN IE','OT INTERN IE'],
-                ['ST INTERN SESSION','ST INTERN SESSION'],['ST INTERN IE','ST INTERN IE'],['PR INTERN','PR INTERN'],
-                ['SUPERVISOR FEE','SUPERVISOR FEE']
-              ].map(([val, label]) => <option key={val} value={val}>{label}</option>)}
+              {ALL_SESSION_TYPE_OPTIONS.map(([val, label]) => <option key={val} value={val}>{label}</option>)}
             </select>
           </div>
           {clientCredit > 0 && <div style={{ marginTop: '6px', fontSize: '12px', color: '#27500A', background: '#EAF3DE', padding: '4px 8px', borderRadius: '6px', display: 'inline-block' }}>💳 Credit available: ₱{clientCredit.toLocaleString()}</div>}
