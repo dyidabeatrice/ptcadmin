@@ -2,7 +2,11 @@ import { cookies } from 'next/headers'
 import jwt from 'jsonwebtoken'
 
 const STAFF_PASSWORD = process.env.STAFF_PASSWORD
-const JWT_SECRET = process.env.JWT_SECRET || 'ptcadmin-secret-key'
+const JWT_SECRET = process.env.JWT_SECRET
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required')
+}
 
 export async function POST(request) {
   try {

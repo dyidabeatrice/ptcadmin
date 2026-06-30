@@ -17,10 +17,12 @@ export async function POST(request) {
       return Response.json({ success: false, error: 'This account has been disabled. Please contact the clinic.' })
     }
 
-    const JWT_SECRET = process.env.JWT_SECRET || 'ptcadmin-secret-key'
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET environment variable is required')
+    }
     const token = jwt.sign(
       { role: 'therapist', name },
-      JWT_SECRET,
+      process.env.JWT_SECRET,
       { expiresIn: '365d' }
     )
     return Response.json({ success: true, name, role: 'therapist', token })

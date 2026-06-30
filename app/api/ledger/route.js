@@ -325,8 +325,6 @@ supervisorFees.forEach(row => {
     const sorted = [...regular.sort(), 'OT INTERNS', 'ST INTERNS']
 
     return Response.json({ success: true, data: ledger, therapists: sorted })
-
-    return Response.json({ success: true, data: ledger, therapists: sorted })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
   }

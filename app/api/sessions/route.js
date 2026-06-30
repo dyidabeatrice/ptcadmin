@@ -244,7 +244,7 @@ if (body.action === 'status') {
             await sheets.spreadsheets.batchUpdate({
               spreadsheetId: SPREADSHEET_ID,
               requestBody: { requests: [{ deleteDimension: {
-                range: { reportsSheetId, dimension: 'ROWS', startIndex: ieIndex + 1, endIndex: ieIndex + 2 }
+                range: { sheetId: reportsSheetId, dimension: 'ROWS', startIndex: ieIndex + 1, endIndex: ieIndex + 2 }
               }}]}
             })
           }

@@ -163,11 +163,18 @@ export async function PATCH(request) {
       const [, ...payRows] = payData
       const index = payRows.findIndex(r => r && r[0] === body.id)
       if (index === -1) return Response.json({ success: false, error: 'Not found' })
+      const sheetRow = index + 2
       await sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
-        range: `payments!F${index + 2}:J${index + 2}`,
+        range: `payments!F${sheetRow}`,
         valueInputOption: 'RAW',
-        requestBody: { values: [[body.mop, '', '', '', body.reference || '']] }
+        requestBody: { values: [[body.mop]] }
+      })
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `payments!J${sheetRow}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[body.reference || '']] }
       })
       return Response.json({ success: true })
     }

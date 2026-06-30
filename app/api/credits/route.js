@@ -90,7 +90,8 @@ export async function POST(request) {
     }
 
     if (body.action === 'apply_credit') {
-      const amountToDeduct = Math.min(body.amount, body.credit_balance || body.amount)
+      const safeCreditBalance = typeof body.credit_balance === 'number' ? body.credit_balance : 0
+      const amountToDeduct = Math.min(body.amount, safeCreditBalance)
       const result = await updateClientBalances(body.client_name, -amountToDeduct, 0)
       
       // Find most recent advance payment reference for this client
@@ -129,7 +130,10 @@ export async function POST(request) {
           'REFUND-' + Date.now(),
           -body.amount, 'Refund',
           'Refund', today,
-          'refund'
+          'refund',
+          '',  // reference
+          '',  // verified_by
+          ''   // comments
         ]]}
       })
       return Response.json({ success: true, ...result })

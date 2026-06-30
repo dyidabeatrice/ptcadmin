@@ -115,10 +115,7 @@ export async function POST(request) {
       const freshData = await getSheetData('clients')
       const [, ...freshRows] = freshData
       const newKeepIndex = freshRows.findIndex(r => r && r[0] === keep_id)
-      const keepRow = (newKeepIndex !== -1 ? newKeepIndex : 
-        // if deleted row was before keeper, keeper shifted up by 1
-        delete_index < keep_index ? keep_index : keep_index
-      ) + 2
+      const keepRow = newKeepIndex + 2
 
       // Step 3 — update keeper record
       await sheets.spreadsheets.values.update({

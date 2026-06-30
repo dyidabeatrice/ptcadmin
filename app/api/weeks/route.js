@@ -13,7 +13,7 @@ function getDefaultAmount(therapistName, therapistList) {
   const t = therapistList.find(r => r[1] === therapistName)
   if (!t) return 1200
   const specialty = t[2] || 'OT'
-  if (t[3] === 'TRUE') return specialty === 'ST' ? 600 : 600 // intern rate
+  if (t[3] === 'TRUE') return 600 // intern rate
   return SPECIALTY_RATES[specialty] || 1200
 }
 
