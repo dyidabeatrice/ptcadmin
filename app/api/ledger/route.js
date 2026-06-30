@@ -1,6 +1,7 @@
 import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
 import { RATES, IE_SESSION_TYPES } from '../../lib/constants'
 import { parsePHDate } from '../../lib/dates'
+import { getTherapistFromCookie } from '../../lib/auth'
 
 function calcRates(sessionType, level, recordedAmount, isIntern, comments) {
   const type = sessionType?.toUpperCase().trim()

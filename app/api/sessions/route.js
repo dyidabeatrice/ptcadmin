@@ -2,6 +2,7 @@ import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../..
 import { SPECIALTY_RATES, getDefaultSessionType, IE_SESSION_TYPES } from '../../lib/constants'
 import { formatPHDate, formatPHDateTime } from '../../lib/dates'
 import { addOutstanding, clearOutstanding, applyCredit, absentCredit } from '../../lib/credits'
+import { getTherapistFromCookie } from '../../lib/auth'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
