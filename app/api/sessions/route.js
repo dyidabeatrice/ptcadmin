@@ -1,4 +1,5 @@
 import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
+import { SPECIALTY_RATES, getDefaultSessionType } from '../../lib/constants'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
@@ -44,11 +45,7 @@ export async function POST(request) {
       const tRow = therapistRows.find(r => r && r[1] === body.therapist)
       const specialty = tRow?.[2] || 'OT'
       const isIntern = tRow?.[3] === 'TRUE'
-      const defaultSessionType =
-        specialty === 'ST' ? 'ST SESSION' :
-        specialty === 'PT' ? 'PT SESSION' :
-        specialty === 'SPED' ? 'SPED SESSION' : 'OT SESSION'
-      const SPECIALTY_RATES = { OT: 1200, ST: 1300, PT: 900, SPED: 900 }
+      const defaultSessionType = getDefaultSessionType(specialty)
       const defaultAmount = isIntern ? 600 : (SPECIALTY_RATES[specialty] || 1200)
 
       const id = Date.now().toString() + Math.random().toString(36).slice(2)
