@@ -25,6 +25,34 @@ function formatTime(mins) {
   return `${dh}:${m.toString().padStart(2, '0')} ${period}`
 }
 
+// Builds a map of { Monday: "Jun 1, 2026", Tuesday: "Jun 2, 2026", ... }
+// for a given week_YYYY_MM_DD key.
+function getWeekDatesMap(weekKey) {
+  const parts = weekKey.replace('week_', '').split('_')
+  const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
+  const map = {}
+  DAYS.forEach((day, i) => {
+    const d = new Date(monday)
+    d.setDate(d.getDate() + i)
+    map[day] = d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+  })
+  return map
+}
+
+// Builds a map of { Monday: "Jun 1, 2026", Tuesday: "Jun 2, 2026", ... }
+// for a given week_YYYY_MM_DD key.
+function getWeekDatesMap(weekKey) {
+  const parts = weekKey.replace('week_', '').split('_')
+  const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
+  const map = {}
+  DAYS.forEach((day, i) => {
+    const d = new Date(monday)
+    d.setDate(d.getDate() + i)
+    map[day] = d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
+  })
+  return map
+}
+
 function getTherapistKey(therapist, therapistData) {
   const t = therapistData.find(x => x.name === therapist)
   if (!t) return 'OT'
@@ -349,14 +377,7 @@ export default function SchedulePage() {
   async function addOneOff() {
     if (!addForm.client_name || !addForm.therapist || !addForm.day || !addForm.time_start || !addForm.time_end) return alert('Please fill in all fields')
     setSaving(true)
-    const parts = selectedWeek.key.replace('week_', '').split('_')
-    const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
-    const weekDates = {}
-    DAYS.forEach((day, i) => {
-      const d = new Date(monday)
-      d.setDate(d.getDate() + i)
-      weekDates[day] = d.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
-    })
+    const weekDates = getWeekDatesMap(selectedWeek.key)
     await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add', week_key: selectedWeek.key, ...addForm, date: weekDates[addForm.day] || '' }) })
     setAddModal(false)
     setAddForm({ client_name: '', therapist: '', day: '', time_start: '', time_end: '' })
@@ -543,14 +564,7 @@ export default function SchedulePage() {
                           const duration = parseTime(dragSession.time_end) - parseTime(dragSession.time_start)
                           const newTimeEnd = formatTime(slotMins + duration)
                           if (newTimeStart === dragSession.time_start && therapist === dragSession.therapist && day === dragSession.day) return
-                          const parts = selectedWeek.key.replace('week_', '').split('_')
-                          const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
-                          const weekDates = {}
-                          DAYS.forEach((d, idx) => {
-                            const dd = new Date(monday)
-                            dd.setDate(dd.getDate() + idx)
-                            weekDates[d] = dd.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
-                          })
+                          const weekDates = getWeekDatesMap(selectedWeek.key)
                           await fetch('/api/sessions', {
                             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ action: 'reschedule', week_key: selectedWeek.key, rowIndex: dragSession.index, therapist, date: weekDates[day] || '', day, time_start: newTimeStart, time_end: newTimeEnd })
@@ -610,14 +624,7 @@ export default function SchedulePage() {
                           const newTimeStart = s.time_start
                           const duration = parseTime(dragSession.time_end) - parseTime(dragSession.time_start)
                           const newTimeEnd = formatTime(parseTime(newTimeStart) + duration)
-                          const parts = selectedWeek.key.replace('week_', '').split('_')
-                          const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
-                          const weekDates = {}
-                          DAYS.forEach((d, idx) => {
-                            const dd = new Date(monday)
-                            dd.setDate(dd.getDate() + idx)
-                            weekDates[d] = dd.toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' })
-                          })
+                          const weekDates = getWeekDatesMap(selectedWeek.key)
                           await fetch('/api/sessions', {
                             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ action: 'reschedule', week_key: selectedWeek.key, rowIndex: dragSession.index, therapist, date: weekDates[day] || '', day, time_start: newTimeStart, time_end: newTimeEnd })
