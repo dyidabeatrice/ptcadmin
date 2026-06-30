@@ -1,6 +1,7 @@
 import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID, deleteSheetRow } from '../../lib/sheets'
 import nodemailer from 'nodemailer'
 import { formatPHDate } from '../../lib/dates'
+import { addOutstanding, clearOutstanding } from '../../lib/credits'
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -97,15 +98,7 @@ export async function POST(request) {
 
       // Add to outstanding if has fee
       if (body.amount > 0) {
-        await fetch(`${process.env.NEXT_PUBLIC_URL}/api/credits`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'add_outstanding',
-            client_name: body.client_name,
-            amount: body.amount
-          })
-        })
+        await addOutstanding(body.client_name, body.amount)
       }
 
       return Response.json({ success: true, id })
@@ -141,15 +134,7 @@ export async function PATCH(request) {
         requestBody: { values: [[body.amount, 'Ready for Release']] }
       })
       if (body.amount > 0) {
-        await fetch(`${process.env.NEXT_PUBLIC_URL}/api/credits`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'clear_outstanding',
-            client_name: body.client_name,
-            amount: body.amount
-          })
-        })
+        await clearOutstanding(body.client_name, body.amount)
       }
       return Response.json({ success: true })
     }

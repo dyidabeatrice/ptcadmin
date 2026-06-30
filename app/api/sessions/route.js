@@ -1,6 +1,7 @@
 import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
 import { SPECIALTY_RATES, getDefaultSessionType } from '../../lib/constants'
 import { formatPHDate, formatPHDateTime } from '../../lib/dates'
+import { addOutstanding, clearOutstanding, applyCredit } from '../../lib/credits'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
@@ -125,17 +126,8 @@ export async function PATCH(request) {
         (session?.status === 'Present' || session?.status === 'Cancelled')
 
       if (needsOutstandingUpdate && oldAmount !== newAmount && session?.client_name) {
-        const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://potentialstherapycenter.com/'
-        await fetch(`${baseUrl}/api/credits`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'clear_outstanding', client_name: session.client_name, amount: oldAmount })
-        })
-        await fetch(`${baseUrl}/api/credits`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'add_outstanding', client_name: session.client_name, amount: newAmount })
-        })
+        await clearOutstanding(session.client_name, oldAmount)
+        await addOutstanding(session.client_name, newAmount)
       }
 
       // Auto-create IE report entry if session type changed to IE and session is Present
@@ -253,24 +245,12 @@ if (body.action === 'status') {
 
       if (nowOwes && !wasOwing && session?.client_name) {
         const rate = session.amount || 0
-        if (rate > 0) {
-          await fetch(`${process.env.NEXT_PUBLIC_URL}/api/credits`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'add_outstanding', client_name: session.client_name, amount: rate })
-          })
-        }
+        if (rate > 0) await addOutstanding(session.client_name, rate)
       }
 
       if (wasOwing && !nowOwes && session?.client_name) {
         const rate = session.amount || 0
-        if (rate > 0) {
-          await fetch(`${process.env.NEXT_PUBLIC_URL}/api/credits`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'clear_outstanding', client_name: session.client_name, amount: rate })
-          })
-        }
+        if (rate > 0) await clearOutstanding(session.client_name, rate)
       }
 
       const today = formatPHDate()
@@ -424,23 +404,11 @@ if (body.action === 'status') {
         }
       }      
       // Credits calls after — wrapped so they don't block the response
-      try {
-        if (body.use_credit || body.split) {
-          const creditAmount = body.split ? body.split_credit : body.amount
-          await fetch(`${baseUrl}/api/credits`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'apply_credit', client_name: body.client_name, amount: creditAmount, credit_balance: body.credit_balance })
-          })
-        }
-        await fetch(`${baseUrl}/api/credits`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'clear_outstanding', client_name: body.client_name, amount: body.amount })
-        })
-      } catch (creditError) {
-        console.error('Credit update failed:', creditError)
+      if (body.use_credit || body.split) {
+        const creditAmount = body.split ? body.split_credit : body.amount
+        await applyCredit(body.client_name, creditAmount, body.credit_balance)
       }
+      await clearOutstanding(body.client_name, body.amount)
 
       return Response.json({ success: true })
     }
@@ -472,13 +440,7 @@ if (body.action === 'status') {
       const unpaidSession = unpaidSessions.find(s => s.index === body.rowIndex)
       if (unpaidSession && (unpaidSession.status === 'Present' || unpaidSession.status === 'Cancelled')) {
         const rate = unpaidSession.amount || 0
-        if (rate > 0) {
-          await fetch(`${process.env.NEXT_PUBLIC_URL || 'https://potentialstherapycenter.com/'}/api/credits`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'add_outstanding', client_name: body.client_name, amount: rate })
-          })
-        }
+        if (rate > 0) await addOutstanding(body.client_name, rate)
       }
 
       return Response.json({ success: true })
@@ -491,11 +453,7 @@ if (body.action === 'status') {
         valueInputOption: 'RAW',
         requestBody: { values: [['Absent']] }
       })
-      await fetch(`${process.env.NEXT_PUBLIC_URL || 'https://potentialstherapycenter.com/'}/api/credits`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'absent_credit', client_name: body.client_name, amount: body.amount })
-      })
+      await absentCredit(body.client_name, body.amount)
       // Tag payment as absent_credit instead of deleting
       const payData = await getSheetData('payments')
       const [, ...payRows] = payData
