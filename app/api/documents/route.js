@@ -1,57 +1,26 @@
 import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID, deleteSheetRow } from '../../lib/sheets'
-import nodemailer from 'nodemailer'
 import { formatPHDate } from '../../lib/dates'
 import { addOutstanding, clearOutstanding } from '../../lib/credits'
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD
-  }
-})
-
-async function updateClientOutstanding(clientName, delta) {
-  const sheets = getGoogleSheets()
-  const data = await getSheetData('clients')
-  const [, ...rows] = data
-  const index = rows.findIndex(r => r && r[1] === clientName)
-  if (index === -1) return
-  const current = parseFloat(rows[index][10] || 0)
-  const newVal = Math.max(0, current + delta)
-  await sheets.spreadsheets.values.update({
-    spreadsheetId: SPREADSHEET_ID,
-    range: `clients!K${index + 2}`,
-    valueInputOption: 'RAW',
-    requestBody: { values: [[newVal]] }
-  })
-}
+import { buildEmailHTML, sendClinicEmail } from '../../lib/email'
 
 async function sendTherapistEmail(therapistEmail, therapistName, clientName, docType, deadline, notes) {
   if (!therapistEmail) return
-  await transporter.sendMail({
-    from: `Potentials Therapy Center <${process.env.GMAIL_USER}>`,
+  const bodyHTML = `
+    <p>Hi ${therapistName},</p>
+    <p>A document request has been logged for your client:</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+      <tr><td style="padding: 8px; color: #666; width: 40%;">Client</td><td style="padding: 8px; font-weight: 500;">${clientName}</td></tr>
+      <tr style="background: white;"><td style="padding: 8px; color: #666;">Document type</td><td style="padding: 8px; font-weight: 500;">${docType}</td></tr>
+      <tr><td style="padding: 8px; color: #666;">Deadline</td><td style="padding: 8px; font-weight: 500; color: #E24B4A;">${deadline}</td></tr>
+      ${notes ? `<tr style="background: white;"><td style="padding: 8px; color: #666;">Notes</td><td style="padding: 8px;">${notes}</td></tr>` : ''}
+    </table>
+    <p style="color: #666; font-size: 13px;">Please prepare this document by the deadline. If you have any questions, please contact the clinic secretary.</p>
+    <p style="color: #666; font-size: 13px; margin-top: 20px;">— Potentials Therapy Center</p>
+  `
+  await sendClinicEmail({
     to: therapistEmail,
     subject: `Document Request — ${docType} for ${clientName}`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #0f4c81; padding: 20px; border-radius: 8px 8px 0 0;">
-          <h2 style="color: white; margin: 0;">Document Request</h2>
-        </div>
-        <div style="background: #f8f9fa; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #e0e0e0;">
-          <p>Hi ${therapistName},</p>
-          <p>A document request has been logged for your client:</p>
-          <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
-            <tr><td style="padding: 8px; color: #666; width: 40%;">Client</td><td style="padding: 8px; font-weight: 500;">${clientName}</td></tr>
-            <tr style="background: white;"><td style="padding: 8px; color: #666;">Document type</td><td style="padding: 8px; font-weight: 500;">${docType}</td></tr>
-            <tr><td style="padding: 8px; color: #666;">Deadline</td><td style="padding: 8px; font-weight: 500; color: #E24B4A;">${deadline}</td></tr>
-            ${notes ? `<tr style="background: white;"><td style="padding: 8px; color: #666;">Notes</td><td style="padding: 8px;">${notes}</td></tr>` : ''}
-          </table>
-          <p style="color: #666; font-size: 13px;">Please prepare this document by the deadline. If you have any questions, please contact the clinic secretary.</p>
-          <p style="color: #666; font-size: 13px; margin-top: 20px;">— Potentials Therapy Center</p>
-        </div>
-      </div>
-    `
+    html: buildEmailHTML({ title: 'Document Request', bodyHTML })
   })
 }
 
