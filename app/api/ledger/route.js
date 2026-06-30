@@ -1,12 +1,12 @@
 import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
-import { RATES } from '../../lib/constants'
+import { RATES, IE_SESSION_TYPES } from '../../lib/constants'
 import { parsePHDate } from '../../lib/dates'
 
 function calcRates(sessionType, level, recordedAmount, isIntern, comments) {
   const type = sessionType?.toUpperCase().trim()
 
   if (isIntern) {
-    const isIE = type === 'OT-IE' || type === 'ST-IE' || type === 'PT-IE' || type === 'SPED IE'
+    const isIE = IE_SESSION_TYPES.includes(type)
     const total = isIE ? 800 : (recordedAmount || 600)
     return { total, therapistCut: 0, center: total }
   }
@@ -23,7 +23,7 @@ function calcRates(sessionType, level, recordedAmount, isIntern, comments) {
   const hasDeduction = comments?.includes('-5%')
   const therapistCut = hasDeduction ? Math.round(cut * 0.95) : cut
 
-  const isIESession = ['OT-IE','ST-IE','PT-IE','SPED IE'].includes(sessionType?.trim())
+  const isIESession = IE_SESSION_TYPES.includes(sessionType?.trim())
   const center = isIESession ? total - (therapistCut * 2) : total - therapistCut
 
   return { total, therapistCut, center }

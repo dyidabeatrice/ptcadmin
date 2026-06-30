@@ -12,8 +12,7 @@ export async function POST(request) {
       cookieStore.set('ptc_auth', 'authenticated', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 365
+        sameSite: 'lax'
       })
       const token = signToken({ role: 'admin' })
       return Response.json({ success: true, role: 'admin', token })

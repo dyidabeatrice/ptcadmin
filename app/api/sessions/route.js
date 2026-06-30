@@ -1,7 +1,7 @@
 import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
-import { SPECIALTY_RATES, getDefaultSessionType } from '../../lib/constants'
+import { SPECIALTY_RATES, getDefaultSessionType, IE_SESSION_TYPES } from '../../lib/constants'
 import { formatPHDate, formatPHDateTime } from '../../lib/dates'
-import { addOutstanding, clearOutstanding, applyCredit } from '../../lib/credits'
+import { addOutstanding, clearOutstanding, applyCredit, absentCredit } from '../../lib/credits'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
@@ -131,7 +131,7 @@ export async function PATCH(request) {
       }
 
       // Auto-create IE report entry if session type changed to IE and session is Present
-      const isNewIE = ['OT-IE', 'ST-IE', 'PT-IE', 'SPED IE'].includes(body.session_type)
+      const isNewIE = IE_SESSION_TYPES.includes(body.session_type)
       const currentSessions = await getWeekSheet(weekKey)
       const currentSession = currentSessions.find(s => s.index === body.rowIndex)
       const isPresent = currentSession?.status === 'Present'
@@ -171,7 +171,7 @@ export async function PATCH(request) {
       }
 
       // Auto-delete IE report entry if session type changed away from IE
-      const wasIE = ['OT-IE', 'ST-IE', 'PT-IE', 'SPED IE'].includes(currentSession?.session_type)
+      const wasIE = IE_SESSION_TYPES.includes(currentSession?.session_type)
       if (wasIE && !isNewIE) {
         const reportsData = await getSheetData('reports')
         const [, ...reportRows] = reportsData
@@ -222,7 +222,7 @@ if (body.action === 'status') {
         })
       }
         // Also delete IE report entry if exists
-        const isIEType = ['OT-IE', 'ST-IE', 'PT-IE', 'SPED IE'].includes(session?.session_type)
+        const isIEType = IE_SESSION_TYPES.includes(session?.session_type)
         if (isIEType) {
           const reportsData = await getSheetData('reports')
           const [, ...reportRows] = reportsData
@@ -351,7 +351,7 @@ if (body.action === 'status') {
       })
 
       // Auto-create to-do task to send policies when IE session is paid and present
-      const isIE = ['OT-IE', 'ST-IE', 'PT-IE', 'SPED IE'].includes(body.session_type)
+      const isIE = IE_SESSION_TYPES.includes(body.session_type)
       const isPresent = session?.status === 'Present'
       if (isIE && isPresent) {
         await sheets.spreadsheets.values.append({
