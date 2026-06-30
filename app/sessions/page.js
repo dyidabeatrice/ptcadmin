@@ -1008,7 +1008,7 @@ export default function SchedulePage() {
       : [...new Set(daySessions.map(s => s.therapist))].sort()
 
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(therapists.length, 4)}, minmax(180px, 1fr))`, gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
+      <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px' }}>
         {therapists.map(therapist => {
           const therapistEntry = therapistData.find(t => t.name === therapist && t.day === day)
           const specialty = therapistEntry?.specialty || ''
@@ -1022,10 +1022,22 @@ export default function SchedulePage() {
           })
           const sortedTimes = Object.keys(byTime).sort((a, b) => parseTime(a) - parseTime(b))
 
+          const isAbsent = (absentTherapists[day] || new Set()).has(therapist)
           return (
-            <div key={therapist} style={{ flexShrink: 0 }}>
-              <div style={{ fontSize: '12px', fontWeight: '500', color: '#666', padding: '4px 6px', background: '#f8f9fa', borderRadius: '8px 8px 0 0' }}>
-                {therapist}{specialty ? ` (${specialty})` : ''}
+            <div key={therapist} style={{ flexShrink: 0, width: '200px' }}>
+              <div style={{
+                padding: '6px 8px', borderRadius: '8px 8px 0 0',
+                background: isAbsent ? '#777' : '#0f4c81', color: 'white',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px'
+              }}>
+                <div style={{ fontSize: '12px', fontWeight: '600' }}>
+                  {therapist} ({specialty}{therapistEntry?.is_intern ? ' · Intern' : ''})
+                </div>
+                <button onClick={() => toggleTherapistAbsent(therapist, day)} style={{
+                  fontSize: '9px', padding: '1px 8px', borderRadius: '10px', border: 'none',
+                  cursor: 'pointer', fontWeight: '500',
+                  background: isAbsent ? '#c00' : 'rgba(255,255,255,0.2)', color: 'white'
+                }}>{isAbsent ? 'ABSENT' : 'Mark absent'}</button>
               </div>
               <div style={{ border: '1px solid #e0e0e0', borderTop: 'none', borderRadius: '0 0 8px 8px', overflow: 'hidden' }}>
                 {sortedTimes.map((time, ti) => {
@@ -1038,14 +1050,52 @@ export default function SchedulePage() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                         {group.map(s => {
                           const sc = getSessionColor(s)
+                          const isExpanded = simpleExpandedId === s.index
                           return (
-                            <div key={s.index} style={{
-                              display: 'flex', alignItems: 'center', gap: '6px',
-                              padding: '3px 6px', borderRadius: '4px',
-                              background: sc.bg, cursor: 'pointer'
-                            }}>
-                              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: sc.border, flexShrink: 0 }} />
-                              <span style={{ fontSize: '12px', fontWeight: '500', color: sc.color }}>{s.client_name}</span>
+                            <div key={s.index}>
+                              <div onClick={() => setSimpleExpandedId(isExpanded ? null : s.index)} style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                padding: '3px 6px', borderRadius: '4px',
+                                background: sc.bg, cursor: 'pointer'
+                              }}>
+                                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: sc.border, flexShrink: 0 }} />
+                                <span style={{ fontSize: '12px', fontWeight: '500', color: sc.color, flex: 1 }}>{s.client_name}</span>
+                                <i style={{ fontSize: '10px', color: sc.color, opacity: 0.6 }}>{isExpanded ? '▾' : '▸'}</i>
+                              </div>
+                              {isExpanded && (
+                                <div style={{ padding: '8px', marginTop: '3px', background: '#f8f9fa', borderRadius: '6px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                  <select value={s.status} onChange={e => updateStatus(s, e.target.value)}
+                                    style={{ fontSize: '11px', padding: '5px', borderRadius: '5px', border: '1px solid #ddd' }}>
+                                    {[
+                                      { value: 'Pencil', label: 'Pencil' },
+                                      { value: 'Scheduled', label: 'Confirmed' },
+                                      { value: 'Present', label: 'Present' },
+                                      { value: 'Absent', label: 'Absent' },
+                                      { value: 'Cancelled', label: 'No Show' },
+                                    ].map(st => <option key={st.value} value={st.value}>{st.label}</option>)}
+                                  </select>
+                                  <select value={s.session_type || ''} onChange={async e => {
+                                    const t = getTypesForTherapist(s.therapist).find(x => x.value === e.target.value)
+                                    const isIntern = therapistData.find(x => x.name === s.therapist)?.is_intern
+                                    const amount = isIntern ? (e.target.value === 'OT-IE' ? 800 : 600) : (SESSION_TYPE_RATES[e.target.value] ?? 0)
+                                    await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update_type', week_key: selectedWeek.key, rowIndex: s.index, session_type: e.target.value, amount }) })
+                                    fetchSessions(selectedWeek.key)
+                                  }} style={{ fontSize: '11px', padding: '5px', borderRadius: '5px', border: '1px solid #ddd' }}>
+                                    {getTypesForTherapist(s.therapist).map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                                  </select>
+                                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                    {s.payment === 'Unpaid' ? (
+                                      <button onClick={() => openPayModal(s)} style={{ fontSize: '11px', padding: '5px 10px', borderRadius: '5px', border: 'none', background: '#FCEBEB', color: '#791F1F', cursor: 'pointer' }}>Unpaid</button>
+                                    ) : (
+                                      <button onClick={() => s.status === 'Absent' ? null : reversePayment(s)} disabled={s.status === 'Absent'}
+                                        style={{ fontSize: '11px', padding: '5px 10px', borderRadius: '5px', border: 'none', background: '#EAF3DE', color: s.status === 'Absent' ? '#aaa' : '#27500A', cursor: s.status === 'Absent' ? 'not-allowed' : 'pointer' }}>Paid ✓</button>
+                                    )}
+                                    <button onClick={() => setRemindModal(s)} style={{ fontSize: '11px', padding: '5px 10px', borderRadius: '5px', border: '1px solid #B5D4F4', background: '#E6F1FB', color: '#0C447C', cursor: 'pointer' }}>💬</button>
+                                    <button onClick={() => deleteSession(s)} disabled={s.payment === 'Paid'}
+                                      style={{ fontSize: '11px', padding: '5px 10px', borderRadius: '5px', border: '1px solid #fcc', background: s.payment === 'Paid' ? '#f5f5f5' : '#fff5f5', color: s.payment === 'Paid' ? '#ccc' : '#c00', cursor: s.payment === 'Paid' ? 'not-allowed' : 'pointer' }}>✕</button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )
                         })}
