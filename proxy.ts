@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const isAuth = request.cookies.get('ptc_auth')?.value === 'authenticated'
 
-  // Protected paths — only these require login
   const protectedPrefixes = [
     '/dashboard', '/sessions', '/clients', '/master',
     '/therapists', '/payments', '/messages', '/documents'
