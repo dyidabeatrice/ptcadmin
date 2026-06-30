@@ -1,24 +1,4 @@
-import { getSheetData } from '../../lib/sheets'
-import { google } from 'googleapis'
-
-const auth = new google.auth.GoogleAuth({
-  credentials: {
-    client_email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
-    private_key: process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-  },
-  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-})
-
-async function getSheetId(sheets, sheetName) {
-  const res = await sheets.spreadsheets.get({
-    spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID
-  })
-  const sheet = res.data.sheets.find(
-    s => s.properties.title.toLowerCase() === sheetName.toLowerCase()
-  )
-  if (!sheet) throw new Error(`Sheet "${sheetName}" not found`)
-  return sheet.properties.sheetId
-}
+import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID, deleteSheetRow } from '../../lib/sheets'
 
 export async function GET() {
   try {
@@ -45,7 +25,7 @@ export async function GET() {
 export async function POST(request) {
   try {
     const body = await request.json()
-    const sheets = google.sheets({ version: 'v4', auth })
+    const sheets = getGoogleSheets()
     const rows = body.days.map((d, i) => [
       Date.now().toString() + i,
       body.name, body.specialty,
@@ -53,7 +33,7 @@ export async function POST(request) {
       d.day, d.time_start, d.time_end
     ])
     await sheets.spreadsheets.values.append({
-      spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
+      spreadsheetId: SPREADSHEET_ID,
       range: 'therapists', valueInputOption: 'RAW',
       requestBody: { values: rows }
     })
@@ -66,12 +46,12 @@ export async function POST(request) {
 export async function PATCH(request) {
   try {
     const body = await request.json()
-    const sheets = google.sheets({ version: 'v4', auth })
+    const sheets = getGoogleSheets()
     const sheetRow = body.rowIndex + 2
 
     // B:G — core fields only (never touches H email, I level, J pin)
     await sheets.spreadsheets.values.update({
-      spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
+      spreadsheetId: SPREADSHEET_ID,
       range: `therapists!B${sheetRow}:G${sheetRow}`,
       valueInputOption: 'RAW',
       requestBody: { values: [[
@@ -83,7 +63,7 @@ export async function PATCH(request) {
 
     // I — level only
     await sheets.spreadsheets.values.update({
-      spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
+      spreadsheetId: SPREADSHEET_ID,
       range: `therapists!I${sheetRow}`,
       valueInputOption: 'RAW',
       requestBody: { values: [[body.level || '']] }
@@ -91,7 +71,7 @@ export async function PATCH(request) {
 
     // K — specialized therapies only
     await sheets.spreadsheets.values.update({
-      spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
+      spreadsheetId: SPREADSHEET_ID,
       range: `therapists!K${sheetRow}`,
       valueInputOption: 'RAW',
       requestBody: { values: [[body.specialized_therapies || '']] }
@@ -106,14 +86,7 @@ export async function PATCH(request) {
 export async function DELETE(request) {
   try {
     const { rowIndex } = await request.json()
-    const sheets = google.sheets({ version: 'v4', auth })
-    const sheetId = await getSheetId(sheets, 'therapists')
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
-      requestBody: { requests: [{ deleteDimension: {
-        range: { sheetId, dimension: 'ROWS', startIndex: rowIndex + 1, endIndex: rowIndex + 2 }
-      }}]}
-    })
+    await deleteSheetRow('therapists', rowIndex)
     return Response.json({ success: true })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
