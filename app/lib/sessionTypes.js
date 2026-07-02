@@ -51,7 +51,7 @@ export const SESSION_TYPES_BY_SPECIALTY = {
   ],
   SPED: [
     { value: 'SPED SESSION', label: 'SPED Tutorial', amount: 900 },
-    { value: 'SPED IE', label: 'SPED Initial Evaluation', amount: 1500 },
+    { value: 'SPED IE', label: 'SPED Initial Evaluation', amount: 1800 },
     { value: 'SPED FE', label: 'SPED Follow-up Evaluation', amount: 1500 },
     { value: 'PLAYSCHOOL', label: 'Playgroup', amount: 750 },
     { value: 'Cancellation Fee', label: 'No Show', amount: 750 },
@@ -66,7 +66,7 @@ export const SESSION_TYPE_RATES = {
   'PR': 750, 'PR-RUSHED': 1000, 'IE REPORT': 0,
   'ST SESSION': 1300, 'ST-IE': 2800, 'ST-FE': 1500, 'SPECIALIZED ST TX': 1700,
   'PT SESSION': 900, 'PT-IE': 2800, 'PT FE': 1500,
-  'SPED SESSION': 900, 'SPED IE': 1500, 'SPED FE': 1500, 'PLAYSCHOOL': 750,
+  'SPED SESSION': 900, 'SPED IE': 1800, 'SPED FE': 1500, 'PLAYSCHOOL': 750,
   'Cancellation Fee': 1200, 'SUPERVISOR FEE': 0,
 }
 
