@@ -1045,7 +1045,7 @@ export default function SchedulePage() {
                   const group = byTime[time]
                   return (
                     <div key={time} style={{ padding: '7px 8px', borderBottom: ti < sortedTimes.length - 1 ? '1px solid #e0e0e0' : 'none' }}>
-                      <div style={{ fontSize: '11px', color: '#999', marginBottom: '3px' }}>
+                      <div style={{ fontSize: '11px', color: '#5d5d5d', marginBottom: '3px' }}>
                         {time}{group.length > 1 ? ` · group (${group.length})` : ''}
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
@@ -1574,7 +1574,13 @@ export default function SchedulePage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {DAYS.map(day => (
             <div key={day} style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1rem' }}>
-              <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f4c81', marginBottom: '10px' }}>{day}</div>
+              <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f4c81', marginBottom: '10px' }}>
+                {day}
+                {selectedWeek && (() => {
+                  const weekDates = getWeekDatesMap(selectedWeek.key)
+                  return weekDates[day] ? <span style={{ fontWeight: '400', color: '#5d5d5d', marginLeft: '6px' }}>· {weekDates[day]}</span> : null
+                })()}
+              </div>
               {renderSimpleDay(day)}
             </div>
           ))}
