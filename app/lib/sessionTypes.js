@@ -33,7 +33,7 @@ export const SESSION_TYPES_BY_SPECIALTY = {
     { value: 'PR', label: 'Progress Report', amount: 750 },
     { value: 'PR-RUSHED', label: 'Progress Report (Rushed)', amount: 1000 },
     { value: 'IE REPORT', label: 'IE Report', amount: 0 },
-    { value: 'Cancellation Fee', label: 'No Show', amount: 1200 },
+    { value: 'Cancellation Fee', label: 'No Show', amount: 1300 },
     { value: 'Custom Amount', label: 'Custom Amount', amount: 0 },
   ],
   ST_INTERN: [

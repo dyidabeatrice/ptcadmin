@@ -19,11 +19,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState('')
 
-  const nowUTC = new Date()
-  const gmt8Time = new Date(nowUTC.getTime() + (8 * 60 * 60 * 1000))
-  const today = gmt8Time
+  const now = new Date()
+  const today = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
   const todayDay = today.toLocaleDateString('en-US', { weekday: 'long' })
-  const todayDate = today.toLocaleDateString('en-US', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
+  const todayDate = today.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
   const todayStr = today.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
   useEffect(() => {
