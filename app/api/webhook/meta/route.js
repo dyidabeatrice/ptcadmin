@@ -124,20 +124,7 @@ export async function POST(request) {
         const psid = event.sender?.id
         if (!psid) continue
 
-        // Get sender name for auto-PSID matching
         let senderName = null
-        try {
-          const nameRes = await fetch(`https://graph.facebook.com/v19.0/${psid}?fields=name&access_token=${PAGE_ACCESS_TOKEN}`)
-          const nameJson = await nameRes.json()
-          senderName = nameJson.name || null
-        } catch (e) {
-          senderName = null
-        }
-
-        // Auto-save PSID if we have a name
-        if (senderName) {
-          await autoSavePsid(psid, senderName)
-        }
 
         // Handle image attachments — payment screenshots
         const attachments = event.message?.attachments || []
@@ -149,7 +136,7 @@ export async function POST(request) {
             if (!imageUrl) continue
             try {
               const { clientName, senderName: clientFbName } = await getClientByPsid(psid)
-              const finalSenderName = senderName || clientFbName || ''
+              const finalSenderName = clientFbName || (clientName ? clientName : `PSID: ${psid}`)
               await savePendingPayment(psid, clientName, imageUrl, finalSenderName)
             } catch (imgError) {
               console.error('Image processing error:', imgError)
