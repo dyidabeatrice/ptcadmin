@@ -369,7 +369,7 @@ export default function SchedulePage() {
     setPayModal(session)
     const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
     const json = await res.json()
-    if (json.success) setClientCredit(json.credit_balance || 0)
+    if (json.success) setClientCredit(Number(json.credit_balance) || 0)
   }
 
   async function confirmPayment() {

@@ -1,7 +1,7 @@
 const BASE_URL = process.env.NEXT_PUBLIC_URL || 'https://potentialstherapycenter.com/'
 
 async function callCreditsApi(action, clientName, amount, extra = {}) {
-  if (!clientName || !amount) return
+  if (!clientName) return
   try {
     await fetch(`${BASE_URL}/api/credits`, {
       method: 'POST',
