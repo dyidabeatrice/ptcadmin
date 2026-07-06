@@ -10,6 +10,15 @@ const MESSAGE_TYPES = {
   'late_cancellation': 'No Show Message',
 }
 
+const MESSAGE_TEMPLATES = {
+  'ie_reminder': `This is to confirm your attendance for [OT/ST/PT/SPED] initial evaluation on [DATE] at [TIME]. 😊\n\nPROTOCOL FOR INITIAL EVALUATION\n1. Only your child will be allowed inside the therapy area.\n2. Only 1 parent may be invited by the therapist inside ONLY if needed and requested by the therapist.\n3. Initial interview may be done via viber call as necessary (coordinated with Therapist in charge) to minimize contact and avoid crowding.\n\nFRIENDLY REMINDERS:\n1. Bring your own ID as the building enforces a NO ID NO ENTRY POLICY.\n2. Only 1 parent/caregiver is allowed in bringing and fetching your child in the premises. Other companions would NOT be allowed entry.\n3. Staying in the reception area is discouraged to prevent crowding. Please do not stay in the hallway.\n4. Please drop off your child and return during the last 10 minutes for feedback.\n5. Cashless payments are encouraged (Gcash, BDO, Unionbank). For cash payments, please pay in exact amount only.\n6. Parking is NOT for everyone. Please plan ahead.\n7. We ask to be courteous and to give respect to the building security and staff as they do their duties in implementing the building policies. The center reserves the right to refuse providing treatments to those who refuses to follow protocols.`,
+  'outstanding': `Hello po! This is a gentle reminder to settle your outstanding balance for [date] session(s). Thank you!`,
+  'makeup': `Hello po! Pwede po ba si [client name] for make up on [DATE & TIME] with T. [THERAPIST]. Please confirm as soon as possible.`,
+  'document': `Hi! This is a gentle reminder to settle your balance for your [document type] request for [client name] on or before [deadline]. Thank you.`,
+  'policies': `Thank you for enrolling your child with us. As we start your therapy sessions, please take note of the clinic policies and guidelines.\n\nWe would like to highlight the ff sections for your reference:\n- center protocols (Section II)\n- clinic operations (Section III)\n- attendance/ tardiness/ no shows (Section VI)\n- payment dues (Section VII)\n\nIf you have any questions, feel free to ask us. Thank you so much! 😊`,
+  'late_cancellation': `Good day! Due to the late cancellation of session, we would have to charge a no show fee (same as session rate). This is for the time allotted by your consultant/therapist.\n\nPlease refer to the policies and guidelines given to you. List of valid excuses to waive no show fee are indicated and proof of excuse is required. Reasons not listed are not valid.\n\nThank you!`,
+}
+
 export default function MessagesPage() {
   const [drafts, setDrafts] = useState([])
   const [archive, setArchive] = useState([])
