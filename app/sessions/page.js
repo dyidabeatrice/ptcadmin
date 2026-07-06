@@ -1465,6 +1465,7 @@ export default function SchedulePage() {
                 { type: 'ie_reminder', label: '📅 IE Appointment Reminder' },
                 { type: 'outstanding', label: '💳 Outstanding Balance Reminder' },
                 { type: 'makeup', label: '🔄 Re-Schedule / Make-Up Request' },
+                { type: 'late_cancellation', label: '🚫 No Show Message' },
               ].map(opt => (
                 <button key={opt.type} onClick={async () => {
                   setRemindSending(true)
@@ -1475,6 +1476,7 @@ export default function SchedulePage() {
                   if (opt.type === 'ie_reminder') message = `Hello po! This is a friendly reminder that ${remindModal.client_name} has an EVALUATION SESSION on ${remindModal.date} at ${remindModal.time_start}. See you po! 😊`
                   else if (opt.type === 'outstanding') message = `Hello po! This is a gentle reminder to settle your outstanding balance for ${remindModal.date} session(s). Thank you!`
                   else if (opt.type === 'makeup') message = `Hello po! Pwede po ba si ${remindModal.client_name} for make up on **DATE & TIME** with T. **THERAPIST**. Please confirm as soon as possible.`
+                  else if (opt.type === 'late_cancellation') message = `Good day! Due to the late cancellation of session, we would have to charge a no show fee (same as session rate). This is for the time allotted by your consultant/therapist.\n\nPlease refer to the policies and guidelines given to you. List of valid excuses to waive no show fee are indicated and proof of excuse is required. Reasons not listed are not valid.\n\nThank you!`
                   await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'create_draft', client_name: remindModal.client_name, psid, type: opt.type, message }) })
                   setRemindModal(null)
                   setRemindSending(false)

@@ -7,6 +7,7 @@ const MESSAGE_TYPES = {
   'makeup': 'Make-up Schedule',
   'document': 'Document Payment Reminder',
   'policies': 'Clinic Policies',
+  'late_cancellation': 'No Show Message',
 }
 
 export default function MessagesPage() {
@@ -167,7 +168,11 @@ async function fetchClients() {
             </div>
             <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Type</label>
-              <select value={composeForm.type} onChange={e => setComposeForm({ ...composeForm, type: e.target.value })}
+              <select value={composeForm.type} onChange={e => {
+                const type = e.target.value
+                const template = MESSAGE_TEMPLATES[type] || ''
+                setComposeForm({ ...composeForm, type, message: template || composeForm.message })
+              }}
                 style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
                 <option value="">Select type...</option>
                 {Object.entries(MESSAGE_TYPES).map(([key, label]) => (
