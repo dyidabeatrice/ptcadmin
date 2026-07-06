@@ -387,7 +387,7 @@ export default function SchedulePage() {
     }
     await fetch('/api/sessions', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'pay', week_key: selectedWeek.key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payForm.session_type, mop: payForm.use_credit ? creditMop : payForm.split ? 'Split' : payForm.mop, amount: payForm.amount, use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, reference: payForm.reference || creditRef, custom_notes: payForm.custom_notes || '' })
+      body: JSON.stringify({ action: 'pay', week_key: selectedWeek.key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payForm.session_type, mop: payForm.use_credit ? creditMop : payForm.split ? 'Split' : payForm.mop, amount: payForm.amount, use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, credit_balance: clientCredit, reference: payForm.reference || creditRef, custom_notes: payForm.custom_notes || '' })
     })
     setPayModal(null)
     fetchSessions(selectedWeek.key)
