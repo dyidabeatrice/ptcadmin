@@ -382,19 +382,35 @@ export default function ClientsPage() {
     setHistoryClient(client)
     setHistoryLoading(true)
     setHistoryData([])
-    const res = await fetch('/api/ledger')
-    const json = await res.json()
-    if (json.success) {
-      const allSessions = Object.values(json.data).flatMap(therapistMonths =>
-        Object.values(therapistMonths).flatMap(month =>
-          Object.values(month.dates || {}).flat()
-        )
-      )
-      const clientSessions = allSessions
-        .filter(s => s.client_name === client.name)
-        .sort((a, b) => new Date(b.date) - new Date(a.date))
-      setHistoryData(clientSessions)
+    const [weeksRes, paymentsRes] = await Promise.all([
+      fetch('/api/weeks'),
+      fetch('/api/payments')
+    ])
+    const [weeksJson, paymentsJson] = await Promise.all([weeksRes.json(), paymentsRes.json()])
+    if (!weeksJson.success) { setHistoryLoading(false); return }
+
+    const paymentMap = {}
+    if (paymentsJson.success) {
+      paymentsJson.data.forEach(p => { paymentMap[p.session_id] = p })
     }
+
+    const allSessions = []
+    await Promise.all(weeksJson.data.map(async week => {
+      const res = await fetch(`/api/sessions?week=${week.key}`)
+      const json = await res.json()
+      if (json.success) {
+        json.data
+          .filter(s => s.client_name === client.name)
+          .forEach(s => allSessions.push({
+            ...s,
+            is_paid: s.payment === 'Paid',
+            mop: paymentMap[s.id]?.mop || ''
+          }))
+      }
+    }))
+
+    allSessions.sort((a, b) => new Date(b.date) - new Date(a.date))
+    setHistoryData(allSessions)
     setHistoryLoading(false)
   }
 
