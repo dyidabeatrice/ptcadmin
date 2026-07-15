@@ -385,13 +385,14 @@ export default function ClientsPage() {
     const res = await fetch('/api/ledger')
     const json = await res.json()
     if (json.success) {
-      const allSessions = Object.values(json.data).flat()
-      console.log('Sample session:', allSessions[0])
-      console.log('Client name looking for:', client.name)
+      const allSessions = Object.values(json.data).flatMap(therapistMonths =>
+        Object.values(therapistMonths).flatMap(month =>
+          Object.values(month.dates || {}).flat()
+        )
+      )
       const clientSessions = allSessions
         .filter(s => s.client_name === client.name)
         .sort((a, b) => new Date(b.date) - new Date(a.date))
-      console.log('Found sessions:', clientSessions.length)
       setHistoryData(clientSessions)
     }
     setHistoryLoading(false)
