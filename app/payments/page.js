@@ -522,7 +522,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
   )
 }
 
-function SettleModal({ payModal, payForm, setPayForm, clientCredit, saving, onClose, onConfirm }) {
+function SettleModal({ payModal, payForm, setPayForm, clientCredit, creditNotes, saving, onClose, onConfirm }) {
   if (!payModal) return null
   const isPartial = !payForm.use_credit && !payForm.split && payForm.amount < (payModal?.amount || 0)
 
@@ -542,7 +542,14 @@ function SettleModal({ payModal, payForm, setPayForm, clientCredit, saving, onCl
               {ALL_SESSION_TYPE_OPTIONS.map(([val, label]) => <option key={val} value={val}>{label}</option>)}
             </select>
           </div>
-          {clientCredit > 0 && <div style={{ marginTop: '6px', fontSize: '12px', color: '#27500A', background: '#EAF3DE', padding: '4px 8px', borderRadius: '6px', display: 'inline-block' }}>💳 Credit available: ₱{clientCredit.toLocaleString()}</div>}
+          {clientCredit > 0 && (
+            <div style={{ marginTop: '6px', background: '#EAF3DE', padding: '6px 8px', borderRadius: '6px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span style={{ fontSize: '12px', color: '#27500A' }}>💳 Credit available: ₱{clientCredit.toLocaleString()}</span>
+              {creditNotes?.date && <span style={{ fontSize: '11px', color: '#27500A' }}>📅 {creditNotes.date}</span>}
+              {creditNotes?.mop && <span style={{ fontSize: '11px', color: '#27500A' }}>💳 {creditNotes.mop}{creditNotes.reference ? ` · ${creditNotes.reference}` : ''}</span>}
+              {creditNotes?.comments && <span style={{ fontSize: '11px', color: '#27500A' }}>📝 {creditNotes.comments}</span>}
+            </div>
+          )}
         </div>
         <div style={{ marginBottom: '12px' }}>
           <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Amount (₱)</label>
@@ -623,6 +630,7 @@ function OutstandingByDayTab({ clients, onSettle }) {
   const [payModal, setPayModal] = useState(null)
   const [payForm, setPayForm] = useState({ mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0 })
   const [clientCredit, setClientCredit] = useState(0)
+  const [creditNotes, setCreditNotes] = useState({ mop: '', reference: '', comments: '', date: '' })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => { fetchOutstanding(true) }, [])
@@ -650,6 +658,18 @@ function OutstandingByDayTab({ clients, onSettle }) {
     const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
     const json = await res.json()
     if (json.success) setClientCredit(Number(json.credit_balance) || 0)
+    const payRes = await fetch('/api/payments')
+    const payJson = await payRes.json()
+    if (payJson.success) {
+      const advances = payJson.data.filter(p => p.client_name === session.client_name && p.payment_type === 'advance')
+      const latest = advances.length > 0 ? advances[advances.length - 1] : null
+      setCreditNotes({
+        mop: latest?.mop || '',
+        reference: latest?.reference || '',
+        comments: latest?.comments || '',
+        date: latest?.date || ''
+      })
+    }
   }
 
   async function settlePayment() {
@@ -698,6 +718,7 @@ function OutstandingByDayTab({ clients, onSettle }) {
         payForm={payForm}
         setPayForm={setPayForm}
         clientCredit={clientCredit}
+        creditNotes={creditNotes}
         saving={saving}
         onClose={() => setPayModal(null)}
         onConfirm={settlePayment}
@@ -812,6 +833,7 @@ function OutstandingTab({ clients, onSettle }) {
   const [payModal, setPayModal] = useState(null)
   const [payForm, setPayForm] = useState({ mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0 })
   const [clientCredit, setClientCredit] = useState(0)
+  const [creditNotes, setCreditNotes] = useState({ mop: '', reference: '', comments: '', date: '' })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => { fetchOutstanding(true) }, [])
@@ -830,7 +852,19 @@ async function openSettle(session) {
   setPayForm({ mop: 'Cash', amount: initialAmount, use_credit: false, split: false, split_credit: 0, split_cash: initialAmount, session_type: session.session_type || '' })
     const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
     const json = await res.json()
-    if (json.success) setClientCredit(json.credit_balance || 0)
+    if (json.success) setClientCredit(Number(json.credit_balance) || 0)
+    const payRes = await fetch('/api/payments')
+    const payJson = await payRes.json()
+    if (payJson.success) {
+      const advances = payJson.data.filter(p => p.client_name === session.client_name && p.payment_type === 'advance')
+      const latest = advances.length > 0 ? advances[advances.length - 1] : null
+      setCreditNotes({
+        mop: latest?.mop || '',
+        reference: latest?.reference || '',
+        comments: latest?.comments || '',
+        date: latest?.date || ''
+      })
+    }
   } 
 
   async function settlePayment() {
@@ -881,6 +915,7 @@ async function openSettle(session) {
         payForm={payForm}
         setPayForm={setPayForm}
         clientCredit={clientCredit}
+        creditNotes={creditNotes}
         saving={saving}
         onClose={() => setPayModal(null)}
         onConfirm={settlePayment}
