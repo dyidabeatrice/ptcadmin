@@ -133,6 +133,7 @@ export default function SchedulePage() {
   const [payModal, setPayModal] = useState(null)
   const [payForm, setPayForm] = useState({ session_type: '', mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0 })
   const [clientCredit, setClientCredit] = useState(0)
+  const [creditNotes, setCreditNotes] = useState({ mop: '', reference: '', comments: '', date: '' })
   const [remindModal, setRemindModal] = useState(null)
   const [remindSending, setRemindSending] = useState(false)
   const [addModal, setAddModal] = useState(false)
@@ -370,6 +371,19 @@ export default function SchedulePage() {
     const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
     const json = await res.json()
     if (json.success) setClientCredit(Number(json.credit_balance) || 0)
+    // Fetch latest advance payment details for credit verification
+    const payRes = await fetch('/api/payments')
+    const payJson = await payRes.json()
+    if (payJson.success) {
+      const advances = payJson.data.filter(p => p.client_name === session.client_name && p.payment_type === 'advance')
+      const latest = advances.length > 0 ? advances[advances.length - 1] : null
+      setCreditNotes({
+        mop: latest?.mop || '',
+        reference: latest?.reference || '',
+        comments: latest?.comments || '',
+        date: latest?.date || ''
+      })
+    }
   }
 
   async function confirmPayment() {
@@ -1391,7 +1405,14 @@ export default function SchedulePage() {
             )}
             {clientCredit > 0 && (
               <div style={{ marginBottom: '12px', padding: '10px 12px', background: '#EAF3DE', borderRadius: '8px', border: '1px solid #97C459' }}>
-                <div style={{ fontSize: '12px', fontWeight: '500', color: '#27500A', marginBottom: '8px' }}>Client has ₱{clientCredit.toLocaleString()} credit</div>
+                <div style={{ fontSize: '12px', fontWeight: '500', color: '#27500A', marginBottom: '4px' }}>Client has ₱{clientCredit.toLocaleString()} credit</div>
+                {(creditNotes.date || creditNotes.mop || creditNotes.reference || creditNotes.comments) && (
+                  <div style={{ fontSize: '11px', color: '#27500A', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    {creditNotes.date && <span>📅 {creditNotes.date}</span>}
+                    {creditNotes.mop && <span>💳 {creditNotes.mop}{creditNotes.reference ? ` · ${creditNotes.reference}` : ''}</span>}
+                    {creditNotes.comments && <span>📝 {creditNotes.comments}</span>}
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {[
                     ...(clientCredit >= payForm.amount ? [{ key: 'full', label: 'Use full credit', active: payForm.use_credit && !payForm.split }] : []),
