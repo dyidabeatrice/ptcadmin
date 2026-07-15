@@ -324,6 +324,9 @@ export default function ClientsPage() {
   const [showInactive, setShowInactive] = useState(false)
   const [loading, setLoading] = useState(true)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [historyClient, setHistoryClient] = useState(null)
+  const [historyData, setHistoryData] = useState([])
+  const [historyLoading, setHistoryLoading] = useState(false)
   const [mergeMode, setMergeMode] = useState(false)
   const [mergeSelected, setMergeSelected] = useState([])
   const [mergeModal, setMergeModal] = useState(null)
@@ -373,6 +376,25 @@ export default function ClientsPage() {
     if (json.success) { setEditClient(null); fetchClients() }
     else alert('Error: ' + json.error)
     setSaving(false)
+  }
+
+  async function viewHistory(client) {
+    setHistoryClient(client)
+    setHistoryLoading(true)
+    setHistoryData([])
+    const res = await fetch('/api/ledger')
+    const json = await res.json()
+    if (json.success) {
+      const allSessions = Object.values(json.data).flat()
+      console.log('Sample session:', allSessions[0])
+      console.log('Client name looking for:', client.name)
+      const clientSessions = allSessions
+        .filter(s => s.client_name === client.name)
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+      console.log('Found sessions:', clientSessions.length)
+      setHistoryData(clientSessions)
+    }
+    setHistoryLoading(false)
   }
 
   async function handleDelete(client) {
@@ -484,6 +506,62 @@ export default function ClientsPage() {
 
       {showForm && <ClientForm data={form} setData={setForm} onSave={handleAdd} onClose={() => setShowForm(false)} title="New client" saving={saving} therapistData={therapistData} clients={clients} />}
       {editClient && <ClientForm data={editClient} setData={setEditClient} onSave={handleEdit} onClose={() => setEditClient(null)} title="Edit client" saving={saving} therapistData={therapistData} clients={clients} />}
+
+      {historyClient && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '640px', maxWidth: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div>
+                <h3 style={{ margin: '0 0 2px', color: '#0f4c81' }}>{historyClient.name}</h3>
+                <div style={{ fontSize: '12px', color: '#999' }}>Full attendance history</div>
+              </div>
+              <button onClick={() => { setHistoryClient(null); setHistoryData([]) }}
+                style={{ padding: '6px 14px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Close</button>
+            </div>
+            {historyLoading ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>Loading...</div>
+            ) : historyData.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>No session history found.</div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                <thead>
+                  <tr style={{ background: '#f8f9fa' }}>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Date</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Therapist</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Status</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Payment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historyData.map((s, i) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                      <td style={{ padding: '8px 10px', color: '#333' }}>{s.date}</td>
+                      <td style={{ padding: '8px 10px', color: '#333' }}>{s.therapist}</td>
+                      <td style={{ padding: '8px 10px' }}>
+                        <span style={{
+                          fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: '500',
+                          background: s.status === 'Present' ? '#EAF3DE' : s.status === 'Absent' ? '#FCEBEB' : '#f8f9fa',
+                          color: s.status === 'Present' ? '#27500A' : s.status === 'Absent' ? '#791F1F' : '#666'
+                        }}>{s.status}</span>
+                      </td>
+                      <td style={{ padding: '8px 10px' }}>
+                        <span style={{
+                          fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: '500',
+                          background: s.is_paid ? '#EAF3DE' : '#FCEBEB',
+                          color: s.is_paid ? '#27500A' : '#791F1F'
+                        }}>{s.is_paid ? 'Paid' : 'Unpaid'}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            <div style={{ marginTop: '1rem', fontSize: '12px', color: '#999', textAlign: 'right' }}>
+              {historyData.length} session{historyData.length !== 1 ? 's' : ''} found
+            </div>
+          </div>
+        </div>
+      )}
 
       {deleteConfirm && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -665,6 +743,12 @@ export default function ClientsPage() {
                             background: isInactive ? '#EAF3DE' : '#fff5f5',
                             color: isInactive ? '#27500A' : '#c00'
                           }}>{isInactive ? 'Reactivate' : 'Deactivate'}</button>
+                      )}
+                      {!mergeMode && (
+                        <button onClick={() => viewHistory(c)}
+                          style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '5px', cursor: 'pointer', border: '1px solid #B5D4F4', background: '#E6F1FB', color: '#0C447C' }}>
+                          History
+                        </button>
                       )}
                       {!mergeMode && (
                         <button onClick={() => setDeleteConfirm(c)}
