@@ -209,7 +209,8 @@ export async function POST(request) {
         body.address || '',
         body.notes || '',
         body.schedule || '',
-        'active', 0, 0
+        'active', 0, 0,
+        body.psid || ''
       ]]}
     })
 
