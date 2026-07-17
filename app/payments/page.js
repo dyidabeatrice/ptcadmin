@@ -809,6 +809,12 @@ function OutstandingByDayTab({ clients, onSettle }) {
                                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
                                     <span style={{ fontSize: '13px', fontWeight: '500', color: '#E24B4A' }}>₱{Number(s.amount || 0).toLocaleString()}</span>
                                     <button onClick={() => openSettle(s)} style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Settle</button>
+                                    <button onClick={async () => {
+                                      if (!confirm(`Mark ${s.client_name} as Absent? This will remove the outstanding balance.`)) return
+                                      await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ action: 'status', week_key: s.week_key, rowIndex: s.index, status: 'Absent', client_name: s.client_name, amount: s.amount, session_id: s.id }) })
+                                      fetchOutstanding()
+                                    }} style={{ padding: '5px 10px', borderRadius: '6px', border: '1px solid #fcc', background: '#fff5f5', color: '#c00', cursor: 'pointer', fontSize: '12px' }}>Absent</button>
                                   </div>
                                 </div>
                               )
