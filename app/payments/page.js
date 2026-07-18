@@ -1002,26 +1002,64 @@ async function openSettle(session) {
 
 function CreditHistory({ clientName }) {
   const [latest, setLatest] = useState(null)
+  const [editingNotes, setEditingNotes] = useState(false)
+  const [notesForm, setNotesForm] = useState('')
+  const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
+  function loadLatest() {
     fetch('/api/payments')
       .then(r => r.json())
       .then(json => {
         if (json.success) {
           const advances = json.data.filter(p => p.client_name === clientName && p.payment_type === 'advance')
-          if (advances.length > 0) setLatest(advances[advances.length - 1])
+          if (advances.length > 0) {
+            const l = advances[advances.length - 1]
+            setLatest(l)
+            setNotesForm(l.comments || '')
+          }
         }
       })
-  }, [clientName])
+  }
+
+  useEffect(() => { loadLatest() }, [clientName])
+
+  async function saveNotes() {
+    if (!latest) return
+    setSaving(true)
+    await fetch('/api/payments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_comments', id: latest.id, comments: notesForm })
+    })
+    setEditingNotes(false)
+    loadLatest()
+    setSaving(false)
+  }
 
   return (
     <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>
       {latest ? (
         <>
-        <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-          <div><span style={{ color: '#999' }}>MOP:</span> {latest.mop || '—'}{latest.reference ? ` · ${latest.reference}` : ''}</div>
-          {latest.comments && <div><span style={{ color: '#999' }}>Notes:</span> {latest.comments}</div>}
-        </div>
+          <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
+            <div><span style={{ color: '#999' }}>MOP:</span> {latest.mop || '—'}{latest.reference ? ` · ${latest.reference}` : ''}</div>
+            {!editingNotes && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ color: '#999' }}>Notes:</span>
+                <span>{latest.comments || '—'}</span>
+                <button onClick={() => setEditingNotes(true)} style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '4px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', color: '#666' }}>✎ Edit</button>
+              </div>
+            )}
+            {editingNotes && (
+              <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <textarea value={notesForm} onChange={e => setNotesForm(e.target.value)}
+                  rows={2} style={{ fontSize: '12px', padding: '6px', borderRadius: '6px', border: '1px solid #ddd', resize: 'vertical', width: '100%', boxSizing: 'border-box' }} />
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button onClick={saveNotes} disabled={saving} style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer' }}>{saving ? 'Saving...' : 'Save'}</button>
+                  <button onClick={() => { setEditingNotes(false); setNotesForm(latest.comments || '') }} style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
+                </div>
+              </div>
+            )}
+          </div>
         </>
       ) : (
         <div style={{ color: '#999' }}>Available credit</div>
