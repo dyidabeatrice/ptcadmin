@@ -178,11 +178,29 @@ export default function DocumentsPage() {
 
   async function deleteReport(report) {
     if (!confirm(`Delete document request for ${report.client_name}?`)) return
-    await fetch('/api/documents', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ index: report.index })
-    })
+    const calls = [
+      fetch('/api/documents', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ index: report.index })
+      })
+    ]
+    // Also delete associated payment record if document was paid
+    if (report.status === 'Paid' || report.amount > 0) {
+      const payRes = await fetch('/api/payments')
+      const payJson = await payRes.json()
+      if (payJson.success) {
+        const docPayment = payJson.data.find(p => p.session_id === `DOC-${report.id}`)
+        if (docPayment) {
+          calls.push(fetch('/api/payments', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: docPayment.session_id })
+          }))
+        }
+      }
+    }
+    await Promise.all(calls)
     fetchAll()
   }
 
