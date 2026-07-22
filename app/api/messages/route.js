@@ -1,21 +1,6 @@
 import { getSheetData, getGoogleSheets, SPREADSHEET_ID, getSheetId } from '../../lib/sheets'
 import { formatPHDateTime } from '../../lib/dates'
-
-const PAGE_ACCESS_TOKEN = process.env.META_PAGE_ACCESS_TOKEN
-
-async function sendMessengerMessage(psid, message) {
-  const res = await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      messaging_type: 'MESSAGE_TAG',
-      tag: 'CONFIRMED_EVENT_UPDATE',
-      recipient: { id: psid },
-      message: { text: message }
-    })
-  })
-  return await res.json()
-}
+import { sendTaggedMessage } from '../../lib/messenger'
 
 export async function GET(request) {
   try {
