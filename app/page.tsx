@@ -18,6 +18,7 @@ export default function HomePage() {
     })
   }
   const [lightbox, setLightbox] = useState<string | null>(null)
+  const [openService, setOpenService] = useState<number | null>(null)
 
   const slideShow = (id: string, dir: number, total: number) => {
     const current = slideState.current[id]
@@ -47,18 +48,54 @@ export default function HomePage() {
   }, [])
 
   const services = [
-    { icon: '🧠', name: 'Occupational Therapy', desc: 'Building independence in daily activities and sensory processing' },
-    { icon: '💬', name: 'Speech Therapy', desc: 'Communication, language development, and fluency' },
-    { icon: '🏃', name: 'Physical Therapy', desc: 'Motor skills, strength, and physical development' },
-    { icon: '📚', name: 'Special Education Tutorials', desc: 'Individualized academic support for children with special needs' },
-    { icon: '🎮', name: 'Playgroup Classes', desc: 'Social skills and peer interaction in a structured environment' },
-    { icon: '🧩', name: 'Cognitive Behavioral Therapy', desc: 'Managing emotions, behavior, and thought patterns' },
-    { icon: '👄', name: 'Oral Placement Therapy', desc: 'Improving oral motor function and feeding skills' },
-    { icon: '🔤', name: 'AAC', desc: 'Augmentative & Alternative Communication systems' },
-    { icon: '🗣️', name: 'PROMPT Therapy', desc: 'Tactile-kinesthetic approach to speech motor control' },
-    { icon: '✋', name: 'Sensory Integration', desc: 'Processing and responding to sensory information' },
-    { icon: '🍽️', name: 'Pediatric Dysphagia', desc: 'Feeding therapy and swallowing difficulties' },
-    { icon: '🌈', name: '..and more!', desc: 'All tailored to your child’s unique developmental needs'}
+    { icon: '🧠', name: 'Occupational Therapy',
+      what: 'Occupational Therapy helps children develop the skills they need for daily life. For kids, their "occupation" is playing, learning, and growing — and our OTs make sure nothing gets in the way of that.',
+      who: 'Children who struggle with fine motor skills, self-care tasks, sensory sensitivities, handwriting, attention, or social participation.',
+      expect: 'Sessions are play-based and fun. Our therapists observe how your child moves, interacts, and responds to their environment, then work on targeted skills through activities your child enjoys.' },
+    { icon: '💬', name: 'Speech Therapy',
+      what: 'Speech Therapy addresses how children talk, understand language, and communicate — covering everything from first words to fluency, articulation, and social communication.',
+      who: 'Children with delayed speech, language difficulties, stuttering, articulation issues, or challenges with social communication and pragmatics.',
+      expect: 'Our SLPs use play, stories, and structured activities to make communication feel natural and achievable — tailored to your child\'s pace and goals.' },
+    { icon: '🏃', name: 'Physical Therapy',
+      what: 'Physical Therapy focuses on gross motor development — how your child moves their body. Our PTs work on strength, balance, coordination, and mobility.',
+      who: 'Children with developmental delays, low muscle tone, coordination difficulties, balance issues, or those recovering from injury or surgery.',
+      expect: 'Sessions involve movement-based activities, exercises, and play that build physical strength and confidence in a safe, supportive setting.' },
+    { icon: '📚', name: 'Special Education Tutorials',
+      what: 'One-on-one academic support designed specifically for children with learning differences, developmental delays, or special needs.',
+      who: 'Children who need extra support in reading, writing, math, or other academic areas — especially those with learning disabilities, ADHD, autism, or developmental delays.',
+      expect: 'Our special educators assess your child\'s current level and design a personalized learning plan, structured and paced to your child\'s unique learning style.' },
+    { icon: '🎮', name: 'Playgroup Classes',
+      what: 'Small-group sessions where children practice social skills in a real-world setting — with other kids their age, guided by trained therapists.',
+      who: 'Children who struggle with social interaction, turn-taking, sharing, following group instructions, or peer engagement.',
+      expect: 'Fun group activities that naturally build communication, cooperation, and friendship skills in a safe, supervised environment.' },
+    { icon: '🧩', name: 'Cognitive Behavioral Therapy',
+      what: 'A structured, evidence-based approach that helps children recognize how their thoughts, feelings, and behaviors are connected — and how to change unhelpful patterns.',
+      who: 'Children dealing with anxiety, emotional dysregulation, behavioral challenges, OCD, or difficulty coping with everyday stress.',
+      expect: 'Age-appropriate activities, storytelling, and guided conversations to help children build coping strategies they can use in real life.' },
+    { icon: '👄', name: 'Oral Placement Therapy',
+      what: 'OPT uses specific tactile and movement techniques to improve the strength, coordination, and movement of the lips, tongue, and jaw.',
+      who: 'Children with feeding difficulties, drooling, unclear speech, or weak oral motor function — often seen in Down syndrome, cerebral palsy, or developmental delays.',
+      expect: 'Our therapists use specialized tools and techniques to stimulate and strengthen oral muscles, supporting better feeding and clearer speech over time.' },
+    { icon: '🔤', name: 'AAC',
+      what: 'AAC encompasses all the tools and strategies that support or replace spoken language — from picture boards and sign language to high-tech speech-generating devices.',
+      who: 'Children who are non-verbal, minimally verbal, or have significant difficulty with spoken communication due to autism, cerebral palsy, or other conditions.',
+      expect: 'Our therapists assess your child\'s communication needs and introduce the most appropriate AAC system, then work with your family to integrate it into everyday life.' },
+    { icon: '🗣️', name: 'PROMPT Therapy',
+      what: 'PROMPT uses touch cues on the face and jaw to guide correct speech movement — helping children feel, not just hear, how sounds and words are formed.',
+      who: 'Children with motor speech disorders, childhood apraxia of speech, or those who haven\'t responded well to traditional speech therapy.',
+      expect: 'Our PROMPT-trained therapists use gentle physical guidance alongside verbal and visual cues to help your child develop clearer, more consistent speech.' },
+    { icon: '✋', name: 'Sensory Integration',
+      what: 'Sensory Integration Therapy helps children who have difficulty processing sensory information — affecting behavior, attention, and daily functioning.',
+      who: 'Children who are overly sensitive or under-responsive to touch, sound, movement, or other sensory input — often seen in autism, ADHD, and sensory processing disorder.',
+      expect: 'Sessions take place in a sensory-rich environment with swings, trampolines, textures, and movement activities designed to help the brain process sensory input more effectively.' },
+    { icon: '🍽️', name: 'Pediatric Dysphagia',
+      what: 'Pediatric Dysphagia refers to feeding and swallowing difficulties in children. Our therapists assess and treat the underlying causes to make eating safer and more enjoyable.',
+      who: 'Children who cough or choke during meals, refuse certain food textures, have difficulty chewing, or show signs of unsafe swallowing.',
+      expect: 'Our therapists conduct a thorough feeding evaluation and develop a personalized plan — working closely with families to improve mealtimes at home and in therapy.' },
+    { icon: '🌈', name: '..and more!',
+      what: 'Beyond our core services, we offer a range of specialized programs tailored to your child\'s unique developmental needs.',
+      who: 'Any child who needs support beyond what\'s listed — our team will assess and guide you to the right program.',
+      expect: 'Reach out to us and we\'ll work with you to find the best fit for your child.' },
   ]
 
   const steps = [
@@ -406,40 +443,70 @@ export default function HomePage() {
       {/* Services */}
       <section id="services" style={{ padding: '6rem 2rem', background: '#f8f9fb' }}>
         <style>{`
+          .services-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+          }
           .service-card {
             background: #fff;
             border-radius: 14px;
             border: 1px solid #e8edf5;
             cursor: pointer;
             overflow: hidden;
-            height: 80px;
-            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease, height 0.3s ease;
+            transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
           }
-          @media (hover: hover) {
-            .service-card:hover {
-              transform: translateY(-5px);
-              box-shadow: 0 16px 32px rgba(252,194,0,0.18);
-              border-color: #fcc200;
-              background: #fffbec;
-              height: 155px;
-            }
-            .service-card:hover .service-card-icon { background: #fef3c7; }
-            .service-card:hover .service-card-desc { opacity: 1; transform: translateY(0); }
+          .service-card.open {
+            border-color: #fcc200;
+            background: #fffbec;
+            box-shadow: 0 8px 24px rgba(252,194,0,0.15);
+            grid-column: span 3;
           }
-          @media (max-width: 768px) {
-            .service-card { height: auto !important; }
-            .service-card-desc { opacity: 1 !important; transform: none !important; }
+          .service-card-top {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 1.1rem 1.25rem;
           }
           .service-card-icon {
             width: 46px; height: 46px; border-radius: 12px;
-            background: #f0f4fa; display: flex; align-items: center;
-            justify-content: center; font-size: 22px; margin-bottom: 12px;
-            flex-shrink: 0; transition: background 0.25s ease;
+            background: #f0f4fa; display: flex;
+            align-items: center; justify-content: center;
+            font-size: 22px; flex-shrink: 0;
+            transition: background 0.25s;
           }
-          .service-card-desc {
-            font-size: 13px; color: #888; line-height: 1.6; margin-top: 8px;
-            opacity: 0; transform: translateY(6px);
-            transition: opacity 0.25s ease 0.05s, transform 0.25s ease 0.05s;
+          .service-card.open .service-card-icon { background: #fef3c7; }
+          .service-card-name {
+            font-family: 'Nunito', sans-serif;
+            font-size: 16px; font-weight: 700;
+            color: #0f4c81; flex: 1; line-height: 1.3;
+          }
+          .service-card-chevron {
+            font-size: 11px; color: #ccc;
+            transition: transform 0.25s, color 0.25s;
+            flex-shrink: 0;
+          }
+          .service-card.open .service-card-chevron { transform: rotate(180deg); color: #fcc200; }
+          .service-card-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+          .service-card.open .service-card-body { max-height: 600px; }
+          .service-card-body-inner {
+            padding: 1rem 1.25rem 1.25rem;
+            border-top: 1px solid rgba(252,194,0,0.2);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.25rem;
+          }
+          .service-body-label {
+            font-size: 10px; letter-spacing: 0.12em;
+            text-transform: uppercase; color: #fcc200;
+            font-weight: 700; margin-bottom: 6px;
+            font-family: 'Nunito', sans-serif;
+          }
+          .service-body-text { font-size: 13px; color: #777; line-height: 1.7; }
+          @media (max-width: 768px) {
+            .services-grid { grid-template-columns: 1fr; }
+            .service-card.open { grid-column: span 1; }
+            .service-card-body-inner { grid-template-columns: 1fr; gap: 1rem; }
           }
         `}</style>
 
@@ -456,17 +523,33 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
+          <div className="services-grid">
             {services.map((s, i) => (
-              <div key={i} className="service-card">
-                <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-                    <div className="service-card-icon">{s.icon}</div>
-                    <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '16px', fontWeight: '700', color: '#0f4c81', lineHeight: '1.3' }}>
-                      {s.name}
+              <div
+                key={i}
+                className={`service-card${openService === i ? ' open' : ''}`}
+                onClick={() => setOpenService(openService === i ? null : i)}
+              >
+                <div className="service-card-top">
+                  <div className="service-card-icon">{s.icon}</div>
+                  <div className="service-card-name">{s.name}</div>
+                  <div className="service-card-chevron">▼</div>
+                </div>
+                <div className="service-card-body">
+                  <div className="service-card-body-inner">
+                    <div>
+                      <div className="service-body-label">What is it?</div>
+                      <div className="service-body-text">{s.what}</div>
+                    </div>
+                    <div>
+                      <div className="service-body-label">Who is it for?</div>
+                      <div className="service-body-text">{s.who}</div>
+                    </div>
+                    <div>
+                      <div className="service-body-label">What to expect?</div>
+                      <div className="service-body-text">{s.expect}</div>
                     </div>
                   </div>
-                  <div className="service-card-desc">{s.desc}</div>
                 </div>
               </div>
             ))}
