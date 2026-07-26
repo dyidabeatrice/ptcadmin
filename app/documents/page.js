@@ -122,6 +122,8 @@ export default function DocumentsPage() {
   }
 
     async function settlePayment() {
+    if (saving) return
+    setSaving(true)
     const mop = payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop
     const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
 
@@ -173,6 +175,7 @@ export default function DocumentsPage() {
 
     setPayModal(null)
     setPayForm({ amount: 0, mop: 'Cash', use_credit: false, split: false, split_credit: 0, split_cash: 0, reference: '' })
+    setSaving(false)
     fetchAll()
   }
 
