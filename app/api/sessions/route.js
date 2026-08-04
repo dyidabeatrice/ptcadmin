@@ -256,6 +256,42 @@ if (body.action === 'status') {
 
       const today = formatPHDate()
 
+      // Auto-create IE report entry when status becomes Present and session is already Paid
+      // (covers the case where payment was marked before status — the 'pay' action's own
+      // check only fires if status was already Present at that moment)
+      if (newStatus === 'Present' && oldStatus !== 'Present' && isPaid && IE_SESSION_TYPES.includes(session?.session_type) && session?.id) {
+        const reportsData = await getSheetData('reports')
+        const [, ...reportRows] = reportsData
+        const exists = reportRows.find(r => r && r[0] === `IE-${session.id}`)
+        if (!exists) {
+          const sessionDate = new Date(session.date || new Date())
+          const deadline = new Date(sessionDate)
+          deadline.setMonth(deadline.getMonth() + 6)
+          const deadlineStr = deadline.toISOString().split('T')[0]
+          await sheets.spreadsheets.values.append({
+            spreadsheetId: SPREADSHEET_ID,
+            range: 'reports',
+            valueInputOption: 'RAW',
+            requestBody: { values: [[
+              `IE-${session.id}`,
+              session.client_name || '',
+              session.therapist || '',
+              '',
+              session.date || today,
+              deadlineStr,
+              'IE Report',
+              0,
+              'Pending Submission',
+              '',
+              '',
+              'soft',
+              '',
+              ''
+            ]]}
+          })
+        }
+      }
+
       // Log unpaid present sessions
       if (newStatus === 'Present' && oldStatus !== 'Present' && !isPaid) {
         await sheets.spreadsheets.values.append({
