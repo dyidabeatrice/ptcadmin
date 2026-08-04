@@ -1216,6 +1216,10 @@ export default function PaymentsPage() {
   const [therapistSpecialtyMap, setTherapistSpecialtyMap] = useState({})
   const [summaryYear, setSummaryYear] = useState(new Date().getFullYear())
   const [summaryQuarter, setSummaryQuarter] = useState(Math.floor(new Date().getMonth() / 3) + 1)
+  const [summaryPasswordModal, setSummaryPasswordModal] = useState(false)
+  const [summaryPasswordInput, setSummaryPasswordInput] = useState('')
+  const [summaryPasswordError, setSummaryPasswordError] = useState(false)
+  const [summaryChecking, setSummaryChecking] = useState(false)
 
   useEffect(() => { fetchAll() }, [])
 
@@ -1277,6 +1281,24 @@ export default function PaymentsPage() {
     const res = await fetch(`/api/sessions?week=${weekKey}`)
     const json = await res.json()
     if (json.success) setWeekSessions(json.data)
+  }
+
+  async function checkSummaryPassword() {
+    if (!summaryPasswordInput) return
+    setSummaryChecking(true)
+    const res = await fetch('/api/verify-summary-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: summaryPasswordInput })
+    })
+    const json = await res.json()
+    setSummaryChecking(false)
+    if (json.success) {
+      setSummaryPasswordModal(false)
+      setActiveTab('summary')
+    } else {
+      setSummaryPasswordError(true)
+    }
   }
 
   async function fetchPendingPayments() {
@@ -1423,7 +1445,15 @@ export default function PaymentsPage() {
       {/* Main tabs */}
       <div style={{ display: 'flex', gap: '8px', marginBottom: '1rem', padding: '4px', background: '#f0f0f0', borderRadius: '10px', width: 'fit-content' }}>
         {tabs.map(tab => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+          <button key={tab.key} onClick={() => {
+            if (tab.key === 'summary') {
+              setSummaryPasswordInput('')
+              setSummaryPasswordError(false)
+              setSummaryPasswordModal(true)
+            } else {
+              setActiveTab(tab.key)
+            }
+          }} style={{
             padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer',
             fontSize: '13px', fontWeight: '500', transition: 'all 0.15s',
             background: activeTab === tab.key ? 'white' : 'transparent',
@@ -1622,6 +1652,32 @@ export default function PaymentsPage() {
               <button onClick={() => setProcessModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
               <button onClick={confirmProcess} disabled={processSaving || !processForm.client_name || !processForm.amount} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: processSaving || !processForm.client_name || !processForm.amount ? 0.5 : 1 }}>
                 {processSaving ? 'Processing...' : `Record ₱${Number(processForm.amount || 0).toLocaleString()} as credit`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Monthly Summary password gate */}
+      {summaryPasswordModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 150, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '340px', maxWidth: '90vw' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>🔒 Monthly Summary</h3>
+            <p style={{ margin: '0 0 1.25rem', fontSize: '13px', color: '#999' }}>Enter the password to view this section.</p>
+            <input
+              type="password"
+              value={summaryPasswordInput}
+              onChange={e => { setSummaryPasswordInput(e.target.value); setSummaryPasswordError(false) }}
+              onKeyDown={async e => { if (e.key === 'Enter') await checkSummaryPassword() }}
+              autoFocus
+              placeholder="Password"
+              style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: summaryPasswordError ? '2px solid #E24B4A' : '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box', marginBottom: '6px' }}
+            />
+            {summaryPasswordError && <p style={{ margin: '0 0 12px', fontSize: '12px', color: '#E24B4A' }}>Incorrect password.</p>}
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '1rem' }}>
+              <button onClick={() => setSummaryPasswordModal(false)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={checkSummaryPassword} disabled={summaryChecking || !summaryPasswordInput} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (summaryChecking || !summaryPasswordInput) ? 0.6 : 1 }}>
+                {summaryChecking ? 'Checking...' : 'Unlock'}
               </button>
             </div>
           </div>
