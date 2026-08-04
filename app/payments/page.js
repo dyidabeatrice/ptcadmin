@@ -1068,6 +1068,120 @@ function CreditHistory({ clientName }) {
   )
 }
 
+const QUARTERS = {
+  1: ['01', '02', '03'], 2: ['04', '05', '06'],
+  3: ['07', '08', '09'], 4: ['10', '11', '12']
+}
+const MONTH_NAMES = { '01':'JANUARY','02':'FEBRUARY','03':'MARCH','04':'APRIL','05':'MAY','06':'JUNE','07':'JULY','08':'AUGUST','09':'SEPTEMBER','10':'OCTOBER','11':'NOVEMBER','12':'DECEMBER' }
+
+function getDayPeriod(dateStr) {
+  if (!dateStr) return 1
+  const day = parseInt(dateStr.split(' ')[1] || dateStr.split('/')[1] || '1')
+  return day <= 15 ? 1 : 2
+}
+
+function getBucket(name, specialtyMap) {
+  if (name === 'OT INTERNS' || name === 'ST INTERNS') return 'other'
+  const specialty = specialtyMap[name]
+  if (specialty === 'OT') return 'OT'
+  if (specialty === 'ST') return 'ST'
+  return 'other' // PT, SPED, or unknown specialty
+}
+
+function computePeriods(ledger, therapistName, monthKey) {
+  const monthData = ledger[therapistName]?.[monthKey]
+  const empty = { p1: { total: 0, cut: 0, center: 0 }, p2: { total: 0, cut: 0, center: 0 } }
+  if (!monthData) return empty
+  const result = { p1: { total: 0, cut: 0, center: 0 }, p2: { total: 0, cut: 0, center: 0 } }
+  Object.values(monthData.dates).flat().forEach(s => {
+    const p = getDayPeriod(s.date) === 1 ? 'p1' : 'p2'
+    result[p].total += s.total || 0
+    result[p].cut += s.therapist_cut || 0
+    result[p].center += s.center || 0
+  })
+  return result
+}
+
+function SummaryColumn({ title, therapistNames, ledger, monthKey, bg, headerBg }) {
+  let colTotal = 0, colCut = 0, colCenter = 0
+  return (
+    <div style={{ background: bg, borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr 1fr', background: headerBg, fontWeight: '600', fontSize: '11px' }}>
+        {[title, 'Total', 'Cut', 'Center'].map(h => <div key={h} style={{ padding: '5px 8px' }}>{h}</div>)}
+      </div>
+      {therapistNames.length === 0 ? (
+        <div style={{ padding: '10px 8px', fontSize: '11px', color: '#888' }}>None</div>
+      ) : therapistNames.map(name => {
+        const { p1, p2 } = computePeriods(ledger, name, monthKey)
+        colTotal += p1.total + p2.total
+        colCut += p1.cut + p2.cut
+        colCenter += p1.center + p2.center
+        return (
+          <div key={name}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr 1fr', fontSize: '12px', borderTop: '1px solid rgba(0,0,0,0.08)' }}>
+              <div style={{ padding: '5px 8px', fontWeight: '500' }}>{name}</div>
+              <div style={{ padding: '5px 8px' }}>{p1.total || ''}</div>
+              <div style={{ padding: '5px 8px' }}>{p1.cut || ''}</div>
+              <div style={{ padding: '5px 8px' }}>{p1.center || ''}</div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr 1fr', fontSize: '12px', background: 'rgba(0,0,0,0.06)' }}>
+              <div style={{ padding: '5px 8px' }}></div>
+              <div style={{ padding: '5px 8px' }}>{p2.total || ''}</div>
+              <div style={{ padding: '5px 8px' }}>{p2.cut || ''}</div>
+              <div style={{ padding: '5px 8px' }}>{p2.center || ''}</div>
+            </div>
+          </div>
+        )
+      })}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr 1fr', fontSize: '12px', fontWeight: '700', background: '#fcc200', borderTop: '2px solid #333' }}>
+        <div style={{ padding: '6px 8px' }}>TOTAL</div>
+        <div style={{ padding: '6px 8px' }}>{colTotal.toLocaleString()}</div>
+        <div style={{ padding: '6px 8px' }}>{colCut.toLocaleString()}</div>
+        <div style={{ padding: '6px 8px' }}>{colCenter.toLocaleString()}</div>
+      </div>
+    </div>
+  )
+}
+
+function MonthlySummaryTab({ ledger, ledgerTherapists, therapistSpecialtyMap, summaryYear, setSummaryYear, summaryQuarter, setSummaryQuarter }) {
+  const otNames = ledgerTherapists.filter(n => getBucket(n, therapistSpecialtyMap) === 'OT')
+  const stNames = ledgerTherapists.filter(n => getBucket(n, therapistSpecialtyMap) === 'ST')
+  const otherNames = ledgerTherapists.filter(n => getBucket(n, therapistSpecialtyMap) === 'other')
+
+  const months = QUARTERS[summaryQuarter]
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '1.5rem', alignItems: 'center' }}>
+        <select value={summaryYear} onChange={e => setSummaryYear(Number(e.target.value))}
+          style={{ padding: '7px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px' }}>
+          {[summaryYear - 1, summaryYear, summaryYear + 1].map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
+        <select value={summaryQuarter} onChange={e => setSummaryQuarter(Number(e.target.value))}
+          style={{ padding: '7px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px' }}>
+          {[1, 2, 3, 4].map(q => <option key={q} value={q}>Quarter {q}</option>)}
+        </select>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+        {months.map(m => {
+          const monthKey = `${summaryYear}-${m}`
+          return (
+            <div key={monthKey}>
+              <h3 style={{ color: '#0f4c81', marginBottom: '10px', fontSize: '15px' }}>{MONTH_NAMES[m]}</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', alignItems: 'start' }}>
+                <SummaryColumn title="OT" therapistNames={otNames} ledger={ledger} monthKey={monthKey} bg="#E6F1FB" headerBg="#B5D4F4" />
+                <SummaryColumn title="ST" therapistNames={stNames} ledger={ledger} monthKey={monthKey} bg="#FFF8E1" headerBg="#FCE9A8" />
+                <SummaryColumn title="SPED/PT/Interns" therapistNames={otherNames} ledger={ledger} monthKey={monthKey} bg="#E0EEEA" headerBg="#A9CFC4" />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function PaymentsPage() {
   const [ledger, setLedger] = useState({})
   const [ledgerTherapists, setLedgerTherapists] = useState([])
@@ -1099,14 +1213,22 @@ export default function PaymentsPage() {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
+  const [therapistSpecialtyMap, setTherapistSpecialtyMap] = useState({})
+  const [summaryYear, setSummaryYear] = useState(new Date().getFullYear())
+  const [summaryQuarter, setSummaryQuarter] = useState(Math.floor(new Date().getMonth() / 3) + 1)
 
   useEffect(() => { fetchAll() }, [])
 
   async function fetchAll() {
     setLoading(true)
-    const [cRes, wRes] = await Promise.all([fetch('/api/clients'), fetch('/api/weeks')])
-    const [cJson, wJson] = await Promise.all([cRes.json(), wRes.json()])
+    const [cRes, wRes, tRes] = await Promise.all([fetch('/api/clients'), fetch('/api/weeks'), fetch('/api/therapists')])
+    const [cJson, wJson, tJson] = await Promise.all([cRes.json(), wRes.json(), tRes.json()])
     if (cJson.success) setClients(cJson.data)
+    if (tJson.success) {
+      const map = {}
+      tJson.data.forEach(t => { if (!map[t.name]) map[t.name] = t.specialty })
+      setTherapistSpecialtyMap(map)
+    }
     if (wJson.success && wJson.data.length > 0) {
       setWeeks(wJson.data)
       const today = new Date()
@@ -1244,6 +1366,7 @@ export default function PaymentsPage() {
     { key: 'by-day', label: `By Day (${outstandingClients.length})` },
     { key: 'credits', label: 'Credits' },
     { key: 'pending', label: `Pending Payments${pendingPayments.filter(p => p.status === 'pending').length > 0 ? ` (${pendingPayments.filter(p => p.status === 'pending').length})` : ''}` },
+    { key: 'summary', label: 'Monthly Summary' },
   ]
 
   return (
@@ -1558,6 +1681,19 @@ export default function PaymentsPage() {
               />
               )}
             </div>
+          )}
+
+          {/* Monthly Summary tab */}
+          {activeTab === 'summary' && (
+            <MonthlySummaryTab
+              ledger={ledger}
+              ledgerTherapists={ledgerTherapists}
+              therapistSpecialtyMap={therapistSpecialtyMap}
+              summaryYear={summaryYear}
+              setSummaryYear={setSummaryYear}
+              summaryQuarter={summaryQuarter}
+              setSummaryQuarter={setSummaryQuarter}
+            />
           )}
 
           {/* By Client tab */}
