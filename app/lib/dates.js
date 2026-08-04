@@ -15,9 +15,18 @@ export function formatPHDateTime(date = new Date()) {
   })
 }
 
-// Parses strings like "Jun 30, 2026" back into a Date object
+// Parses strings like "Jun 30, 2026" back into a Date object.
+// Also accepts ISO format ("2026-07-16"), used by <input type="date"> fields.
 export function parsePHDate(dateStr) {
   if (!dateStr) return null
+
+  // ISO format: 2026-07-16
+  const isoMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr)
+  if (isoMatch) {
+    const [, year, month, day] = isoMatch
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+  }
+
   const parts = dateStr.replace(',', '').split(' ')
   if (parts.length !== 3) return null
   const month = MONTHS[parts[0]]

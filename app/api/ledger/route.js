@@ -3,6 +3,28 @@ import { RATES, IE_SESSION_TYPES } from '../../lib/constants'
 import { parsePHDate } from '../../lib/dates'
 import { getTherapistFromCookie } from '../../lib/auth'
 
+// Returns the level that was in effect for a therapist on a given date,
+// based on level_history entries at or before that date. Falls back to
+// their current `level` column value if no qualifying history exists —
+// this covers all sessions predating this feature.
+function resolveLevel(therapistName, sessionDateStr, levelHistoryByTherapist, fallbackLevel) {
+  const history = levelHistoryByTherapist[therapistName]
+  if (!history || history.length === 0) return fallbackLevel
+
+  const sessionDate = parsePHDate(sessionDateStr)
+  if (!sessionDate) return fallbackLevel
+
+  // history is pre-sorted ascending by effective_date; find the last entry
+  // whose effective_date is on or before the session date
+  let resolved = null
+  for (const entry of history) {
+    const effDate = parsePHDate(entry.effective_date)
+    if (effDate && effDate <= sessionDate) resolved = entry.level
+    else break
+  }
+  return resolved || fallbackLevel
+}
+
 function calcRates(sessionType, level, recordedAmount, isIntern, comments) {
   const type = sessionType?.toUpperCase().trim()
 
@@ -35,10 +57,11 @@ export async function GET() {
     const sheets = getGoogleSheets()
 
     // Fetch all data in parallel
-    const [therapistData, paymentData, spreadsheet] = await Promise.all([
+    const [therapistData, paymentData, spreadsheet, levelHistoryData] = await Promise.all([
       getSheetData('therapists!A:I'),
       getSheetData('payments'),
-      sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID })
+      sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID }),
+      getSheetData('level_history')
     ])
 
     // Build therapist map
@@ -54,6 +77,18 @@ export async function GET() {
           level: row[8] || 'JUNIOR 1'
         }
       }
+    })
+
+    // Build level history map, grouped by therapist, sorted ascending by effective_date
+    const [, ...levelHistoryRows] = levelHistoryData
+    const levelHistoryByTherapist = {}
+    levelHistoryRows.filter(r => r && r[0]).forEach(row => {
+      const name = row[1]
+      if (!levelHistoryByTherapist[name]) levelHistoryByTherapist[name] = []
+      levelHistoryByTherapist[name].push({ level: row[2], effective_date: row[3] })
+    })
+    Object.values(levelHistoryByTherapist).forEach(entries => {
+      entries.sort((a, b) => (parsePHDate(a.effective_date) || new Date(0)) - (parsePHDate(b.effective_date) || new Date(0)))
     })
 
     // Build payment map keyed by session_id
@@ -98,9 +133,10 @@ export async function GET() {
         const sessionType = payment?.session_type || row[7] || 'Regular'
         const recordedAmount = payment ? payment.amount : parseFloat(row[11] || 0)
         const comments = payment?.comments || ''
+        const resolvedLevel = resolveLevel(row[2], row[3], levelHistoryByTherapist, therapistInfo?.level || 'JUNIOR 1')
         const rates = calcRates(
           sessionType,
-          therapistInfo?.level || 'JUNIOR 1',
+          resolvedLevel,
           recordedAmount,
           therapistInfo?.is_intern || false,
           comments
@@ -140,7 +176,7 @@ const ieReports = payRows.filter(r => r && r[0] && (r[8] === 'ie_report'))
 ieReports.forEach(row => {
   const therapistName = row[2]
   const therapistInfo = therapistMap[therapistName]
-  const level = therapistInfo?.level || 'JUNIOR 1'
+  const level = resolveLevel(therapistName, row[7], levelHistoryByTherapist, therapistInfo?.level || 'JUNIOR 1')
   const cut = RATES['IE REPORT']?.levels[level] || 800
   allSessions.push({
     id: row[0],
@@ -205,12 +241,12 @@ supervisorFees.forEach(row => {
     reportRows.filter(r => r && r[0] && r[8] === 'Completed' && r[6] !== 'IE Report').forEach(row => {
       const therapistName = row[2]
       const therapistInfo = therapistMap[therapistName]
-      const level = therapistInfo?.level || 'JUNIOR 1'
       const amount = parseFloat(row[7] || 0)
 
       // Find matching payment record for date and mop
       const paymentRecord = payRows.find(p => p && p[3] === `DOC-${row[0]}`)
       const payDate = row[13] || (paymentRecord ? paymentRecord[7] : row[4])
+      const level = resolveLevel(therapistName, payDate, levelHistoryByTherapist, therapistInfo?.level || 'JUNIOR 1')
       const mop = paymentRecord ? paymentRecord[5] : ''
       const reference = paymentRecord ? paymentRecord[9] : ''
       const rates = calcRates(row[6], level, amount, '')

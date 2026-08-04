@@ -93,6 +93,20 @@ function EditModal({ editForm, setEditForm, editSaving, closeEdit, addEditDay, u
           </div>
         </div>
 
+        {editForm.level !== editForm.originalLevel && (
+          <div style={{ marginBottom: '20px', padding: '10px 12px', background: '#FAEEDA', border: '1px solid #EF9F27', borderRadius: '8px' }}>
+            <label style={{ fontSize: '12px', color: '#633806', fontWeight: '500', display: 'block', marginBottom: '4px' }}>
+              Level change effective date
+            </label>
+            <input type="date" value={editForm.levelEffectiveDate}
+              onChange={e => setEditForm({ ...editForm, levelEffectiveDate: e.target.value })}
+              style={{ padding: '7px 10px', borderRadius: '6px', border: '1px solid #EF9F27', fontSize: '13px' }} />
+            <p style={{ margin: '6px 0 0', fontSize: '11px', color: '#633806' }}>
+              Past sessions/payroll before this date keep using the old level ({editForm.originalLevel || 'none'}). Sessions from this date onward use the new level.
+            </p>
+          </div>
+        )}
+
         <div style={{ marginBottom: '16px', fontSize: '14px', color: '#333' }}>
           <span style={{ color: '#999', fontSize: '12px' }}>Specialized Therapy: </span><strong>{editForm.specialized_therapies || '— none —'}</strong>
         </div>
@@ -201,11 +215,14 @@ export default function TherapistsPage() {
   function openEdit(name) {
     const rows = therapists.filter(t => t.name === name).sort((a, b) => DAYS.indexOf(a.day) - DAYS.indexOf(b.day))
     const first = rows[0]
+    const todayISO = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })
     setEditForm({
       name: first.name,
       specialty: first.specialty,
       is_intern: first.is_intern,
       level: first.level || '',
+      originalLevel: first.level || '',
+      levelEffectiveDate: todayISO,
       specialized_therapies: first.specialized_therapies || '',
       days: rows.map(r => ({
         rowIndex: r.index,
@@ -305,6 +322,19 @@ export default function TherapistsPage() {
             is_intern: editForm.is_intern,
             level: editForm.level,
             days: toAdd.map(d => ({ day: d.day, time_start: d.time_start, time_end: d.time_end }))
+          })
+        })
+      }
+
+      if (editForm.level !== editForm.originalLevel) {
+        await fetch('/api/level-history', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            therapist_name: editForm.name,
+            level: editForm.level,
+            effective_date: editForm.levelEffectiveDate,
+            baseline_level: editForm.originalLevel
           })
         })
       }
