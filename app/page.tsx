@@ -8,6 +8,9 @@ export default function HomePage() {
   const [stepIndex, setStepIndex] = useState(0)
   const [mobOpen, setMobOpen] = useState(0)
   const slideState = useRef<Record<string, number>>({ clinic: 1, staff: 1 })
+  const FEEDBACK_IMAGES = ['/feedback1.png', '/feedback2.png', '/feedback3.png', '/feedback4.png', '/feedback5.png', '/feedback6.png', '/feedback7.png', '/feedback8.png']
+  const [feedbackIndex, setFeedbackIndex] = useState(0)
+  const [feedbackPerView, setFeedbackPerView] = useState(2)
   const [facilityIndex, setFacilityIndex] = useState(0)
   const updateSlideshow = (id: string, index: number) => {
     slideState.current[id] = index
@@ -46,6 +49,21 @@ export default function HomePage() {
       document.body.removeChild(script)
     }
   }, [])
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 769px)')
+    const applyPerView = () => { setFeedbackPerView(mq.matches ? 2 : 1); setFeedbackIndex(0) }
+    applyPerView()
+    mq.addEventListener('change', applyPerView)
+    return () => mq.removeEventListener('change', applyPerView)
+  }, [])
+
+  const feedbackGroupCount = Math.ceil(FEEDBACK_IMAGES.length / feedbackPerView)
+
+  useEffect(() => {
+    const id = setInterval(() => setFeedbackIndex(i => (i + 1) % feedbackGroupCount), 6000)
+    return () => clearInterval(id)
+  }, [feedbackGroupCount])
 
   const services = [
     { icon: '🧠', name: 'Occupational Therapy',
@@ -660,6 +678,53 @@ export default function HomePage() {
           <h3 style={{ textAlign: 'center', marginTop: '3rem', color: '#0f4c81', fontWeight: '700', fontFamily: "'Nunito', sans-serif" }}>
             Work with us to unlock the best in your child! 💙💛
           </h3>
+        </div>
+      </section>
+
+      {/* Reaching Potentials — Parent Feedback */}
+      <section id="reaching-potentials" style={{ padding: '6rem 2rem', background: '#f8f9fb' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <div style={{ fontSize: '11px', letterSpacing: '0.18em', color: '#fcc200', fontWeight: '600', marginBottom: '10px', textTransform: 'uppercase' }}>
+              In Their Words
+            </div>
+            <h2 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: 0, fontWeight: '800' }}>
+              Reaching Potentials
+            </h2>
+            <p style={{ color: '#666', fontSize: '15px', maxWidth: '540px', margin: '0 auto', lineHeight: '1.75', fontWeight: '300' }}>
+              Real stories from families we've worked with.
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button onClick={() => setFeedbackIndex(i => (i - 1 + feedbackGroupCount) % feedbackGroupCount)} style={{
+              flexShrink: 0, width: '40px', height: '40px', borderRadius: '50%', background: 'white',
+              border: '1px solid #e0e0e0', cursor: 'pointer', fontSize: '18px', color: '#0f4c81',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+            }}>‹</button>
+
+            <div style={{ flex: 1, display: 'flex', gap: '16px', justifyContent: 'center' }}>
+              {FEEDBACK_IMAGES.slice(feedbackIndex * feedbackPerView, feedbackIndex * feedbackPerView + feedbackPerView).map((src, i) => (
+                <img key={i} src={src} alt="Parent feedback" onClick={() => setLightbox(src)}
+                  style={{ width: '100%', maxWidth: feedbackPerView === 2 ? '460px' : '100%', height: 'auto', display: 'block', cursor: 'zoom-in' }} />
+              ))}
+            </div>
+
+            <button onClick={() => setFeedbackIndex(i => (i + 1) % feedbackGroupCount)} style={{
+              flexShrink: 0, width: '40px', height: '40px', borderRadius: '50%', background: 'white',
+              border: '1px solid #e0e0e0', cursor: 'pointer', fontSize: '18px', color: '#0f4c81',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+            }}>›</button>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '1.5rem' }}>
+            {Array.from({ length: feedbackGroupCount }).map((_, i) => (
+              <button key={i} onClick={() => setFeedbackIndex(i)} style={{
+                width: i === feedbackIndex ? '20px' : '7px', height: '7px', borderRadius: '4px', border: 'none',
+                background: i === feedbackIndex ? '#fcc200' : '#ccc', cursor: 'pointer', transition: 'all 0.2s'
+              }} />
+            ))}
+          </div>
         </div>
       </section>
 
