@@ -11,6 +11,21 @@ export default function HomePage() {
   const FEEDBACK_IMAGES = ['/feedback1.png', '/feedback2.png', '/feedback3.png', '/feedback4.png', '/feedback5.png', '/feedback6.png', '/feedback7.png', '/feedback8.png']
   const [feedbackIndex, setFeedbackIndex] = useState(0)
   const [feedbackPerView, setFeedbackPerView] = useState(2)
+
+  const SONGS = ['/song1.mp3', '/song2.mp3']
+  const SONG_TITLES = ['Unlock The Best Ver. 1', 'Unlock The Best Ver. 2']
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [musicPlaying, setMusicPlaying] = useState(false)
+  const [musicTrack, setMusicTrack] = useState(0)
+  const [musicCurrentTime, setMusicCurrentTime] = useState(0)
+  const [musicDuration, setMusicDuration] = useState(0)
+
+  const formatTime = (secs: number) => {
+    if (!secs || isNaN(secs)) return '0:00'
+    const m = Math.floor(secs / 60)
+    const s = Math.floor(secs % 60)
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }
   const [facilityIndex, setFacilityIndex] = useState(0)
   const updateSlideshow = (id: string, index: number) => {
     slideState.current[id] = index
@@ -64,6 +79,55 @@ export default function HomePage() {
     const id = setInterval(() => setFeedbackIndex(i => (i + 1) % feedbackGroupCount), 6000)
     return () => clearInterval(id)
   }, [feedbackGroupCount])
+
+  const toggleMusic = () => {
+    const audio = audioRef.current
+    if (!audio) return
+    if (musicPlaying) {
+      audio.pause()
+      setMusicPlaying(false)
+    } else {
+      audio.play()
+      setMusicPlaying(true)
+    }
+  }
+
+  const handleSongEnded = () => {
+    if (musicTrack === 0) {
+      // Advance to song 2 and play it
+      setMusicTrack(1)
+      setTimeout(() => audioRef.current?.play(), 0)
+    } else {
+      // Both songs finished — stop
+      setMusicPlaying(false)
+      setMusicTrack(0)
+    }
+  }
+
+  const skipToNextSong = () => {
+    if (musicTrack === 0) {
+      setMusicTrack(1)
+      setTimeout(() => audioRef.current?.play(), 0)
+      setMusicPlaying(true)
+    }
+    // Already on song 2 — nothing to skip to
+  }
+
+  const skipToPrevSong = () => {
+    if (musicTrack === 1) {
+      setMusicTrack(0)
+      setTimeout(() => audioRef.current?.play(), 0)
+      setMusicPlaying(true)
+    }
+    // Already on song 1 — nothing to go back to
+  }
+
+  const seekMusic = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const audio = audioRef.current
+    if (!audio) return
+    audio.currentTime = Number(e.target.value)
+    setMusicCurrentTime(Number(e.target.value))
+  }
 
   const services = [
     { icon: '🧠', name: 'Occupational Therapy',
@@ -724,6 +788,60 @@ export default function HomePage() {
                 background: i === feedbackIndex ? '#fcc200' : '#ccc', cursor: 'pointer', transition: 'all 0.2s'
               }} />
             ))}
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '12px',
+              padding: '10px 18px', borderRadius: '40px', border: '1px solid #e0e0e0',
+              background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+              fontFamily: "'Nunito', sans-serif", maxWidth: '380px', width: '100%'
+            }}>
+              <button onClick={skipToPrevSong} disabled={musicTrack === 0} style={{
+                flexShrink: 0, width: '28px', height: '28px', borderRadius: '50%',
+                border: 'none', background: musicTrack === 0 ? '#f0f0f0' : '#f0f4fa',
+                color: musicTrack === 0 ? '#ccc' : '#0f4c81',
+                cursor: musicTrack === 0 ? 'not-allowed' : 'pointer',
+                fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>⏮</button>
+
+              <button onClick={toggleMusic} style={{
+                flexShrink: 0, width: '32px', height: '32px', borderRadius: '50%',
+                border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer',
+                fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>{musicPlaying ? '⏸' : '▶'}</button>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                  <span style={{ fontSize: '11px', color: '#999', fontWeight: '600' }}>{SONG_TITLES[musicTrack]}</span>
+                  <span style={{ fontSize: '11px', color: '#999' }}>{formatTime(musicCurrentTime)} / {formatTime(musicDuration)}</span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={musicDuration || 0}
+                  value={musicCurrentTime}
+                  onChange={seekMusic}
+                  style={{ width: '100%', accentColor: '#fcc200', height: '4px', cursor: 'pointer' }}
+                />
+              </div>
+
+              <button onClick={skipToNextSong} disabled={musicTrack === 1} style={{
+                flexShrink: 0, width: '28px', height: '28px', borderRadius: '50%',
+                border: 'none', background: musicTrack === 1 ? '#f0f0f0' : '#f0f4fa',
+                color: musicTrack === 1 ? '#ccc' : '#0f4c81',
+                cursor: musicTrack === 1 ? 'not-allowed' : 'pointer',
+                fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>⏭</button>
+            </div>
+
+            <audio
+              ref={audioRef}
+              src={SONGS[musicTrack]}
+              onEnded={handleSongEnded}
+              onTimeUpdate={e => setMusicCurrentTime(e.currentTarget.currentTime)}
+              onLoadedMetadata={e => setMusicDuration(e.currentTarget.duration)}
+            />
           </div>
         </div>
       </section>
