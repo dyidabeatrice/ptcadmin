@@ -1198,7 +1198,7 @@ export default function PaymentsPage() {
   const [ieReportModal, setIeReportModal] = useState(false)
   const [ieReportForm, setIeReportForm] = useState({ client_name: '', therapist: '' })
   const [supervisorModal, setSupervisorModal] = useState(false)
-  const [supervisorForm, setSupervisorForm] = useState({ therapist: '', amount: '', notes: '' })
+  const [supervisorForm, setSupervisorForm] = useState({ therapist: '', amount: '', date: '' })
   const [refundModal, setRefundModal] = useState(null)
   const [refundAmount, setRefundAmount] = useState('')
   const [saving, setSaving] = useState(false)
@@ -1545,7 +1545,7 @@ export default function PaymentsPage() {
               <input value={supervisorForm.therapist} onChange={e => setSupervisorForm({ ...supervisorForm, therapist: e.target.value })}
                 list="sup-therapist-list" placeholder="Type or select therapist..."
                 style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
-<datalist id="sup-therapist-list">{[...new Set(clients.flatMap(c => (c.schedule || '').split(';').map(s => s.split('|')[0]).filter(Boolean)))].sort().map(t => <option key={t} value={t} />)}</datalist>
+                <datalist id="sup-therapist-list">{Object.keys(therapistSpecialtyMap).sort().map(t => <option key={t} value={t} />)}</datalist>
             </div>
             <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Amount (₱)</label>
@@ -1554,17 +1554,19 @@ export default function PaymentsPage() {
                 style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '16px', fontWeight: '500', boxSizing: 'border-box' }} />
             </div>
             <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Notes (optional)</label>
-              <input value={supervisorForm.notes} onChange={e => setSupervisorForm({ ...supervisorForm, notes: e.target.value })}
-                placeholder="e.g. June supervision"
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Effective payment date</label>
+              <input type="date" value={supervisorForm.date} onChange={e => setSupervisorForm({ ...supervisorForm, date: e.target.value })}
                 style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
             </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button onClick={() => { setSupervisorModal(false); setSupervisorForm({ therapist: '', amount: '', notes: '' }) }}
+              <button onClick={() => { setSupervisorModal(false); setSupervisorForm({ therapist: '', amount: '', date: '' }) }}
                 style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
               <button onClick={async () => {
                 if (!supervisorForm.therapist || !supervisorForm.amount) return alert('Please fill in all fields')
                 const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
+                const effectiveDate = supervisorForm.date
+                  ? new Date(supervisorForm.date + 'T00:00:00').toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
+                  : today
                 await fetch('/api/payments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
                   action: 'log',
                   client_name: '-',
@@ -1573,15 +1575,15 @@ export default function PaymentsPage() {
                   amount: 0,
                   mop: 'N/A',
                   session_type: 'SUPERVISOR FEE',
-                  date: today,
+                  date: effectiveDate,
                   payment_type: 'supervisor_fee',
                   reference: '',
                   custom_cut: Number(supervisorForm.amount),
                   custom_center: null,
-                  custom_notes: supervisorForm.notes || ''
+                  custom_notes: ''
                 })})
                 setSupervisorModal(false)
-                setSupervisorForm({ therapist: '', amount: '', notes: '' })
+                setSupervisorForm({ therapist: '', amount: '', date: '' })
                 fetchAll()
               }} disabled={!supervisorForm.therapist || !supervisorForm.amount}
                 style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: !supervisorForm.therapist || !supervisorForm.amount ? 0.5 : 1 }}>
