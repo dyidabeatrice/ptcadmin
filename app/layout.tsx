@@ -1,6 +1,7 @@
 'use client'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
+import { Analytics } from '@vercel/analytics/next'
 
 const NAV_LINKS = [
   { href: '/dashboard', label: 'Dashboard' },
@@ -128,6 +129,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         )}
         {children}
+        <Analytics />
       </body>
     </html>
   )
