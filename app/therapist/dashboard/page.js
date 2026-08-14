@@ -101,6 +101,7 @@ export default function TherapistDashboard() {
   const [activeTab, setActiveTab] = useState('schedule')
   const [expandedFeeMonths, setExpandedFeeMonths] = useState(new Set())
   const [uploading, setUploading] = useState(null)
+  const [announcements, setAnnouncements] = useState({})
   const router = useRouter()
 
   useEffect(() => {
@@ -113,13 +114,15 @@ export default function TherapistDashboard() {
   async function initializePage(name) {
     setLoading(true)
     try {
-      const [weeksRes, rRes] = await Promise.all([
+      const [weeksRes, rRes, aRes] = await Promise.all([
         fetch('/api/weeks'),
-        fetch('/api/documents')
+        fetch('/api/documents'),
+        fetch('/api/announcements')
       ])
-      const [weeksJson, rJson] = await Promise.all([weeksRes.json(), rRes.json()])
+      const [weeksJson, rJson, aJson] = await Promise.all([weeksRes.json(), rRes.json(), aRes.json()])
 
       if (rJson.success) setReports(rJson.data.filter(r => r.therapist === name))
+      if (aJson.success) setAnnouncements(aJson.data)
 
       const [feesRes, pfRes] = await Promise.all([
         fetch(`/api/ledger`),
@@ -245,8 +248,13 @@ export default function TherapistDashboard() {
         />
 
             <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '1.25rem' }}>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '1.25rem', padding: '4px', background: '#f0f0f0', borderRadius: '10px', width: 'fit-content' }}>
-              {[{ key: 'schedule', label: 'My Schedule' }, { key: 'fees', label: 'My Fees' }, { key: 'policies', label: 'Therapist-Center Agreement' }].map(tab => (
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '1.25rem', padding: '4px', background: '#f0f0f0', borderRadius: '10px', width: 'fit-content', flexWrap: 'wrap' }}>
+              {[
+                { key: 'schedule', label: 'My Schedule' },
+                { key: 'fees', label: 'My Fees' },
+                { key: 'policies', label: 'Therapist-Center Agreement' },
+                ...(announcements.therapist_reminder?.value ? [{ key: 'reminders', label: 'Reminders' }] : [])
+              ].map(tab => (
                 <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
                   padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer',
                   fontSize: '13px', fontWeight: '500',
@@ -524,6 +532,13 @@ export default function TherapistDashboard() {
             </div>
           )}
 
+          {activeTab === 'reminders' && (
+            <div
+              style={{ background: 'white', borderRadius: '12px', border: '1px solid #B5D4F4', padding: '1.5rem', fontSize: '14px', color: '#0C447C', lineHeight: '1.7' }}
+              dangerouslySetInnerHTML={{ __html: announcements.therapist_reminder?.value || '' }}
+            />
+          )}
+
           {activeTab === 'policies' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', fontSize: '13px' }}>
 
@@ -625,6 +640,19 @@ export default function TherapistDashboard() {
           )}
 
         </div>
+
+        {activeTab === 'schedule' && (() => {
+          const w = announcements.weather_reminder
+          if (!w?.value || !w?.start_date || !w?.end_date) return null
+          const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })
+          if (todayStr < w.start_date) return null
+          if (todayStr > w.end_date) return null
+          return (
+            <div style={{ marginTop: '1rem', padding: '12px 14px', background: '#FFF3CD', border: '1px solid #FFD666', borderRadius: '8px', fontSize: '13px', color: '#7C5800', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+              ⚠️ {w.value}
+            </div>
+          )
+        })()}
 
         <div style={{ marginTop: '1rem', padding: '12px 14px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
         <div style={{ fontSize: '11px', fontWeight: '500', color: '#666', marginBottom: '8px' }}>Color guide</div>
