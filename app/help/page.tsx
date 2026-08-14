@@ -3,12 +3,14 @@ import { useState } from 'react'
 
 const sections = [
   { id: 'dashboard', label: '📊 Dashboard', emoji: '📊' },
+  { id: 'tasks', label: '📝 To-do & Inquiries', emoji: '📝' },
   { id: 'clients', label: '👥 Clients', emoji: '👥' },
   { id: 'schedule', label: '🗓️ Schedule', emoji: '🗓️' },
   { id: 'payments', label: '💳 Payments', emoji: '💳' },
   { id: 'reports', label: '📄 Reports', emoji: '📄' },
   { id: 'messages', label: '💬 Messages', emoji: '💬' },
   { id: 'therapists', label: '🧑‍⚕️ Therapists', emoji: '🧑‍⚕️' },
+  { id: 'announcements', label: '📢 Announcements', emoji: '📢' },
   { id: 'tips', label: '✨ Tips & Tricks', emoji: '✨' },
 ]
 
@@ -132,6 +134,28 @@ export default function HelpPage() {
           <p style={{ fontSize: '13px', color: '#555' }}>Below the cards you'll see <strong>Today's sessions</strong> at a glance, the list of <strong>therapists in today</strong>, <strong>pending message drafts</strong>, and clients with <strong>outstanding balances</strong> that need follow-up.</p>
         </Section></div>
 
+        {/* TO-DO & INQUIRIES */}
+        <div id="tasks"><Section title="To-do & Inquiries" emoji="📝">
+          <p style={{ fontSize: '13px', color: '#555', marginTop: 0 }}>The Tasks page has two tabs: <strong>To-do</strong> for reminders and follow-ups, and <strong>Inquiries</strong> for tracking prospective client contacts before they become clients.</p>
+
+          <SubSection title="To-do tab">
+            <p>Track IE reminders, make-up sessions, and other one-off tasks.</p>
+            <Step num={1}>Choose a task type — <strong>IE Reminder</strong>, <strong>Make-up</strong>, or <strong>Other</strong>.</Step>
+            <Step num={2}>For IE/Make-up types, select the client and therapist.</Step>
+            <Step num={3}>Type a note and click <strong>+ Add</strong>.</Step>
+            <p>Use the filter pills to view by type. Click <strong>Remind</strong> on a task to create a message draft for that client, or <strong>✓ Done</strong> to remove it once handled.</p>
+          </SubSection>
+
+          <SubSection title="Inquiries tab">
+            <p>Track prospective clients who've reached out but haven't enrolled yet — walk-ins, Facebook messages, phone calls, etc.</p>
+            <Step num={1}>Click <strong>+ Add inquiry</strong>.</Step>
+            <Step num={2}>Enter the contact's name, a first note about the inquiry, and who recorded it.</Step>
+            <Step num={3}>Click <strong>Add</strong> — a new expandable card is created for that contact.</Step>
+            <p>Each contact's card shows all their notes with the newest first. Click a card to expand or collapse it. Use the <strong>"Add a note for today..."</strong> field at the bottom of an expanded card to log follow-up conversations over time — everything stays organized under that one contact.</p>
+            <Note type="tip">Cards are sorted with the most recently active contact at the top, so you always see who needs follow-up soonest.</Note>
+          </SubSection>
+        </Section></div>
+
         {/* CLIENTS */}
         <div id="clients"><Section title="Clients" emoji="👥">
           <SubSection title="How to add a new client">
@@ -169,7 +193,7 @@ export default function HelpPage() {
 
           <SubSection title="Page layout">
             <p>The Schedule page shows all 6 days of the week in one scrollable view. Each day is an <strong>accordion section</strong> — click the day header to expand or collapse it. The current day is auto-expanded when you open the page.</p>
-            <p>At the top is a toggle between <strong>This Week</strong> and <strong>Master Template</strong> views.</p>
+            <p>At the top is a toggle between <strong>This Week</strong>, <strong>Master Template</strong>, and <strong>Simple View</strong>.</p>
             <Note type="tip">The day header shows the date, total session count, how many are present, and how many are unpaid — so you can see the status of each day at a glance without expanding it.</Note>
           </SubSection>
 
@@ -300,7 +324,7 @@ export default function HelpPage() {
             <Step num={3}>For bank transfers, enter the <strong>reference number</strong> — the row turns white once filled.</Step>
             <Step num={4}>The <strong>Total, Cut, and Center</strong> columns are auto-calculated from the session type and therapist level — but you can overwrite them if needed by typing directly in the field.</Step>
             <Step num={5}>All fields save automatically when you click away — no save button needed.</Step>
-            <Note type="info">IE Reports and paid Document Requests also appear inline under the corresponding therapist's tab.</Note>
+            <Note type="info">IE Reports, Supervisor Fees, and paid Document Requests also appear inline under the corresponding therapist's tab.</Note>
           </SubSection>
 
           <SubSection title="Month grouping, totals and PF release">
@@ -327,6 +351,22 @@ export default function HelpPage() {
 
           <SubSection title="Submitted IE Report by Therapist">
             <p>Use this to record when a therapist submits their IE report. No payment is collected from the parent — this is purely for tracking so the therapist's professional fee is computed correctly in the ledger and Excel export.</p>
+          </SubSection>
+
+          <SubSection title="Supervisor Fee">
+            <Step num={1}>Click <strong>+ Supervisor Fee</strong> at the top of the Payments page.</Step>
+            <Step num={2}>Select the therapist being paid for supervision — the list includes every therapist on file, not just those with scheduled clients.</Step>
+            <Step num={3}>Enter the amount and set the <strong>effective payment date</strong> — this can be backdated if the supervision happened earlier and is only being logged now.</Step>
+            <Step num={4}>Click <strong>Record</strong>.</Step>
+            <p>The fee appears in that therapist's ledger tab under the correct date, and is included in the Excel export.</p>
+          </SubSection>
+
+          <SubSection title="Monthly Summary tab">
+            <p>A password-protected quarterly overview — grouped totals for every therapist at once, organized into <strong>OT</strong>, <strong>ST</strong>, and <strong>SPED/PT/Interns</strong> columns, matching the layout used for the clinic's internal payroll spreadsheet.</p>
+            <Step num={1}>Click the <strong>Monthly Summary</strong> tab — you'll be asked for a password each time (not saved between visits, so only share it with co-owners).</Step>
+            <Step num={2}>Use the Year and Quarter dropdowns to pick a period. Each quarter shows all 3 months stacked, one below the other.</Step>
+            <Step num={3}>Each therapist shows two rows — Period 1 (1st–15th) and Period 2 (16th–end) — with Total, Cut, and Center columns. A bold totals row sums each specialty column at the bottom.</Step>
+            <Note type="warning">This is intentionally separate from the regular By Therapist tab, since it's meant for owner-level payroll review rather than day-to-day secretary use.</Note>
           </SubSection>
 
           <SubSection title="Credits tab">
@@ -391,6 +431,11 @@ export default function HelpPage() {
             <Note type="tip">Use the filter tabs at the top to view by status — Outstanding, Ready for Release, or Completed.</Note>
           </SubSection>
 
+          <SubSection title="IE Reports created from Schedule">
+            <p>When an OT-IE or ST-IE session is marked both <strong>Paid</strong> and <strong>Present</strong> — in either order — an IE Report entry is created here automatically for tracking, with a 6-month deadline from the session date.</p>
+            <Note type="tip">If an IE session is missing its report entry, toggling its status away from Present and back to Present will re-trigger the check.</Note>
+          </SubSection>
+
         </Section></div>
 
         {/* MESSAGES */}
@@ -426,12 +471,49 @@ export default function HelpPage() {
 
           <SubSection title="How to edit a therapist">
             <Step num={1}>Find the therapist on the list and click <strong>Edit</strong>.</Step>
-            <Step num={2}>Update their name, specialty, intern status, or <strong>level</strong> (Junior 1–3, Senior 1–2) — the level affects their professional fee in the Excel export.</Step>
+            <Step num={2}>Update their name, specialty, intern status, or <strong>level</strong> (Junior 1–3, Senior 1–2).</Step>
             <Step num={3}>Add or remove working days using <strong>+ Add day</strong> or the ✕ button per day.</Step>
             <Step num={4}>Click <strong>Save changes</strong>.</Step>
             <Note type="info">The <strong>Level</strong> field is only visible in the edit modal — it won't show on the therapist list card.</Note>
           </SubSection>
 
+          <SubSection title="Changing a therapist's Level (important!)">
+            <p>When you change a therapist's <strong>Level</strong>, an orange banner appears asking for an <strong>effective date</strong> — defaulting to today, but editable.</p>
+            <p>This matters because the Level determines the therapist's cut on every session. Setting the correct effective date ensures <strong>past sessions keep calculating at the old level</strong>, while sessions from that date onward use the new one — nothing retroactively changes for old payroll.</p>
+            <Step num={1}>Open the therapist's Edit modal and change the Level dropdown.</Step>
+            <Step num={2}>The orange banner appears — confirm or adjust the effective date (it can be backdated or set for a future date).</Step>
+            <Step num={3}>Click <strong>Save changes</strong>.</Step>
+            <Note type="warning">If this is the very first time a therapist's level has ever been changed, the system automatically records what their level was before, so old sessions still calculate correctly. You don't need to do anything extra for this.</Note>
+          </SubSection>
+
+          <SubSection title="Deleting a therapist vs. removing their days">
+            <Note type="warning">Deleting a therapist entirely removes all their day rows — including the ones that store their level, specialty, and intern status. Any of their historical sessions will lose access to that information, which can affect payroll calculations for those old records.</Note>
+            <p>If a therapist has left but has <strong>historical sessions on record</strong>, it's safer to remove their individual working days (via Edit → ✕ on each day, keeping at least one) rather than using the <strong>Remove</strong> button, which deletes them entirely.</p>
+          </SubSection>
+
+        </Section></div>
+
+        {/* ANNOUNCEMENTS */}
+        <div id="announcements"><Section title="Announcements" emoji="📢">
+          <p style={{ fontSize: '13px', color: '#555', marginTop: 0 }}>Manage two messages shown to therapists in their portal — no code changes needed, everything is edited right here.</p>
+
+          <SubSection title="Reminder Tab">
+            <p>A general-purpose reminder that appears as its own tab in the therapist portal, alongside My Schedule and My Fees.</p>
+            <Step num={1}>Go to <strong>Announcements</strong> in the admin nav.</Step>
+            <Step num={2}>Use the toolbar to format the text — Bold, Italic, Underline, bullet/numbered lists, text color, and highlight color.</Step>
+            <Step num={3}>Click <strong>Preview</strong> to see exactly how it'll appear to therapists before saving.</Step>
+            <Step num={4}>Click <strong>Save</strong>.</Step>
+            <Note type="tip">Leave the text completely empty and save to hide the Reminders tab entirely from the therapist portal.</Note>
+          </SubSection>
+
+          <SubSection title="Weather / Urgent Reminder">
+            <p>A short banner shown above the color guide, only when a therapist is viewing the <strong>My Schedule</strong> tab specifically.</p>
+            <Step num={1}>Type the message.</Step>
+            <Step num={2}>Set a <strong>Start date</strong> and <strong>End date</strong> — both are required. The banner only shows on days that fall within this range.</Step>
+            <Step num={3}>Click <strong>Save</strong>.</Step>
+            <Note type="info">The date check is based on the actual current date, not which day/week a therapist happens to be browsing in the schedule.</Note>
+            <Note type="tip">No need to remember to remove it later — once the end date passes, it automatically stops showing on its own.</Note>
+          </SubSection>
         </Section></div>
 
         {/* TIPS */}
@@ -444,6 +526,7 @@ export default function HelpPage() {
               { tip: 'Color = status at a glance', detail: 'Yellow = Pencil, Blue = Confirmed, Green = Paid, Red = Absent, Orange = Unpaid Present/Cancelled. ⚠️ means the client has an outstanding balance.' },
               { tip: 'Outstanding tab is grouped by client', detail: 'Sessions are grouped per client with their total balance shown at a glance — making it easy to see who owes the most and settle everything at once.' },
               { tip: 'Credits carry over', detail: 'Any overpayment or advance payment is stored as credit and automatically offered when recording the next payment for that client.' },
+              { tip: 'Inquiries keep a full timeline', detail: 'Instead of one note per contact, each Inquiries card holds a running history — every follow-up call or message gets logged under the same person, newest first.' },
             ].map((t, i) => (
               <div key={i} style={{ background: 'white', borderRadius: '10px', border: '1px solid #e8edf5', padding: '14px 16px', display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
                 <span style={{ fontSize: '18px', flexShrink: 0, marginTop: '1px' }}>✨</span>

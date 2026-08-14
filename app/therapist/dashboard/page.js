@@ -266,7 +266,7 @@ export default function TherapistDashboard() {
             </div>
             {activeTab === 'schedule' && (<>
               <div style={{ padding: '12px 14px', background: '#FAEEDA', border: '1px solid #EF9F27', borderRadius: '8px', marginBottom: '1rem', fontSize: '12px', color: '#633806', lineHeight: '1.6' }}>
-                <strong>Disclaimer:</strong> The schedule shown is not yet final. Please <strong>wait for confirmation</strong> from the admin assistants.
+                <strong>Disclaimer:</strong> Please refer to the color guide below, and <strong>wait for confirmation</strong> from the admin assistants.
                 <br />
                 For schedules already confirmed on your end, kindly coordinate with the admin assistants so they can update them here.
                 <br />
