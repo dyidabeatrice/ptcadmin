@@ -7,7 +7,7 @@ const DOC_TYPES = [
   { value: 'PR-RUSHED', label: 'Progress Report (Rushed)', info: '<2 weeks processing — ₱1,000', amount: 1000, custom: false },
   { value: 'PR-INTERN', label: 'Progress Report (Intern)', info: 'Minimum 2 weeks processing — ₱300', amount: 300, custom: false },
   { value: 'Endorsement Notes', label: 'Endorsement Notes', info: 'Custom amount', amount: 0, custom: true },
-  { value: 'Home Program', label: 'Home Program', info: 'Custom amount', amount: 0, custom: true },
+  { value: 'Home Program', label: 'Home Program', info: 'Fixed rate — ₱1,000', amount: 1000, custom: false },
 ]
 
 function getStatusColor(status) {

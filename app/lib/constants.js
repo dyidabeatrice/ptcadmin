@@ -47,4 +47,5 @@ export const RATES = {
   'ST INTERN IE':      { full: 800, levels: { 'JUNIOR 1': 460, 'JUNIOR 2': 460, 'JUNIOR 3': 460, 'SENIOR 1': 460, 'SENIOR 2': 460 } },
   'PR INTERN':         { full: 300, levels: { 'JUNIOR 1': 0,   'JUNIOR 2': 0,   'JUNIOR 3': 0,   'SENIOR 1': 0,   'SENIOR 2': 0 } },
   'SUPERVISOR FEE':    { full: 0,    levels: { 'JUNIOR 1': 0,   'JUNIOR 2': 0,   'JUNIOR 3': 0,   'SENIOR 1': 0,   'SENIOR 2': 0 } },
+  'Home Program':         { full: 1000,    levels: { 'JUNIOR 1': 700,   'JUNIOR 2': 700,   'JUNIOR 3': 700,   'SENIOR 1': 700,   'SENIOR 2': 700 } },
 }
