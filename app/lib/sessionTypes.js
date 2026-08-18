@@ -67,7 +67,7 @@ export const SESSION_TYPE_RATES = {
   'ST SESSION': 1300, 'ST-IE': 2800, 'ST-FE': 1500, 'SPECIALIZED ST TX': 1700,
   'PT SESSION': 900, 'PT-IE': 2800, 'PT FE': 1500,
   'SPED SESSION': 900, 'SPED IE': 1800, 'SPED FE': 1500, 'PLAYSCHOOL': 750,
-  'Cancellation Fee': 1200, 'SUPERVISOR FEE': 0,
+  'Cancellation Fee': 1200, 'SUPERVISOR FEE': 0, 'Home Program': 1000,
 }
 
 // Full flat dropdown list (value/label pairs) used by Payments page's
@@ -78,6 +78,7 @@ export const ALL_SESSION_TYPE_OPTIONS = [
   ['PT SESSION','PT SESSION'],['PT-IE','PT-IE'],['PT FE','PT FE'],
   ['SPED SESSION','SPED SESSION'],['SPED IE','SPED IE'],['SPED FE','SPED FE'],
   ['PLAYSCHOOL','PLAYSCHOOL'],['PR','PR'],['PR-RUSHED','PR-RUSHED'],['IE REPORT','IE REPORT'],
+  ['Home Program','Home Program'],
   ['Cancellation Fee','No Show Fee'],
   ['OT INTERN SESSION','OT INTERN SESSION'],['OT INTERN IE','OT INTERN IE'],
   ['ST INTERN SESSION','ST INTERN SESSION'],['ST INTERN IE','ST INTERN IE'],['PR INTERN','PR INTERN'],
