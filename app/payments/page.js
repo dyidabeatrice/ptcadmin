@@ -148,6 +148,45 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
     })
   }
 
+  async function applyDeduction(pct) {
+    if (!session.payment_id) return
+    const normalCut = session.normal_cut ?? session.therapist_cut
+    const newCut = Math.round(normalCut * (1 - pct / 100))
+    const newCenter = Number(total) - newCut
+    setCut(newCut)
+    setCenter(newCenter)
+    await fetch('/api/payments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_amounts',
+        id: session.payment_id,
+        total: Number(total),
+        custom_cut: newCut,
+        custom_center: newCenter
+      })
+    })
+  }
+
+  async function resetDeduction() {
+    if (!session.payment_id) return
+    const normalCut = session.normal_cut ?? session.therapist_cut
+    const newCenter = Number(total) - normalCut
+    setCut(normalCut)
+    setCenter(newCenter)
+    await fetch('/api/payments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_amounts',
+        id: session.payment_id,
+        total: Number(total),
+        custom_cut: normalCut,
+        custom_center: newCenter
+      })
+    })
+  }
+
   async function saveComments() {
     if (comments === session.comments) return
     if (!session.payment_id) return
@@ -272,8 +311,17 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
         <input value={comments} onChange={e => setComments(e.target.value)} onBlur={saveComments}
           placeholder="Notes..." style={{ fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd', width: '100px', boxSizing: 'border-box' }} />
       </td>
-      <td style={{ padding: '8px 10px', fontSize: '11px', color: saving ? '#999' : isPaid ? '#1D9E75' : '#E24B4A', fontWeight: '500' }}>
-        {saving ? '...' : isPaid ? '✓ Paid' : 'Unpaid'}
+      <td style={{ padding: '8px 10px' }}>
+        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+          <button onClick={() => applyDeduction(10)} title="Deduct 10% from cut, add to center"
+            style={{ fontSize: '10px', padding: '3px 7px', borderRadius: '5px', border: '1px solid #EF9F27', background: '#FAEEDA', color: '#633806', cursor: 'pointer', fontWeight: '500' }}>-10%</button>
+          <button onClick={() => applyDeduction(5)} title="Deduct 5% from cut, add to center"
+            style={{ fontSize: '10px', padding: '3px 7px', borderRadius: '5px', border: '1px solid #EF9F27', background: '#FAEEDA', color: '#633806', cursor: 'pointer', fontWeight: '500' }}>-5%</button>
+          {Number(cut) !== Number(session.normal_cut ?? session.therapist_cut) && (
+            <button onClick={resetDeduction} title="Restore original cut"
+              style={{ fontSize: '10px', padding: '3px 7px', borderRadius: '5px', border: '1px solid #ddd', background: 'white', color: '#666', cursor: 'pointer' }}>Reset</button>
+          )}
+        </div>
       </td>
     </tr>
   )
@@ -403,7 +451,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ background: '#f0f4f8' }}>
-                        {['Time', 'Client', 'Type of Service', 'MOP', 'Ref No.', 'Total', 'Cut', 'Center', 'Comments', 'Status'].map(h => (
+                        {['Time', 'Client', 'Type of Service', 'MOP', 'Ref No.', 'Total', 'Cut', 'Center', 'Comments', 'Deduction'].map(h => (
                         <th key={h} style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0', whiteSpace: 'nowrap', fontSize: '12px' }}>{h}</th>
                       ))}
                     </tr>
