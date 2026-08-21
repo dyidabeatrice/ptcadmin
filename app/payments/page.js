@@ -1249,6 +1249,9 @@ export default function PaymentsPage() {
   const [supervisorForm, setSupervisorForm] = useState({ therapist: '', amount: '', date: '' })
   const [refundModal, setRefundModal] = useState(null)
   const [refundAmount, setRefundAmount] = useState('')
+  const [forfeitModal, setForfeitModal] = useState(null)
+  const [forfeitAmount, setForfeitAmount] = useState('')
+  const [forfeitNote, setForfeitNote] = useState('')
   const [saving, setSaving] = useState(false)
   const [pendingPayments, setPendingPayments] = useState([])
   const [processModal, setProcessModal] = useState(null)
@@ -1422,6 +1425,20 @@ export default function PaymentsPage() {
     setRefundModal(null)
     setRefundAmount('')
     fetchAll()
+    setSaving(false)
+  }
+
+  async function processForfeit() {
+    if (!forfeitAmount || Number(forfeitAmount) <= 0) return alert('Please enter an amount')
+    const client = clients.find(c => c.name === forfeitModal.name)
+    if (Number(forfeitAmount) > (client?.credit_balance || 0)) return alert('Amount exceeds credit balance')
+    setSaving(true)
+    await fetch('/api/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'forfeit', client_name: forfeitModal.name, amount: Number(forfeitAmount), note: forfeitNote }) })
+    setForfeitModal(null)
+    setForfeitAmount('')
+    setForfeitNote('')
+    fetchAll()
+    fetchLedger()
     setSaving(false)
   }
 
@@ -1666,6 +1683,34 @@ export default function PaymentsPage() {
         </div>
       )}
 
+      {/* Forfeit reservation fee modal */}
+      {forfeitModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '380px', maxWidth: '90vw' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Forfeit reservation fee</h3>
+            <p style={{ margin: '0 0 0.5rem', fontSize: '14px', color: '#333' }}>{forfeitModal.name}</p>
+            <p style={{ margin: '0 0 0.75rem', fontSize: '13px', color: '#999' }}>Available credit: ₱{Number(forfeitModal.credit_balance || 0).toLocaleString()}</p>
+            <div style={{ marginBottom: '1rem', padding: '10px 12px', background: '#FAEEDA', border: '1px solid #EF9F27', borderRadius: '8px', fontSize: '12px', color: '#633806' }}>
+              ⚠️ This amount will <strong>not</strong> be refunded to the client. It will be recorded as clinic income under the <strong>FORFEITED FEES</strong> tab in the ledger, with no therapist cut.
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Amount to forfeit (₱)</label>
+              <input type="number" value={forfeitAmount} onChange={e => setForfeitAmount(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '16px', fontWeight: '500', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Note (optional)</label>
+              <input value={forfeitNote} onChange={e => setForfeitNote(e.target.value)} placeholder="e.g. Did not show up for IE" style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => { setForfeitModal(null); setForfeitAmount(''); setForfeitNote('') }} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={processForfeit} disabled={saving} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#633806', color: 'white', cursor: 'pointer', fontWeight: '500' }}>
+                {saving ? 'Processing...' : `Forfeit ₱${Number(forfeitAmount || 0).toLocaleString()}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Process screenshot modal */}
       {processModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1822,7 +1867,10 @@ export default function PaymentsPage() {
                         <div style={{ fontWeight: '700', color: '#1D9E75', fontSize: '18px' }}>₱{Number(c.credit_balance).toLocaleString()}</div>
                       </div>
                       <CreditHistory clientName={c.name} />
-                      <button onClick={() => setRefundModal(c)} style={{ width: '100%', padding: '7px', borderRadius: '6px', border: '1px solid #E24B4A', background: '#fff5f5', color: '#E24B4A', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Process refund</button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={() => setRefundModal(c)} style={{ flex: 1, padding: '7px', borderRadius: '6px', border: '1px solid #E24B4A', background: '#fff5f5', color: '#E24B4A', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Process refund</button>
+                        <button onClick={() => { setForfeitModal(c); setForfeitAmount(String(c.credit_balance)) }} style={{ flex: 1, padding: '7px', borderRadius: '6px', border: '1px solid #633806', background: '#FAEEDA', color: '#633806', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Forfeit</button>
+                      </div>
                     </div>
                   ))}
                 </div>

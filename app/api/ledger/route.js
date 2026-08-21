@@ -238,6 +238,37 @@ supervisorFees.forEach(row => {
   })
 })
 
+    // Fetch forfeited (non-refunded) reservation fees — whole amount to clinic, no therapist involved
+    const forfeitedFees = payRows.filter(r => r && r[0] && r[8] === 'forfeit')
+    forfeitedFees.forEach(row => {
+      const amount = parseFloat(row[4] || 0)
+      allSessions.push({
+        id: row[0],
+        week_key: null,
+        index: null,
+        client_name: row[1],
+        therapist: 'FORFEITED FEES',
+        date: row[7],
+        day: '',
+        time_start: '',
+        time_end: '',
+        session_type: 'Reservation Fee (Forfeited)',
+        status: 'Present',
+        is_paid: true,
+        mop: row[5] || '',
+        reference: row[9] || '',
+        comments: row[11] || '',
+        payment_id: row[0],
+        total: amount,
+        therapist_cut: 0,
+        normal_cut: 0,
+        center: amount,
+        therapist_level: '',
+        is_intern: false,
+        is_forfeit: true
+      })
+    })
+
     // Fetch paid document requests
     const reportData = await getSheetData('reports')
     const [, ...reportRows] = reportData
@@ -331,7 +362,7 @@ supervisorFees.forEach(row => {
 
     const allTherapists = Object.keys(therapistMap).sort()
     const regular = allTherapists.filter(t => !t.includes('INTERN'))
-    const sorted = [...regular.sort(), 'OT INTERNS', 'ST INTERNS']
+    const sorted = [...regular.sort(), 'OT INTERNS', 'ST INTERNS', 'FORFEITED FEES']
 
     return Response.json({ success: true, data: ledger, therapists: sorted })
   } catch (error) {

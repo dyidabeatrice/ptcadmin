@@ -80,7 +80,7 @@ export async function POST(request) {
           body.client_name, '',
           'ADVANCE-' + Date.now(),
           body.amount, body.mop,
-          'Advance', body.date || today,
+          'Advance', body.date || now,
           'advance',
           body.reference || '',
           '',              // K: verified_by
@@ -130,11 +130,34 @@ export async function POST(request) {
           body.client_name, '',
           'REFUND-' + Date.now(),
           -body.amount, 'Refund',
-          'Refund', today,
+          'Refund', now,
           'refund',
           '',  // reference
           '',  // verified_by
           ''   // comments
+        ]]}
+      })
+      return Response.json({ success: true, ...result })
+    }
+
+    if (body.action === 'forfeit') {
+      const result = await updateClientBalances(body.client_name, -body.amount, 0)
+      // Whole amount goes to the clinic — no therapist involved, full center cut.
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: 'payments', valueInputOption: 'RAW',
+        requestBody: { values: [[
+          Date.now().toString(),
+          body.client_name, '-',
+          'FORFEIT-' + Date.now(),
+          body.amount, 'N/A',
+          'Reservation Fee (Forfeited)', now,
+          'forfeit',
+          '',              // reference
+          '',              // verified_by
+          body.note || '', // comments
+          0,                // custom_cut — none, whole amount to clinic
+          body.amount       // custom_center
         ]]}
       })
       return Response.json({ success: true, ...result })
