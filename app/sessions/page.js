@@ -129,6 +129,7 @@ export default function SchedulePage() {
   const [holidayDays, setHolidayDays] = useState(new Set())
   const [blockedSlots, setBlockedSlots] = useState([])
   const [freeSlotMode, setFreeSlotMode] = useState(false)
+  const [reminderProgress, setReminderProgress] = useState({}) // { [day]: { current, total } }
   const [search, setSearch] = useState('')
   const [payModal, setPayModal] = useState(null)
   const [payForm, setPayForm] = useState({ session_type: '', mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0 })
@@ -441,6 +442,32 @@ export default function SchedulePage() {
     setAddForm({ client_name: '', therapist: '', day: '', time_start: '', time_end: '' })
     fetchSessions(selectedWeek.key)
     setSaving(false)
+  }
+
+  async function sendDayReminders(day) {
+    if (reminderProgress[day]) return // already in progress — ignore extra clicks
+    const daySessions = sessions.filter(s => s.day === day && s.status === 'Pencil')
+    const uniqueClients = [...new Set(daySessions.map(s => s.client_name))]
+    if (uniqueClients.length === 0) return alert(`No unconfirmed (Pencil) sessions for ${day}.`)
+    if (!confirm(`Send a session reminder draft to ${uniqueClients.length} client${uniqueClients.length !== 1 ? 's' : ''} with unconfirmed sessions on ${day}?`)) return
+
+    const message = `Good day po!\n\nFriendly reminder that you have a session scheduled tomorrow. Kindly react or reply to this message _by 5PM_ TODAY to confirm.\n\n*Failure to notify us of absence may result in a no show fee.*\n\nThank you! 😊`
+
+    setReminderProgress(prev => ({ ...prev, [day]: { current: 0, total: uniqueClients.length } }))
+
+    for (let i = 0; i < uniqueClients.length; i++) {
+      const clientName = uniqueClients[i]
+      const client = clients.find(c => c.name === clientName)
+      await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'create_draft', client_name: clientName, psid: client?.psid || '', type: 'session_reminder', message })
+      })
+      setReminderProgress(prev => ({ ...prev, [day]: { current: i + 1, total: uniqueClients.length } }))
+    }
+
+    setReminderProgress(prev => { const next = { ...prev }; delete next[day]; return next })
+    alert(`${uniqueClients.length} reminder draft(s) created! Go to Messages page to review and send.`)
   }
 
   async function toggleHoliday(day) {
@@ -1752,10 +1779,11 @@ export default function SchedulePage() {
                       padding: '4px 10px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontSize: '11px',
                       background: isHoliday ? '#888' : '#f0f0f0', color: isHoliday ? 'white' : '#666'
                     }}>{isHoliday ? '🏖 Holiday' : 'Mark holiday'}</button>
-                    <button onClick={e => { e.stopPropagation(); setFreeSlotMode(!freeSlotMode) }} style={{
-                      padding: '4px 10px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontSize: '11px',
-                      background: freeSlotMode ? '#006c6c' : '#f0f0f0', color: freeSlotMode ? 'white' : '#666'
-                    }}>Free slots</button>
+                    <button onClick={e => { e.stopPropagation(); sendDayReminders(day) }} disabled={!!reminderProgress[day]} style={{
+                      padding: '4px 10px', borderRadius: '10px', border: 'none',
+                      cursor: reminderProgress[day] ? 'not-allowed' : 'pointer', fontSize: '11px',
+                      background: reminderProgress[day] ? '#ddd' : '#f0f0f0', color: '#666'
+                    }}>{reminderProgress[day] ? `Drafting ${reminderProgress[day].current} of ${reminderProgress[day].total}...` : '📌 Send session reminder'}</button>
                     <span style={{ color: '#999', fontSize: '12px' }}>{isExpanded ? '▼' : '▶'}</span>
                   </div>
                 </div>
