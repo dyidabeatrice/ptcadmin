@@ -1483,6 +1483,7 @@ export default function SchedulePage() {
             <div style={{ fontSize: '13px', color: '#666', marginBottom: '1.5rem' }}>{remindModal.client_name} · {remindModal.date} · {remindModal.time_start}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1.5rem' }}>
               {[
+                { type: 'session_reminder', label: '📌 Session Reminder (Tomorrow)' },
                 { type: 'ie_reminder', label: '📅 IE Appointment Reminder' },
                 { type: 'outstanding', label: '💳 Outstanding Balance Reminder' },
                 { type: 'makeup', label: '🔄 Re-Schedule / Make-Up Request' },
@@ -1494,7 +1495,9 @@ export default function SchedulePage() {
                   const psid = client?.psid || ''
                   const outstanding = Number(client?.outstanding_balance || 0)
                   let message = ''
-                  if (opt.type === 'ie_reminder') {
+                  if (opt.type === 'session_reminder') {
+                    message = `Good day po!\n\nFriendly reminder that you have a session scheduled tomorrow. Kindly react or reply to this message _by 5PM_ TODAY to confirm.\n\n*Failure to notify us of absence may result in a no show fee.*\n\nThank you! 😊`
+                  } else if (opt.type === 'ie_reminder') {
                     message = `Good day po! Confirming your attendance lang po and sharing a few friendly reminders for your initial evaluation on ${remindModal.date} at ${remindModal.time_start}:\n\n1. Only your child will be allowed inside the therapy area; only 1 parent may join if needed and requested by the therapist.\n2. Interview may be via Viber call as needed, coordinated with the Therapist.\n3. Bring ID — building enforces NO ID NO ENTRY.\n4. Only 1 parent/caregiver to bring/fetch child; other companions not allowed entry.\n5. Staying in the reception area is discouraged to prevent crowding. If there's a reason to stay, only 1 parent is allowed there, and please do not wait in the hallway.\n6. Please arrive 10 mins before session ends for feedback.\n7. Cashless payment encouraged; we kindly ask for exact amounts for cash payment if possible.\n8. Parking is NOT for everyone. Please plan ahead.\n9. Please be courteous to building security/staff. We reserve the right to refuse service for those who don't follow protocols.\n\nThank you!`
                   } else if (opt.type === 'outstanding') message = `Hello po! This is a gentle reminder to settle your outstanding balance for ${remindModal.date} session(s). Thank you!`
                   else if (opt.type === 'makeup') message = `Hello po! Pwede po ba si ${remindModal.client_name} for make up on **DATE & TIME** with T. **THERAPIST**. Please confirm as soon as possible.`
