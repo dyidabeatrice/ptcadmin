@@ -129,7 +129,8 @@ export default function SchedulePage() {
   const [holidayDays, setHolidayDays] = useState(new Set())
   const [blockedSlots, setBlockedSlots] = useState([])
   const [freeSlotMode, setFreeSlotMode] = useState(false)
-  const [reminderProgress, setReminderProgress] = useState({}) // { [day]: { current, total } }
+  const [reminderProgress, setReminderProgress] = useState({})
+  const [editMessageModal, setEditMessageModal] = useState(null) // { title, message, onConfirm } // { [`${day}:${type}`]: { current, total } }
   const [search, setSearch] = useState('')
   const [payModal, setPayModal] = useState(null)
   const [payForm, setPayForm] = useState({ session_type: '', mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0 })
@@ -261,6 +262,18 @@ export default function SchedulePage() {
     setLoading(false)
   }
 
+  function getFullDateCaps(day) {
+    if (!selectedWeek) return ''
+    const parts = selectedWeek.key.replace('week_', '').split('_')
+    const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
+    const dayIndex = DAYS.indexOf(day)
+    const d = new Date(monday)
+    d.setDate(monday.getDate() + dayIndex)
+    const month = d.toLocaleDateString('en-US', { month: 'long' }).toUpperCase()
+    const weekday = d.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase()
+    return `${month} ${d.getDate()} (${weekday})`
+  }
+
   function getMondayOf(date) {
     const d = new Date(date)
     const day = d.getDay()
@@ -337,7 +350,6 @@ export default function SchedulePage() {
     } else {
       setAbsentTherapists(new Set())
     }
-    setHolidayDays(new Set())
     setSearch('')
     setFreeSlotMode(false)
     setSessions([])
@@ -444,16 +456,9 @@ export default function SchedulePage() {
     setSaving(false)
   }
 
-  async function sendDayReminders(day) {
-    if (reminderProgress[day]) return // already in progress — ignore extra clicks
-    const daySessions = sessions.filter(s => s.day === day && s.status === 'Pencil')
-    const uniqueClients = [...new Set(daySessions.map(s => s.client_name))]
-    if (uniqueClients.length === 0) return alert(`No unconfirmed (Pencil) sessions for ${day}.`)
-    if (!confirm(`Send a session reminder draft to ${uniqueClients.length} client${uniqueClients.length !== 1 ? 's' : ''} with unconfirmed sessions on ${day}?`)) return
-
-    const message = `Good day po!\n\nFriendly reminder that you have a session scheduled tomorrow. Kindly react or reply to this message _by 5PM_ TODAY to confirm.\n\n*Failure to notify us of absence may result in a no show fee.*\n\nThank you! 😊`
-
-    setReminderProgress(prev => ({ ...prev, [day]: { current: 0, total: uniqueClients.length } }))
+  async function createDraftsForClients(progressKey, type, uniqueClients, message, label) {
+    if (reminderProgress[progressKey]) return // already in progress — ignore extra clicks
+    setReminderProgress(prev => ({ ...prev, [progressKey]: { current: 0, total: uniqueClients.length } }))
 
     for (let i = 0; i < uniqueClients.length; i++) {
       const clientName = uniqueClients[i]
@@ -461,34 +466,50 @@ export default function SchedulePage() {
       await fetch('/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'create_draft', client_name: clientName, psid: client?.psid || '', type: 'session_reminder', message })
+        body: JSON.stringify({ action: 'create_draft', client_name: clientName, psid: client?.psid || '', type, message })
       })
-      setReminderProgress(prev => ({ ...prev, [day]: { current: i + 1, total: uniqueClients.length } }))
+      setReminderProgress(prev => ({ ...prev, [progressKey]: { current: i + 1, total: uniqueClients.length } }))
     }
 
-    setReminderProgress(prev => { const next = { ...prev }; delete next[day]; return next })
-    alert(`${uniqueClients.length} reminder draft(s) created! Go to Messages page to review and send.`)
+    setReminderProgress(prev => { const next = { ...prev }; delete next[progressKey]; return next })
+    alert(`${uniqueClients.length} ${label} draft(s) created! Go to Messages page to review and send.`)
   }
 
-  async function toggleHoliday(day) {
-    if (holidayDays.has(day)) { setHolidayDays(prev => { const n = new Set(prev); n.delete(day); return n }); return }
-    if (!confirm(`Mark ${day} as a holiday? All sessions will be cancelled.`)) return
-    setHolidayDays(prev => new Set([...prev, day]))
-    await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'holiday', week_key: selectedWeek.key, day }) })
-    const affectedSessions = sessions.filter(s => s.day === day && s.status !== 'Cancelled')
-    const uniqueClients = [...new Set(affectedSessions.map(s => s.client_name))]
-    if (uniqueClients.length > 0) {
-      const defaultMessage = `Hello po! We would like to inform you that our clinic will be closed on ${day}, [DATE]. We apologize for any inconvenience and will reach out to reschedule your appointment. Thank you for your understanding! 😊`
-      const editedMessage = window.prompt(`Holiday message for ${uniqueClients.length} client(s) — edit if needed:`, defaultMessage)
-      if (editedMessage) {
-        for (const clientName of uniqueClients) {
-          const client = clients.find(c => c.name === clientName)
-          await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'create_draft', client_name: clientName, psid: client?.psid || '', type: 'holiday', message: editedMessage }) })
-        }
-        alert(`${uniqueClients.length} message draft(s) created! Go to Messages page to review and send.`)
-      }
-    }
-    fetchSessions(selectedWeek.key)
+  async function sendBulkDrafts(day, key, type, filterFn, message, label) {
+    const progressKey = `${day}:${key}`
+    if (reminderProgress[progressKey]) return
+    const daySessions = sessions.filter(s => s.day === day && filterFn(s))
+    const uniqueClients = [...new Set(daySessions.map(s => s.client_name))]
+    if (uniqueClients.length === 0) return alert(`No matching sessions for ${day}.`)
+    if (!confirm(`Send ${label} draft to ${uniqueClients.length} client${uniqueClients.length !== 1 ? 's' : ''} on ${day}?`)) return
+    await createDraftsForClients(progressKey, type, uniqueClients, message, label)
+  }
+
+  function sendDayReminders(day) {
+    const message = `Good day!\n\nThis is a friendly reminder that you have a scheduled session tomorrow. 😊\n\nKindly react to this message to confirm your attendance. If you need to reschedule, please inform us *before 5PM today* so we can properly coordinate with your therapist and avoid a late cancellation/no-show fee.\n\nWe look forward to see you! 💙`
+    sendBulkDrafts(day, 'session', 'session_reminder', s => s.status === 'Pencil', message, 'session reminder')
+  }
+
+  function sendWeatherSuspension(day) {
+    const dateStr = getFullDateCaps(day)
+    const message = `*ADVISORY: SUSPENSION OF THERAPY SESSIONS*\n\nPlease be advised that all therapy sessions are suspended today, *${dateStr}*, due to the weather conditions. 🌧️\n\nNo worries—sessions will be rescheduled accordingly.\n\nThank you for your understanding, and stay safe! 💛`
+    sendBulkDrafts(day, 'weather', 'weather_suspension', s => s.status === 'Pencil' || s.status === 'Scheduled', message, 'weather suspension')
+  }
+
+  function sendHolidaySuspension(day) {
+    const progressKey = `${day}:holiday`
+    if (reminderProgress[progressKey]) return
+    const daySessions = sessions.filter(s => s.day === day && (s.status === 'Pencil' || s.status === 'Scheduled'))
+    const uniqueClients = [...new Set(daySessions.map(s => s.client_name))]
+    if (uniqueClients.length === 0) return alert(`No matching sessions for ${day}.`)
+
+    const defaultMessage = `*HOLIDAY ADVISORY*\nPlease be advised of our holiday schedule for *[INSERT HOLIDAY]*:\n\n* [DATE] (CLOSED)\n* [DATE] (CLOSED)\n* [DATE] (CLOSED)\n* [DATE] (CLOSED)\n* [DATE] (OPEN)\n\nThe clinic will be taking its break for all clients, therapists and staff to celebrate the holidays with their loved ones. With this, kindly coordinate with us regarding schedules or document requests ahead of the break.\n\nThank you! 💙💛`
+
+    setEditMessageModal({
+      title: `Holiday suspension message for ${uniqueClients.length} client(s) on ${day}`,
+      message: defaultMessage,
+      onConfirm: (finalMessage) => createDraftsForClients(progressKey, 'holiday_suspension', uniqueClients, finalMessage, 'holiday suspension')
+    })
   }
 
   async function toggleTherapistAbsent(therapist, day) {
@@ -513,14 +534,17 @@ export default function SchedulePage() {
       const uniqueClients = [...new Set(affectedSessions.map(s => s.client_name))]
       if (uniqueClients.length > 0) {
         const defaultMessage = `Hello po! We would like to inform you that T. ${therapist} will be unavailable on ${day}, [DATE]. We apologize for the inconvenience and will reach out to reschedule your session. Thank you for your understanding! 😊`
-        const editedMessage = window.prompt(`Absence message for ${uniqueClients.length} client(s) of ${therapist} — edit if needed:`, defaultMessage)
-        if (editedMessage) {
-          for (const clientName of uniqueClients) {
-            const client = clients.find(c => c.name === clientName)
-            await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'create_draft', client_name: clientName, psid: client?.psid || '', type: 'therapist_absent', message: editedMessage }) })
+        setEditMessageModal({
+          title: `Absence message for ${uniqueClients.length} client(s) of ${therapist}`,
+          message: defaultMessage,
+          onConfirm: async (finalMessage) => {
+            for (const clientName of uniqueClients) {
+              const client = clients.find(c => c.name === clientName)
+              await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'create_draft', client_name: clientName, psid: client?.psid || '', type: 'therapist_absent', message: finalMessage }) })
+            }
+            alert(`${uniqueClients.length} message draft(s) created! Go to Messages page to review and send.`)
           }
-          alert(`${uniqueClients.length} message draft(s) created! Go to Messages page to review and send.`)
-        }
+        })
       }
     }
   }
@@ -1313,6 +1337,30 @@ export default function SchedulePage() {
         )
       })()}
 
+      {editMessageModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '1.5rem', width: '480px', maxWidth: '100%' }}>
+            <h3 style={{ margin: '0 0 0.25rem', color: '#0f4c81', fontSize: '15px' }}>{editMessageModal.title}</h3>
+            <p style={{ margin: '0 0 12px', fontSize: '12px', color: '#999' }}>Edit the message below before creating the drafts.</p>
+            <textarea
+              value={editMessageModal.message}
+              onChange={e => setEditMessageModal(prev => ({ ...prev, message: e.target.value }))}
+              rows={6}
+              autoFocus
+              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box', resize: 'vertical', lineHeight: '1.6', marginBottom: '1rem' }}
+            />
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setEditMessageModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={async () => {
+                const { message, onConfirm } = editMessageModal
+                setEditMessageModal(null)
+                await onConfirm(message)
+              }} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500' }}>Send drafts</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {blockModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '380px', maxWidth: '90vw' }}>
@@ -1523,7 +1571,7 @@ export default function SchedulePage() {
                   const outstanding = Number(client?.outstanding_balance || 0)
                   let message = ''
                   if (opt.type === 'session_reminder') {
-                    message = `Good day po!\n\nFriendly reminder that you have a session scheduled tomorrow. Kindly react or reply to this message _by 5PM_ TODAY to confirm.\n\n*Failure to notify us of absence may result in a no show fee.*\n\nThank you! 😊`
+                    message = `Good day!\n\nThis is a friendly reminder that you have a scheduled session tomorrow. 😊\n\nKindly react to this message to confirm your attendance. If you need to reschedule, please inform us *before 5PM today* so we can properly coordinate with your therapist and avoid a late cancellation/no-show fee.\n\nWe look forward to see you! 💙`
                   } else if (opt.type === 'ie_reminder') {
                     message = `Good day po! Confirming your attendance lang po and sharing a few friendly reminders for your initial evaluation on ${remindModal.date} at ${remindModal.time_start}:\n\n1. Only your child will be allowed inside the therapy area; only 1 parent may join if needed and requested by the therapist.\n2. Interview may be via Viber call as needed, coordinated with the Therapist.\n3. Bring ID — building enforces NO ID NO ENTRY.\n4. Only 1 parent/caregiver to bring/fetch child; other companions not allowed entry.\n5. Staying in the reception area is discouraged to prevent crowding. If there's a reason to stay, only 1 parent is allowed there, and please do not wait in the hallway.\n6. Please arrive 10 mins before session ends for feedback.\n7. Cashless payment encouraged; we kindly ask for exact amounts for cash payment if possible.\n8. Parking is NOT for everyone. Please plan ahead.\n9. Please be courteous to building security/staff. We reserve the right to refuse service for those who don't follow protocols.\n\nThank you!`
                   } else if (opt.type === 'outstanding') message = `Hello po! This is a gentle reminder to settle your outstanding balance for ${remindModal.date} session(s). Thank you!`
@@ -1767,7 +1815,6 @@ export default function SchedulePage() {
                     <span style={{ fontWeight: '600', color: isToday ? '#7C5800' : '#0f4c81', fontSize: '14px' }}>
                       {day}
                       {isToday && <span style={{ marginLeft: '6px', fontSize: '11px', padding: '1px 7px', borderRadius: '8px', background: '#fcc200', color: '#7C5800' }}>Today</span>}
-                      {isHoliday && <span style={{ marginLeft: '6px' }}>🏖</span>}
                     </span>
                     {weekDatesMap[day] && <span style={{ fontSize: '12px', color: '#999' }}>{weekDatesMap[day]}</span>}
                     <span style={{ fontSize: '12px', color: '#999' }}>{daySessions.length} sessions</span>
@@ -1775,15 +1822,21 @@ export default function SchedulePage() {
                     {unpaidCount > 0 && <span style={{ fontSize: '11px', padding: '1px 7px', borderRadius: '8px', background: '#FCE5CD', color: '#7F3F00' }}>{unpaidCount} unpaid</span>}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <button onClick={e => { e.stopPropagation(); toggleHoliday(day) }} style={{
-                      padding: '4px 10px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontSize: '11px',
-                      background: isHoliday ? '#888' : '#f0f0f0', color: isHoliday ? 'white' : '#666'
-                    }}>{isHoliday ? '🏖 Holiday' : 'Mark holiday'}</button>
-                    <button onClick={e => { e.stopPropagation(); sendDayReminders(day) }} disabled={!!reminderProgress[day]} style={{
+                    <button onClick={e => { e.stopPropagation(); sendDayReminders(day) }} disabled={!!reminderProgress[`${day}:session`]} style={{
                       padding: '4px 10px', borderRadius: '10px', border: 'none',
-                      cursor: reminderProgress[day] ? 'not-allowed' : 'pointer', fontSize: '11px',
-                      background: reminderProgress[day] ? '#ddd' : '#f0f0f0', color: '#666'
-                    }}>{reminderProgress[day] ? `Drafting ${reminderProgress[day].current} of ${reminderProgress[day].total}...` : '📌 Send session reminder'}</button>
+                      cursor: reminderProgress[`${day}:session`] ? 'not-allowed' : 'pointer', fontSize: '11px',
+                      background: reminderProgress[`${day}:session`] ? '#ddd' : '#f0f0f0', color: '#666'
+                    }}>{reminderProgress[`${day}:session`] ? `Drafting ${reminderProgress[`${day}:session`].current} of ${reminderProgress[`${day}:session`].total}...` : '📌 Send session reminder'}</button>
+                    <button onClick={e => { e.stopPropagation(); sendWeatherSuspension(day) }} disabled={!!reminderProgress[`${day}:weather`]} style={{
+                      padding: '4px 10px', borderRadius: '10px', border: 'none',
+                      cursor: reminderProgress[`${day}:weather`] ? 'not-allowed' : 'pointer', fontSize: '11px',
+                      background: reminderProgress[`${day}:weather`] ? '#ddd' : '#f0f0f0', color: '#666'
+                    }}>{reminderProgress[`${day}:weather`] ? `Drafting ${reminderProgress[`${day}:weather`].current} of ${reminderProgress[`${day}:weather`].total}...` : '🌧️ Weather suspension'}</button>
+                    <button onClick={e => { e.stopPropagation(); sendHolidaySuspension(day) }} disabled={!!reminderProgress[`${day}:holiday`]} style={{
+                      padding: '4px 10px', borderRadius: '10px', border: 'none',
+                      cursor: reminderProgress[`${day}:holiday`] ? 'not-allowed' : 'pointer', fontSize: '11px',
+                      background: reminderProgress[`${day}:holiday`] ? '#ddd' : '#f0f0f0', color: '#666'
+                    }}>{reminderProgress[`${day}:holiday`] ? `Drafting ${reminderProgress[`${day}:holiday`].current} of ${reminderProgress[`${day}:holiday`].total}...` : '🏖️ Holiday suspension'}</button>
                     <span style={{ color: '#999', fontSize: '12px' }}>{isExpanded ? '▼' : '▶'}</span>
                   </div>
                 </div>
