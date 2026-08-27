@@ -122,12 +122,14 @@ async function fetchClients() {
   }
 
   async function clearOld() {
-    if (!confirm('Clear all sent messages older than 3 months?')) return
-    await fetch('/api/messages', {
+    if (!confirm('Delete ALL sent messages? This cannot be undone.')) return
+    const res = await fetch('/api/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'clear_old' })
     })
+    const json = await res.json()
+    if (json.success) alert(`Deleted ${json.deleted} sent message${json.deleted !== 1 ? 's' : ''}.`)
     fetchMessages()
   }
 
@@ -149,16 +151,18 @@ async function fetchClients() {
           <h1 style={{ color: '#0f4c81', margin: '0 0 4px' }}>Messages</h1>
           <p style={{ margin: 0, fontSize: '13px', color: '#999' }}>Review and send messages to clients via Messenger</p>
         </div>
-        <button onClick={() => setComposeModal(true)} style={{
-          background: '#0f4c81', color: 'white', border: 'none',
-          padding: '9px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '500'
-        }}>+ Compose</button>
-        {tab === 'archive' && (
-          <button onClick={clearOld} style={{
-            background: 'white', border: '1px solid #ddd', color: '#999',
-            padding: '8px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px'
-          }}>Clear old messages</button>
-        )}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button onClick={() => setComposeModal(true)} style={{
+            background: '#0f4c81', color: 'white', border: 'none',
+            padding: '9px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '500'
+          }}>+ Compose</button>
+          {tab === 'archive' && (
+            <button onClick={clearOld} style={{
+              background: 'white', border: '1px solid #ddd', color: '#999',
+              padding: '8px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px'
+            }}>Clear all sent messages</button>
+          )}
+        </div>
       </div>
 
       {composeModal && (

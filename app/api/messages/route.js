@@ -121,17 +121,12 @@ export async function POST(request) {
     if (body.action === 'clear_old') {
       const data = await getSheetData('messages')
       const [, ...rows] = data
-      const threeMonthsAgo = new Date()
-      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
       const sheetId = await getSheetId('messages')
 
+      // Deletes every sent message, regardless of date.
       const toDelete = rows
         .map((r, i) => ({ r, i }))
-        .filter(({ r }) => {
-          if (!r || r[5] !== 'sent' || !r[7]) return false
-          const sentDate = new Date(r[7])
-          return sentDate < threeMonthsAgo
-        })
+        .filter(({ r }) => r && r[5] === 'sent')
         .map(({ i }) => i)
         .reverse()
 
