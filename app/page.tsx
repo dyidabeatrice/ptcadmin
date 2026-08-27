@@ -26,7 +26,11 @@ export default function HomePage() {
     const s = Math.floor(secs % 60)
     return `${m}:${s.toString().padStart(2, '0')}`
   }
+
   const [facilityIndex, setFacilityIndex] = useState(0)
+  const [lightbox, setLightbox] = useState<string | null>(null)
+  const [openService, setOpenService] = useState<number | null>(null)
+
   const updateSlideshow = (id: string, index: number) => {
     slideState.current[id] = index
     const slidesEl = document.getElementById(`${id}-slides`)
@@ -35,8 +39,6 @@ export default function HomePage() {
       d.classList.toggle('active', i === index)
     })
   }
-  const [lightbox, setLightbox] = useState<string | null>(null)
-  const [openService, setOpenService] = useState<number | null>(null)
 
   const slideShow = (id: string, dir: number, total: number) => {
     const current = slideState.current[id]
@@ -60,9 +62,7 @@ export default function HomePage() {
     script.charset = 'UTF-8'
     script.src = 'https://cdn.curator.io/published/86f456eb-f528-4228-a9b3-705552a7c017.js'
     document.body.appendChild(script)
-    return () => {
-      document.body.removeChild(script)
-    }
+    return () => { document.body.removeChild(script) }
   }, [])
 
   useEffect(() => {
@@ -83,22 +83,15 @@ export default function HomePage() {
   const toggleMusic = () => {
     const audio = audioRef.current
     if (!audio) return
-    if (musicPlaying) {
-      audio.pause()
-      setMusicPlaying(false)
-    } else {
-      audio.play()
-      setMusicPlaying(true)
-    }
+    if (musicPlaying) { audio.pause(); setMusicPlaying(false) }
+    else { audio.play(); setMusicPlaying(true) }
   }
 
   const handleSongEnded = () => {
     if (musicTrack === 0) {
-      // Advance to song 2 and play it
       setMusicTrack(1)
       setTimeout(() => audioRef.current?.play(), 0)
     } else {
-      // Both songs finished — stop
       setMusicPlaying(false)
       setMusicTrack(0)
     }
@@ -110,7 +103,6 @@ export default function HomePage() {
       setTimeout(() => audioRef.current?.play(), 0)
       setMusicPlaying(true)
     }
-    // Already on song 2 — nothing to skip to
   }
 
   const skipToPrevSong = () => {
@@ -119,7 +111,6 @@ export default function HomePage() {
       setTimeout(() => audioRef.current?.play(), 0)
       setMusicPlaying(true)
     }
-    // Already on song 1 — nothing to go back to
   }
 
   const seekMusic = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,7 +182,7 @@ export default function HomePage() {
 
   return (
     <div style={{ fontFamily: 'sans-serif', background: '#fff', color: '#1a1a2e', minHeight: '100vh' }}>
-        <style>{`
+      <style>{`
         .desktop-links { display: flex !important; }
         .hamburger-btn { display: none !important; }
         @media (max-width: 768px) {
@@ -200,7 +191,21 @@ export default function HomePage() {
           #location > div {
             grid-template-columns: 1fr !important;
             gap: 2rem !important;
+          }
         }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(24px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes heroZoomOut {
+          from { transform: scale(1.08); }
+          to   { transform: scale(1); }
+        }
+        .hero-logo    { animation: fadeUp 0.9s ease 0.2s both; }
+        .hero-title   { animation: fadeUp 0.9s ease 0.5s both; }
+        .hero-tagline { animation: fadeUp 0.9s ease 0.75s both; }
+        .hero-buttons { animation: fadeUp 0.9s ease 1s both; }
+        .hero-bg-zoom { animation: heroZoomOut 2.5s ease-out both; }
       `}</style>
 
       {/* Navbar */}
@@ -213,7 +218,7 @@ export default function HomePage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         height: '70px'
       }}>
-        <img src="/logo.png" alt="Potentials Therapy Center" style={{ background:'transparent', height: '44px', objectFit: 'contain' }} />
+        <img src="/logo.png" alt="Potentials Therapy Center" style={{ background: 'transparent', height: '44px', objectFit: 'contain' }} />
         <div className="desktop-links" style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
           {[
             { label: 'Home', href: '#home' },
@@ -222,14 +227,14 @@ export default function HomePage() {
             { label: 'Book an Appointment', href: 'https://www.facebook.com/potentialstherapycenter' },
           ].map(l => (
             <a key={l.label} href={l.href}
-                target={l.href.startsWith('http') ? '_blank' : undefined}
-                rel={l.href.startsWith('http') ? 'noopener noreferrer' : undefined} 
-                style={{
-                    fontSize: '14px',
-                    color: scrolled ? '#0f4c81' : '#545454',
-                    textDecoration: 'none', fontWeight: '500',
-                    transition: 'opacity 0.2s'
-            }}>{l.label}</a>
+              target={l.href.startsWith('http') ? '_blank' : undefined}
+              rel={l.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+              style={{
+                fontSize: '14px',
+                color: scrolled ? '#0f4c81' : '#545454',
+                textDecoration: 'none', fontWeight: '500',
+                transition: 'opacity 0.2s'
+              }}>{l.label}</a>
           ))}
           <span onClick={() => setShowJoinUs(true)} style={{
             fontSize: '14px',
@@ -247,8 +252,8 @@ export default function HomePage() {
             textDecoration: 'none', fontSize: '13px', fontWeight: '700'
           }}>Staff Login</Link>
         </div>
-        
-        {/* Hamburger Navigation */}
+
+        {/* Hamburger */}
         <button
           className="hamburger-btn"
           onClick={() => {
@@ -267,6 +272,7 @@ export default function HomePage() {
         </button>
       </nav>
 
+      {/* Mobile Menu */}
       <div id="public-mobile-menu" style={{
         display: 'none', position: 'fixed', top: '70px', left: 0, right: 0,
         background: 'white', zIndex: 99, padding: '8px 0',
@@ -292,7 +298,7 @@ export default function HomePage() {
               textDecoration: 'none', fontWeight: '500',
               borderBottom: '1px solid #f0f0f0'
             }}>{l.label}</a>
-        ))}  
+        ))}
         <span onClick={() => {
           setShowJoinUs(true)
           const menu = document.getElementById('public-mobile-menu')
@@ -302,7 +308,7 @@ export default function HomePage() {
           fontSize: '14px', color: '#0f4c81',
           fontWeight: '500', borderBottom: '1px solid #f0f0f0',
           cursor: 'pointer'
-        }}>Join us</span>     
+        }}>Join us</span>
         <div style={{ padding: '12px 24px 0' }}>
           <a href="/therapist/login" style={{
             display: 'block', padding: '10px 20px', borderRadius: '6px',
@@ -320,7 +326,7 @@ export default function HomePage() {
       </div>
 
       {/* Hero */}
-      <section id="home" style={{
+      <section id="home" className="hero-bg-zoom" style={{
         minHeight: '100vh',
         backgroundImage: 'url("/hero.png")',
         backgroundSize: 'cover',
@@ -335,61 +341,56 @@ export default function HomePage() {
         position: 'relative',
         overflow: 'hidden'
       }}>
+        <img
+          src="/logobig.png"
+          alt="Potentials Therapy Center"
+          className="hero-logo"
+          style={{ width: '300px', objectFit: 'contain', marginBottom: '1.5rem' }}
+        />
 
-        <img src="/logobig.png" alt="Potentials Therapy Center" 
-            style={{ width: '300px', objectFit: 'contain', marginBottom: '1.5rem'
-        }} />
-
-        <h1 style={{
+        <h1 className="hero-title" style={{
           fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: '#545454',
           fontWeight: '800', margin: '0 0 1rem', lineHeight: '1.2',
           maxWidth: '700px', fontFamily: "'Nunito', sans-serif"
         }}>Potentials Therapy Center</h1>
 
-        <p style={{
+        <p className="hero-tagline" style={{
           fontSize: 'clamp(1rem, 2vw, 1.2rem)', color: '#545454',
           maxWidth: '560px', lineHeight: '1.7', margin: '0 0 2.5rem'
         }}>
-          🔹 unlocking your child’s best 🔸
+          🔹 unlocking your child's best 🔸
         </p>
 
-        <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
-        <a target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/potentialstherapycenter" style={{
-          padding: '14px 32px', borderRadius: '40px',
-          background: '#fcc200', color: '#0f4c81',
-          textDecoration: 'none', fontSize: '15px', fontWeight: '700',
-          fontFamily: "'Nunito', sans-serif"
-        }}>Book an Appointment</a>
-        <a href="#services" style={{
-          padding: '14px 32px', borderRadius: '40px',
-          background: '#0f4c81', color: '#fff',
-          textDecoration: 'none', fontSize: '15px', fontWeight: '600',
-          fontFamily: "'Nunito', sans-serif"
-        }}>Our Services</a>
-        <a href="#location" style={{
-          padding: '14px 32px', borderRadius: '40px',
-          background: 'transparent', color: '#545454',
-          textDecoration: 'none', fontSize: '15px', fontWeight: '600',
-          border: '1.5px solid #545454',
-          fontFamily: "'Nunito', sans-serif"
-        }}>Find Us</a>
+        <div className="hero-buttons" style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <a target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/potentialstherapycenter" style={{
+            padding: '14px 32px', borderRadius: '40px',
+            background: '#fcc200', color: '#0f4c81',
+            textDecoration: 'none', fontSize: '15px', fontWeight: '700',
+            fontFamily: "'Nunito', sans-serif"
+          }}>Book an Appointment</a>
+          <a href="#services" style={{
+            padding: '14px 32px', borderRadius: '40px',
+            background: '#0f4c81', color: '#fff',
+            textDecoration: 'none', fontSize: '15px', fontWeight: '600',
+            fontFamily: "'Nunito', sans-serif"
+          }}>Our Services</a>
+          <a href="#location" style={{
+            padding: '14px 32px', borderRadius: '40px',
+            background: 'transparent', color: '#545454',
+            textDecoration: 'none', fontSize: '15px', fontWeight: '600',
+            border: '1.5px solid #545454',
+            fontFamily: "'Nunito', sans-serif"
+          }}>Find Us</a>
         </div>
       </section>
 
       {/* Intro & Pictures */}
       <section id="intro" style={{ padding: '6rem 2rem', background: '#e9ebee' }}>
         <style>{`
-          .slideshow {
-              position: relative;
-              border-radius: 0px;
-              overflow: hidden;
-              width: 100%;
-              max-height: 380px;
-              aspect-ratio: 16/9;
-            }
+          .slideshow { position: relative; border-radius: 0px; overflow: hidden; width: 100%; max-height: 380px; aspect-ratio: 16/9; }
           .slides { display: flex; transition: transform 0.4s cubic-bezier(0.4,0,0.2,1); height: 100%; }
           .slide { flex-shrink: 0; width: 100%; height: 100%; }
-          .slide img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 0;}
+          .slide img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 0; }
           .slide-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.9); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, transform 0.2s; z-index: 2; }
           .slide-arrow:hover { background: #fcc200; transform: translateY(-50%) scale(1.08); }
           .slide-arrow-left { left: 12px; }
@@ -403,28 +404,10 @@ export default function HomePage() {
           @media (hover: hover) { .ab-photo:hover { width: 360px; } }
           .ab-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
           @media (hover: hover) { .ab-photo:hover img { transform: scale(1.05); } }
-          .team-track {
-            display: flex;
-            gap: 10px;
-            width: max-content;
-            animation: teamScroll 18s linear infinite;
-          }
-          .team-track:hover {
-            animation-play-state: paused;
-          }
-          .team-photo {
-            flex-shrink: 0;
-            width: 280px;
-            height: 200px;
-            border-radius: 0px;
-            overflow: hidden;
-          }
-          .team-photo img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-          }
+          .team-track { display: flex; gap: 10px; width: max-content; animation: teamScroll 18s linear infinite; }
+          .team-track:hover { animation-play-state: paused; }
+          .team-photo { flex-shrink: 0; width: 280px; height: 200px; border-radius: 0px; overflow: hidden; }
+          .team-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
           @keyframes teamScroll {
             0%   { transform: translateX(0); }
             100% { transform: translateX(-50%); }
@@ -456,15 +439,15 @@ export default function HomePage() {
               {(() => {
                 const FACILITY_IMAGES = ['/clinic-new1.jpeg', '/clinic-new2.jpg', '/clinic-new3.jpg', '/clinic-new4.jpg', '/clinic-new5.jpg', '/clinic-new6.jpg', '/clinic-new7.jpg']
                 return [0, 1, 2, 3].map(offset => FACILITY_IMAGES[(facilityIndex + offset) % FACILITY_IMAGES.length])
-              })()
-                .map((imgSrc, i) => (
-                  <div key={i} onClick={() => setLightbox(imgSrc)}
-                    style={{ height: '220px', overflow: 'hidden', cursor: 'zoom-in' }}>
-                    <img src={imgSrc} alt="Our Facility" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s ease' }}
-                      onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-                      onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} />
-                  </div>
-                ))}
+              })().map((imgSrc, i) => (
+                <div key={i} onClick={() => setLightbox(imgSrc)}
+                  style={{ height: '220px', overflow: 'hidden', cursor: 'zoom-in' }}>
+                  <img src={imgSrc} alt="Our Facility"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s ease' }}
+                    onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                    onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'} />
+                </div>
+              ))}
             </div>
             <button onClick={() => setFacilityIndex(i => (i - 1 + 7) % 7)} style={{
               position: 'absolute', left: '-16px', top: '50%', transform: 'translateY(-50%)',
@@ -480,34 +463,37 @@ export default function HomePage() {
             }}>›</button>
           </div>
           {lightbox && (
-            <div onClick={() => setLightbox(null)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}>
+            <div onClick={() => setLightbox(null)} style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              background: 'rgba(0,0,0,0.85)', zIndex: 1000,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out'
+            }}>
               <img src={lightbox} alt="Facility" style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '8px' }} />
             </div>
           )}
-</div>
-
-      {/* Our Team — Auto Scroll Strip */}
-      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '14px' }}>
-          <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
-          <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>Our Team</div>
-          <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
         </div>
-        <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '0px' }}>
-          <div className="team-track">
-            {/* Duplicate photos for seamless loop */}
-            {['/staff1.jpg', '/staff2.jpg', '/staff3.jpg', '/staff1.jpg', '/staff2.jpg', '/staff3.jpg'].map((src, i) => (
-              <div key={i} className="team-photo">
-                <img src={src} alt="Our Team" />
-              </div>
-            ))}
+
+        {/* Our Team */}
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '14px' }}>
+            <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
+            <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>Our Team</div>
+            <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
           </div>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '60px', height: '100%', background: 'linear-gradient(to right, #e9ebee, transparent)', pointerEvents: 'none', zIndex: 1 }} />
-          <div style={{ position: 'absolute', top: 0, right: 0, width: '60px', height: '100%', background: 'linear-gradient(to left, #e9ebee, transparent)', pointerEvents: 'none', zIndex: 1 }} />
+          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '0px' }}>
+            <div className="team-track">
+              {['/staff1.jpg', '/staff2.jpg', '/staff3.jpg', '/staff1.jpg', '/staff2.jpg', '/staff3.jpg'].map((src, i) => (
+                <div key={i} className="team-photo">
+                  <img src={src} alt="Our Team" />
+                </div>
+              ))}
+            </div>
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '60px', height: '100%', background: 'linear-gradient(to right, #e9ebee, transparent)', pointerEvents: 'none', zIndex: 1 }} />
+            <div style={{ position: 'absolute', top: 0, right: 0, width: '60px', height: '100%', background: 'linear-gradient(to left, #e9ebee, transparent)', pointerEvents: 'none', zIndex: 1 }} />
+          </div>
         </div>
-      </div>
 
-      {/* Social Media Plugins */}
+        {/* Social Media / Curator */}
         <div style={{ maxWidth: '1100px', margin: '2.5rem auto 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '14px' }}>
             <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
@@ -525,65 +511,19 @@ export default function HomePage() {
       {/* Services */}
       <section id="services" style={{ padding: '6rem 2rem', background: '#f8f9fb' }}>
         <style>{`
-          .services-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 14px;
-          }
-          .service-card {
-            background: #fff;
-            border-radius: 14px;
-            border: 1px solid #e8edf5;
-            cursor: pointer;
-            overflow: hidden;
-            transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
-          }
-          .service-card.open {
-            border-color: #fcc200;
-            background: #fffbec;
-            box-shadow: 0 8px 24px rgba(252,194,0,0.15);
-            grid-column: span 3;
-          }
-          .service-card-top {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 1.1rem 1.25rem;
-          }
-          .service-card-icon {
-            width: 46px; height: 46px; border-radius: 12px;
-            background: #f0f4fa; display: flex;
-            align-items: center; justify-content: center;
-            font-size: 22px; flex-shrink: 0;
-            transition: background 0.25s;
-          }
+          .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+          .service-card { background: #fff; border-radius: 14px; border: 1px solid #e8edf5; cursor: pointer; overflow: hidden; transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease; }
+          .service-card.open { border-color: #fcc200; background: #fffbec; box-shadow: 0 8px 24px rgba(252,194,0,0.15); grid-column: span 3; }
+          .service-card-top { display: flex; align-items: center; gap: 12px; padding: 1.1rem 1.25rem; }
+          .service-card-icon { width: 46px; height: 46px; border-radius: 12px; background: #f0f4fa; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; transition: background 0.25s; }
           .service-card.open .service-card-icon { background: #fef3c7; }
-          .service-card-name {
-            font-family: 'Nunito', sans-serif;
-            font-size: 16px; font-weight: 700;
-            color: #0f4c81; flex: 1; line-height: 1.3;
-          }
-          .service-card-chevron {
-            font-size: 11px; color: #ccc;
-            transition: transform 0.25s, color 0.25s;
-            flex-shrink: 0;
-          }
+          .service-card-name { font-family: 'Nunito', sans-serif; font-size: 16px; font-weight: 700; color: #0f4c81; flex: 1; line-height: 1.3; }
+          .service-card-chevron { font-size: 11px; color: #ccc; transition: transform 0.25s, color 0.25s; flex-shrink: 0; }
           .service-card.open .service-card-chevron { transform: rotate(180deg); color: #fcc200; }
           .service-card-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
           .service-card.open .service-card-body { max-height: 600px; }
-          .service-card-body-inner {
-            padding: 1rem 1.25rem 1.25rem;
-            border-top: 1px solid rgba(252,194,0,0.2);
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 1.25rem;
-          }
-          .service-body-label {
-            font-size: 10px; letter-spacing: 0.12em;
-            text-transform: uppercase; color: #fcc200;
-            font-weight: 700; margin-bottom: 6px;
-            font-family: 'Nunito', sans-serif;
-          }
+          .service-card-body-inner { padding: 1rem 1.25rem 1.25rem; border-top: 1px solid rgba(252,194,0,0.2); display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; }
+          .service-body-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #fcc200; font-weight: 700; margin-bottom: 6px; font-family: 'Nunito', sans-serif; }
           .service-body-text { font-size: 13px; color: #777; line-height: 1.7; }
           @media (max-width: 768px) {
             .services-grid { grid-template-columns: 1fr; }
@@ -639,7 +579,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* How to Avail Services */}
+      {/* How to Avail */}
       <section id="how-to-avail" style={{ padding: '6rem 2rem', background: '#e9ebee' }}>
         <style>{`
           .stepper-row { display: flex; align-items: flex-start; }
@@ -667,14 +607,8 @@ export default function HomePage() {
           .mob-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
           .mob-item.active .mob-body { max-height: 150px; }
           .mob-body-inner { padding: 0 16px 14px 62px; font-size: 13px; color: #888; line-height: 1.65; }
-          @media (max-width: 768px) {
-            .stepper-desktop { display: none !important; }
-            .stepper-mobile { display: block !important; }
-          }
-          @media (min-width: 769px) {
-            .stepper-desktop { display: block !important; }
-            .stepper-mobile { display: none !important; }
-          }
+          @media (max-width: 768px) { .stepper-desktop { display: none !important; } .stepper-mobile { display: block !important; } }
+          @media (min-width: 769px) { .stepper-desktop { display: block !important; } .stepper-mobile { display: none !important; } }
         `}</style>
 
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
@@ -689,7 +623,7 @@ export default function HomePage() {
 
           {/* Desktop Stepper */}
           <div className="stepper-desktop">
-            <div className="stepper-row" id="stepper">
+            <div className="stepper-row">
               {steps.map((s, i) => (
                 <div key={i} className={`step${i < stepIndex ? ' done' : i === stepIndex ? ' active' : ''}`} onClick={() => setStepIndex(i)}>
                   <div className="step-top">
@@ -790,6 +724,7 @@ export default function HomePage() {
             ))}
           </div>
 
+          {/* Music Player */}
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: '12px',
@@ -817,10 +752,7 @@ export default function HomePage() {
                   <span style={{ fontSize: '11px', color: '#999' }}>{formatTime(musicCurrentTime)} / {formatTime(musicDuration)}</span>
                 </div>
                 <input
-                  type="range"
-                  min={0}
-                  max={musicDuration || 0}
-                  value={musicCurrentTime}
+                  type="range" min={0} max={musicDuration || 0} value={musicCurrentTime}
                   onChange={seekMusic}
                   style={{ width: '100%', accentColor: '#fcc200', height: '4px', cursor: 'pointer' }}
                 />
@@ -849,7 +781,6 @@ export default function HomePage() {
       {/* Location */}
       <section id="location" style={{ padding: '6rem 2rem', background: '#fff' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }}>
-          
           <div>
             <div style={{ fontSize: '11px', letterSpacing: '0.18em', color: '#fcc200', fontWeight: '600', marginBottom: '10px', textTransform: 'uppercase' }}>
               Where to find us
@@ -857,7 +788,6 @@ export default function HomePage() {
             <h2 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 2rem', fontWeight: '800' }}>
               Visit Our Clinic
             </h2>
-
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
               {/* Address */}
@@ -929,11 +859,10 @@ export default function HomePage() {
               loading="lazy"
             />
           </div>
-
         </div>
       </section>
 
-      {/* Join Us Pop up */}
+      {/* Join Us Popup */}
       {showJoinUs && (
         <div onClick={() => setShowJoinUs(false)} style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,

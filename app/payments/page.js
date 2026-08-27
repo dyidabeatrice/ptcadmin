@@ -1048,6 +1048,45 @@ async function openSettle(session) {
   )
 }
 
+function PendingPaymentNotes({ payment, onSaved }) {
+  const [editing, setEditing] = useState(false)
+  const [notesForm, setNotesForm] = useState(payment.notes || '')
+  const [saving, setSaving] = useState(false)
+
+  async function saveNotes() {
+    setSaving(true)
+    await fetch('/api/payments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_pending_notes', id: payment.id, notes: notesForm })
+    })
+    setEditing(false)
+    setSaving(false)
+    onSaved()
+  }
+
+  return (
+    <div style={{ marginTop: 'auto', padding: '10px 16px', fontSize: '12px', color: '#666', borderTop: '1px solid #f0f0f0', background: '#fafafa' }}>
+      {!editing ? (
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', flexWrap: 'wrap' }}>
+          <span style={{ color: '#999', flexShrink: 0 }}>Notes:</span>
+          <span style={{ flex: 1, minWidth: '80px' }}>{payment.notes || '—'}</span>
+          <button onClick={() => setEditing(true)} style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '4px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', color: '#666', flexShrink: 0 }}>✎ Edit</button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <textarea value={notesForm} onChange={e => setNotesForm(e.target.value)}
+            rows={2} style={{ fontSize: '12px', padding: '6px', borderRadius: '6px', border: '1px solid #ddd', resize: 'vertical', width: '100%', boxSizing: 'border-box' }} />
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button onClick={saveNotes} disabled={saving} style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer' }}>{saving ? 'Saving...' : 'Save'}</button>
+            <button onClick={() => { setEditing(false); setNotesForm(payment.notes || '') }} style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function CreditHistory({ clientName }) {
   const [latest, setLatest] = useState(null)
   const [editingNotes, setEditingNotes] = useState(false)
@@ -1886,9 +1925,9 @@ export default function PaymentsPage() {
                   No pending payment screenshots — they'll appear here when clients send them via Messenger.
                 </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '14px' }}>
                   {pendingPayments.filter(p => p.status === 'pending').map((p, i) => (
-                    <div key={i} style={{ background: 'white', borderRadius: '12px', border: '1px solid #EF9F27', overflow: 'hidden' }}>
+                    <div key={i} style={{ background: 'white', borderRadius: '12px', border: '1px solid #EF9F27', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                       <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#FAEEDA' }}>
                         <div>
                           <span style={{ fontWeight: '600', color: '#633806', fontSize: '14px' }}>{p.client_name || '❓ Unknown client'}</span>
@@ -1909,6 +1948,7 @@ export default function PaymentsPage() {
                           <img src={p.image_url} alt="Payment screenshot" style={{ maxWidth: '200px', maxHeight: '150px', objectFit: 'contain', borderRadius: '6px', border: '1px solid #e0e0e0', cursor: 'zoom-in' }} onClick={() => setZoomedImage(p.image_url)} />
                         </div>
                       )}
+                      <PendingPaymentNotes payment={p} onSaved={fetchPendingPayments} />
                     </div>
                   ))}
                 </div>

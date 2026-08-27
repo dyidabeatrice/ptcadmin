@@ -55,7 +55,7 @@ export async function GET(request) {
           id: row[0], psid: row[1], client_name: row[2],
           drive_file_id: row[3], image_url: row[4],
           received_at: row[5], status: row[6],
-          sender_name: row[7] || ''
+          sender_name: row[7] || '', notes: row[8] || ''
         }))
       return Response.json({ success: true, data: pending })
     }
@@ -135,6 +135,20 @@ export async function PATCH(request) {
         range: `payments!G${rowIndex + 2}`,
         valueInputOption: 'RAW',
         requestBody: { values: [[body.session_type]] }
+      })
+      return Response.json({ success: true })
+    }
+
+    if (body.action === 'update_pending_notes') {
+      const data = await getSheetData('pending_payments')
+      const [, ...rows] = data
+      const rowIndex = rows.findIndex(r => r && r[0] === body.id)
+      if (rowIndex === -1) return Response.json({ success: false, error: 'Not found' })
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `pending_payments!I${rowIndex + 2}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[body.notes || '']] }
       })
       return Response.json({ success: true })
     }
