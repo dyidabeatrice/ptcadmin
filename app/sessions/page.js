@@ -154,6 +154,11 @@ export default function SchedulePage() {
   const [savingMaster, setSavingMaster] = useState(false)
   const [blockModal, setBlockModal] = useState(null)
   const [blockDuration, setBlockDuration] = useState(60)
+  const [archiveModal, setArchiveModal] = useState(false)
+  const [archiveWeeks, setArchiveWeeks] = useState([])
+  const [archiveChecking, setArchiveChecking] = useState(false)
+  const [archiveProgress, setArchiveProgress] = useState(null) // { current, total, currentWeek }
+  const [archiveResults, setArchiveResults] = useState([]) // [{ week, success, error? }]
   const [blockType, setBlockType] = useState('blocked')
   const [blockLabel, setBlockLabel] = useState('')
   const [savingBlock, setSavingBlock] = useState(false)
@@ -351,6 +356,41 @@ export default function SchedulePage() {
     setFreeSlotMode(false)
     setSessions([])
     await fetchSessions(week.key)
+  }
+
+  async function openArchiveModal() {
+    setArchiveModal(true)
+    setArchiveResults([])
+    setArchiveChecking(true)
+    const json = await fetchJSON('/api/archive')
+    if (json.success) setArchiveWeeks(json.weeks)
+    else { alert('Could not check for archivable weeks: ' + json.error); setArchiveWeeks([]) }
+    setArchiveChecking(false)
+  }
+
+  async function runArchive() {
+    if (archiveWeeks.length === 0) return
+    if (!confirm(`Archive ${archiveWeeks.length} week(s)? Each will be copied to the Archive spreadsheet, then removed from here. This cannot be undone from within the app.`)) return
+
+    const results = []
+    for (let i = 0; i < archiveWeeks.length; i++) {
+      const weekKey = archiveWeeks[i]
+      setArchiveProgress({ current: i + 1, total: archiveWeeks.length, currentWeek: weekKey })
+      try {
+        const res = await fetch('/api/archive', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ week_key: weekKey })
+        })
+        const json = await res.json()
+        results.push({ week: weekKey, success: json.success, error: json.error })
+      } catch (err) {
+        results.push({ week: weekKey, success: false, error: err.message })
+      }
+      setArchiveResults([...results])
+    }
+    setArchiveProgress(null)
+    setArchiveWeeks(prev => prev.filter(w => !results.find(r => r.week === w && r.success)))
   }
 
   async function updateStatus(session, status) {
@@ -1233,7 +1273,7 @@ export default function SchedulePage() {
             style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '13px', cursor: 'pointer' }}>
             {weeks.map(w => <option key={w.key} value={w.key}>{w.label}</option>)}
           </select>
-          <button onClick={() => setAddModal(true)} style={{ padding: '8px 16px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500' }}>+ Add one-off session</button>
+          <button onClick={() => setAddModal(true)} style={{ padding: '7px 14px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', fontSize: '12px', display: 'inline-flex', alignItems: 'center', lineHeight: '1' }}>+ Add one-off session</button>
           <button onClick={async () => {
             const res = await fetch('/api/weeks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'generate_next' }) })
             const json = await res.json()
@@ -1244,8 +1284,11 @@ export default function SchedulePage() {
               const weeksJson = await weeksRes.json()
               if (weeksJson.success) setWeeks(weeksJson.data)
             }
-          }} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #0f4c81', background: '#E6F1FB', color: '#0f4c81', cursor: 'pointer', fontWeight: '500', fontSize: '13px' }}>
+          }} style={{ padding: '7px 14px', borderRadius: '6px', border: '1px solid #0f4c81', background: '#E6F1FB', color: '#0f4c81', cursor: 'pointer', fontWeight: '500', fontSize: '12px', display: 'inline-flex', alignItems: 'center', lineHeight: '1' }}>
             + Generate next week
+          </button>
+            <button onClick={openArchiveModal} style={{ padding: '7px 14px', borderRadius: '6px', border: '1px solid #999', background: 'white', color: '#666', cursor: 'pointer', fontWeight: '500', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px', lineHeight: '1' }}>
+            <span style={{ fontSize: '13px' }}>📦</span> Archive old weeks
           </button>
         </div>
       </div>
@@ -1422,6 +1465,64 @@ export default function SchedulePage() {
                 {savingBlock ? 'Saving...' : 'Save'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {archiveModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '480px', maxWidth: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Archive old weeks</h3>
+            <p style={{ margin: '0 0 1.25rem', fontSize: '13px', color: '#999' }}>
+              Weeks older than 18 months, copied to a separate Archive spreadsheet and removed from here to keep this file fast.
+            </p>
+
+            {archiveChecking ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>Checking...</div>
+            ) : archiveWeeks.length === 0 && archiveResults.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#1D9E75', background: '#EAF3DE', borderRadius: '10px' }}>
+                Nothing to archive right now — no weeks older than 18 months.
+              </div>
+            ) : (
+              <>
+                {archiveWeeks.length > 0 && (
+                  <div style={{ marginBottom: '1rem', fontSize: '13px', color: '#666' }}>
+                    <strong>{archiveWeeks.length}</strong> week{archiveWeeks.length !== 1 ? 's' : ''} ready to archive.
+                  </div>
+                )}
+
+                {archiveProgress && (
+                  <div style={{ marginBottom: '1rem', padding: '10px 12px', background: '#E6F1FB', borderRadius: '8px', fontSize: '13px', color: '#0C447C' }}>
+                    Archiving {archiveProgress.current} of {archiveProgress.total} — {archiveProgress.currentWeek}...
+                  </div>
+                )}
+
+                {archiveResults.length > 0 && (
+                  <div style={{ marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '200px', overflowY: 'auto' }}>
+                    {archiveResults.map((r, i) => (
+                      <div key={i} style={{ fontSize: '12px', padding: '5px 10px', borderRadius: '6px', background: r.success ? '#EAF3DE' : '#FCEBEB', color: r.success ? '#27500A' : '#791F1F' }}>
+                        {r.success ? '✓' : '✕'} {r.week}{r.error ? ` — ${r.error}` : ''}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {archiveWeeks.length > 0 && (
+                  <button onClick={runArchive} disabled={!!archiveProgress} style={{
+                    width: '100%', padding: '10px', borderRadius: '8px', border: 'none',
+                    background: '#0f4c81', color: 'white', cursor: archiveProgress ? 'not-allowed' : 'pointer',
+                    fontWeight: '500', opacity: archiveProgress ? 0.6 : 1, marginBottom: '10px'
+                  }}>
+                    {archiveProgress ? 'Archiving...' : `Archive ${archiveWeeks.length} week${archiveWeeks.length !== 1 ? 's' : ''}`}
+                  </button>
+                )}
+              </>
+            )}
+
+            <button onClick={() => setArchiveModal(false)} disabled={!!archiveProgress} style={{
+              width: '100%', padding: '9px', borderRadius: '8px', border: '1px solid #ddd', background: 'white',
+              color: '#666', cursor: archiveProgress ? 'not-allowed' : 'pointer'
+            }}>Close</button>
           </div>
         </div>
       )}

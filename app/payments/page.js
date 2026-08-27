@@ -1267,12 +1267,22 @@ function SummaryColumn({ title, therapistNames, ledger, monthKey, bg, headerBg }
   )
 }
 
-function MonthlySummaryTab({ ledger, ledgerTherapists, therapistSpecialtyMap, summaryYear, setSummaryYear, summaryQuarter, setSummaryQuarter }) {
+function MonthlySummaryTab({ ledger, ledgerTherapists, therapistSpecialtyMap, summaryYear, setSummaryYear, summaryQuarter, setSummaryQuarter, loadedMonths, loadingMonths, onLoadMonth }) {
   const otNames = ledgerTherapists.filter(n => getBucket(n, therapistSpecialtyMap) === 'OT')
   const stNames = ledgerTherapists.filter(n => getBucket(n, therapistSpecialtyMap) === 'ST')
   const otherNames = ledgerTherapists.filter(n => getBucket(n, therapistSpecialtyMap) === 'other')
 
   const months = QUARTERS[summaryQuarter]
+  const monthKeysNeeded = months.map(m => `${summaryYear}-${m}`)
+
+  useEffect(() => {
+    monthKeysNeeded.forEach(mk => {
+      if (!loadedMonths.has(mk) && onLoadMonth) onLoadMonth(mk)
+    })
+  }, [summaryYear, summaryQuarter])
+
+  const anyLoading = monthKeysNeeded.some(mk => loadingMonths.has(mk))
+  const allLoaded = monthKeysNeeded.every(mk => loadedMonths.has(mk))
 
   return (
     <div>
@@ -1287,7 +1297,11 @@ function MonthlySummaryTab({ ledger, ledgerTherapists, therapistSpecialtyMap, su
         </select>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+      {anyLoading && (
+        <div style={{ textAlign: 'center', padding: '1rem', color: '#999', fontSize: '13px' }}>Loading month data…</div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', opacity: allLoaded ? 1 : 0.5 }}>
         {months.map(m => {
           const monthKey = `${summaryYear}-${m}`
           return (
@@ -1959,6 +1973,9 @@ export default function PaymentsPage() {
               setSummaryYear={setSummaryYear}
               summaryQuarter={summaryQuarter}
               setSummaryQuarter={setSummaryQuarter}
+              loadedMonths={loadedMonths}
+              loadingMonths={loadingMonths}
+              onLoadMonth={loadMonth}
             />
           )}
 
