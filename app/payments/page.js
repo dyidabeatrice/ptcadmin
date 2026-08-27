@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { ALL_SESSION_TYPE_OPTIONS } from '../lib/sessionTypes'
+import { fetchJSON } from '../lib/fetchJSON'
 
 const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
 
@@ -327,7 +328,7 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
   )
 }
 
-function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases = [], onRelease }) {
+function LedgerTab({ therapistData, therapistName, onPaid, allMonths = [], loadedMonths = new Set(), loadingMonths = new Set(), onLoadMonth, clients, pfReleases = [], onRelease }) {
   const currentMonthKey = (() => {
     const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -353,8 +354,20 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
     return sessions.filter(s => getPeriod(s.date) === period)
   }
 
-  const months = Object.entries(therapistData || {})
-    .sort(([a], [b]) => b.localeCompare(a))
+  function formatMonthLabel(monthKey) {
+    const [y, m] = monthKey.split('-').map(Number)
+    return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  }
+
+  // Every known month (from allMonths), merged with whichever ones actually
+  // have loaded session data for this therapist right now.
+  const loadedMonthEntries = Object.entries(therapistData || {})
+  const allMonthKeys = [...new Set([...allMonths, ...loadedMonthEntries.map(([k]) => k)])].sort((a, b) => b.localeCompare(a))
+
+  const months = allMonthKeys.map(key => {
+    const existing = loadedMonthEntries.find(([k]) => k === key)
+    return [key, existing ? existing[1] : { label: formatMonthLabel(key), dates: {}, __unloaded: !loadedMonths.has(key) }]
+  })
 
   useEffect(() => {
     const initial = {}
@@ -364,7 +377,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
     setCollapsed(initial)
   }, [therapistName])
 
-  if (!therapistData || months.length === 0) {
+  if (months.length === 0) {
     return (
       <div style={{ textAlign: 'center', padding: '3rem', color: '#999', background: '#f8f9fa', borderRadius: '12px' }}>
         No sessions recorded for {therapistName} yet.
@@ -422,22 +435,27 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
         </div>
       )}
       {months.map(([monthKey, monthData]) => {
+        const isUnloaded = monthData.__unloaded
+        const isLoadingThisMonth = loadingMonths.has(monthKey)
         const allSessions = Object.values(monthData.dates).flat()
         const unpaidCount = allSessions.filter(s => !s.is_paid).length
         const isCollapsed = collapsed[monthKey]
 
-        // Date subtotals
         const sortedDates = Object.entries(monthData.dates)
           .sort(([a], [b]) => parseDate(a) - parseDate(b))
 
         return (
           <div key={monthKey} style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', overflow: 'hidden' }}>
             {/* Month header */}
-            <div onClick={() => setCollapsed(prev => ({ ...prev, [monthKey]: !prev[monthKey] }))}
+            <div onClick={() => {
+              const willExpand = isCollapsed
+              setCollapsed(prev => ({ ...prev, [monthKey]: !prev[monthKey] }))
+              if (willExpand && isUnloaded && onLoadMonth) onLoadMonth(monthKey)
+            }}
               style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', background: '#f8f9fa', userSelect: 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontWeight: '600', color: '#0f4c81', fontSize: '14px' }}>{monthData.label}</span>
-                {unpaidCount > 0 && (
+                {!isUnloaded && unpaidCount > 0 && (
                   <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#FFE4EF', color: '#791F1F', fontWeight: '500' }}>
                     {unpaidCount} unpaid
                   </span>
@@ -446,7 +464,13 @@ function LedgerTab({ therapistData, therapistName, onPaid, clients, pfReleases =
               <span style={{ color: '#999', fontSize: '12px' }}>{isCollapsed ? '▶' : '▼'}</span>
             </div>
 
-            {!isCollapsed && (
+            {!isCollapsed && isUnloaded && (
+              <div style={{ padding: '2rem', textAlign: 'center', color: '#999', fontSize: '13px' }}>
+                {isLoadingThisMonth ? 'Loading…' : 'Click to load this month'}
+              </div>
+            )}
+
+            {!isCollapsed && !isUnloaded && (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
@@ -673,6 +697,7 @@ function SettleModal({ payModal, payForm, setPayForm, clientCredit, creditNotes,
 function OutstandingByDayTab({ clients, onSettle }) {
   const [unpaidSessions, setUnpaidSessions] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [collapsedDays, setCollapsedDays] = useState({})
   const [creditTransactions, setCreditTransactions] = useState([])
   const [payModal, setPayModal] = useState(null)
@@ -685,8 +710,8 @@ function OutstandingByDayTab({ clients, onSettle }) {
 
   async function fetchOutstanding(showLoading = false) {
     if (showLoading) setLoading(true)
-    const res = await fetch('/api/payments?action=outstanding')
-    const json = await res.json()
+    setLoadError(false)
+    const json = await fetchJSON('/api/payments?action=outstanding')
     if (json.success) {
       setUnpaidSessions(json.data)
       setCollapsedDays(prev => {
@@ -695,6 +720,8 @@ function OutstandingByDayTab({ clients, onSettle }) {
         json.data.forEach(s => { if (s.date) dates[s.date] = true })
         return dates
       })
+    } else {
+      setLoadError(true)
     }
     setLoading(false)
   }
@@ -773,6 +800,10 @@ function OutstandingByDayTab({ clients, onSettle }) {
       />
       {loading ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading outstanding sessions...</div>
+      ) : loadError ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#791F1F', background: '#FCEBEB', borderRadius: '12px' }}>
+          Couldn't load outstanding balances. <button onClick={() => fetchOutstanding(true)} style={{ background: 'none', border: 'none', color: '#0f4c81', textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit' }}>Tap to retry</button>
+        </div>
       ) : unpaidSessions.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#1D9E75', background: '#EAF3DE', borderRadius: '12px' }}>All caught up — no outstanding balances!</div>
       ) : (
@@ -884,6 +915,7 @@ function OutstandingByDayTab({ clients, onSettle }) {
 function OutstandingTab({ clients, onSettle }) {
   const [unpaidSessions, setUnpaidSessions] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [payModal, setPayModal] = useState(null)
   const [payForm, setPayForm] = useState({ mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0 })
   const [clientCredit, setClientCredit] = useState(0)
@@ -894,9 +926,10 @@ function OutstandingTab({ clients, onSettle }) {
 
   async function fetchOutstanding(showLoading = false) {
     if (showLoading) setLoading(true)
-    const res = await fetch('/api/payments?action=outstanding')
-    const json = await res.json()
+    setLoadError(false)
+    const json = await fetchJSON('/api/payments?action=outstanding')
     if (json.success) setUnpaidSessions(json.data)
+    else setLoadError(true)
     setLoading(false)
   }
 
@@ -976,6 +1009,10 @@ async function openSettle(session) {
       />
       {loading ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading outstanding sessions...</div>
+      ) : loadError ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#791F1F', background: '#FCEBEB', borderRadius: '12px' }}>
+          Couldn't load outstanding balances. <button onClick={() => fetchOutstanding(true)} style={{ background: 'none', border: 'none', color: '#0f4c81', textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit' }}>Tap to retry</button>
+        </div>
       ) : unpaidSessions.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#1D9E75', background: '#EAF3DE', borderRadius: '12px' }}>All caught up — no outstanding balances!</div>
       ) : (
@@ -1274,6 +1311,9 @@ export default function PaymentsPage() {
   const [ledgerTherapists, setLedgerTherapists] = useState([])
   const [activeTherapist, setActiveTherapist] = useState(null)
   const [ledgerLoading, setLedgerLoading] = useState(true)
+  const [allMonths, setAllMonths] = useState([]) // every month key that has data, from action=months
+  const [loadedMonths, setLoadedMonths] = useState(new Set())
+  const [loadingMonths, setLoadingMonths] = useState(new Set()) // months currently being fetched
   const [clients, setClients] = useState([])
   const [weeks, setWeeks] = useState([])
   const [selectedWeek, setSelectedWeek] = useState(null)
@@ -1310,13 +1350,14 @@ export default function PaymentsPage() {
   const [summaryPasswordInput, setSummaryPasswordInput] = useState('')
   const [summaryPasswordError, setSummaryPasswordError] = useState(false)
   const [summaryChecking, setSummaryChecking] = useState(false)
+  const [ledgerError, setLedgerError] = useState(false)
+  const [outstandingError, setOutstandingError] = useState(false)
 
   useEffect(() => { fetchAll() }, [])
 
   async function fetchAll() {
     setLoading(true)
-    const [cRes, wRes, tRes] = await Promise.all([fetch('/api/clients'), fetch('/api/weeks'), fetch('/api/therapists')])
-    const [cJson, wJson, tJson] = await Promise.all([cRes.json(), wRes.json(), tRes.json()])
+    const [cJson, wJson, tJson] = await Promise.all([fetchJSON('/api/clients'), fetchJSON('/api/weeks'), fetchJSON('/api/therapists')])
     if (cJson.success) setClients(cJson.data)
     if (tJson.success) {
       const map = {}
@@ -1340,16 +1381,41 @@ export default function PaymentsPage() {
     fetchLedger()
   }
 
+  function currentMonthKey() {
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  }
+
   async function fetchLedger() {
     setLedgerLoading(true)
-    const res = await fetch('/api/ledger')
-    const json = await res.json()
-    if (json.success) {
-      setLedger(json.data)
-      setLedgerTherapists(json.therapists)
-      if (!activeTherapist && json.therapists.length > 0) setActiveTherapist(json.therapists[0])
-    }
+    setLedgerError(false)
+    const monthsJson = await fetchJSON('/api/ledger?action=months')
+    if (!monthsJson.success) { setLedgerError(true); setLedgerLoading(false); return }
+
+    setAllMonths(monthsJson.months)
+    setLedgerTherapists(monthsJson.therapists)
+    if (!activeTherapist && monthsJson.therapists.length > 0) setActiveTherapist(monthsJson.therapists[0])
+
+    const thisMonth = currentMonthKey()
+    await loadMonth(thisMonth)
     setLedgerLoading(false)
+  }
+
+  async function loadMonth(monthKey, force = false) {
+    if (!force && (loadedMonths.has(monthKey) || loadingMonths.has(monthKey))) return
+    setLoadingMonths(prev => new Set(prev).add(monthKey))
+    const json = await fetchJSON(`/api/ledger?month=${monthKey}`)
+    if (json.success) {
+      setLedger(prev => {
+        const next = { ...prev }
+        Object.entries(json.data).forEach(([therapist, months]) => {
+          next[therapist] = { ...(next[therapist] || {}), ...months }
+        })
+        return next
+      })
+      setLoadedMonths(prev => new Set(prev).add(monthKey))
+    }
+    setLoadingMonths(prev => { const next = new Set(prev); next.delete(monthKey); return next })
   }
 
   function getMondayOf(date) {
@@ -1368,8 +1434,7 @@ export default function PaymentsPage() {
   }
 
   async function fetchWeekSessions(weekKey) {
-    const res = await fetch(`/api/sessions?week=${weekKey}`)
-    const json = await res.json()
+    const json = await fetchJSON(`/api/sessions?week=${weekKey}`)
     if (json.success) setWeekSessions(json.data)
   }
 
@@ -1392,8 +1457,7 @@ export default function PaymentsPage() {
   }
 
   async function fetchPendingPayments() {
-    const res = await fetch('/api/payments?action=pending')
-    const json = await res.json()
+    const json = await fetchJSON('/api/payments?action=pending')
     if (json.success) setPendingPayments(json.data)
   }
 
@@ -1832,6 +1896,12 @@ export default function PaymentsPage() {
           {/* Ledger/By Therapist tab */}
           {activeTab === 'ledger' && (
             <div>
+              {ledgerError ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: '#791F1F', background: '#FCEBEB', borderRadius: '12px' }}>
+                  Couldn't load the ledger. <button onClick={fetchLedger} style={{ background: 'none', border: 'none', color: '#0f4c81', textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit' }}>Tap to retry</button>
+                </div>
+              ) : (
+              <>
               {/* Therapist tabs */}
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
                 {ledgerTherapists.map(t => (
@@ -1848,7 +1918,11 @@ export default function PaymentsPage() {
               <LedgerTab
                 therapistData={ledger[activeTherapist]}
                 therapistName={activeTherapist}
-                onPaid={fetchLedger}
+                onPaid={() => loadMonth(currentMonthKey(), true)}
+                allMonths={allMonths}
+                loadedMonths={loadedMonths}
+                loadingMonths={loadingMonths}
+                onLoadMonth={loadMonth}
                 clients={clients}
                 pfReleases={pfReleases.filter(r => r.therapist === activeTherapist)}
                 onRelease={async (monthKey, period, sentVia, dateSent, notes) => {
@@ -1869,6 +1943,8 @@ export default function PaymentsPage() {
                   if (pfJson.success) setPfReleases(pfJson.data)
                 }}
               />
+              )}
+              </>
               )}
             </div>
           )}

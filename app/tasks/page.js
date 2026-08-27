@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { fetchJSON } from '../lib/fetchJSON'
 
 const TABS = ['To-do', 'Inquiries']
 
@@ -23,13 +24,16 @@ export default function TasksPage() {
   const [addContactModal, setAddContactModal] = useState(false)
   const [newContact, setNewContact] = useState({ contact_name: '', recorded_by: '', note: '' })
   const [inquirySaving, setInquirySaving] = useState(false)
+  const [tasksError, setTasksError] = useState(false)
+  const [inquiriesError, setInquiriesError] = useState(false)
 
   useEffect(() => { fetchAll(); fetchInquiries() }, [])
 
   async function fetchInquiries() {
-    const res = await fetch('/api/inquiries')
-    const json = await res.json()
+    setInquiriesError(false)
+    const json = await fetchJSON('/api/inquiries')
     if (json.success) setInquiries(json.data)
+    else setInquiriesError(true)
   }
 
   async function addNoteToContact(contactName) {
@@ -58,9 +62,10 @@ export default function TasksPage() {
 
   async function fetchAll() {
     setLoading(true)
-    const [tRes, cRes] = await Promise.all([fetch('/api/tasks'), fetch('/api/clients')])
-    const [tJson, cJson] = await Promise.all([tRes.json(), cRes.json()])
+    setTasksError(false)
+    const [tJson, cJson] = await Promise.all([fetchJSON('/api/tasks'), fetchJSON('/api/clients')])
     if (tJson.success) setTasks(tJson.data)
+    else setTasksError(true)
     if (cJson.success) setClients(cJson.data.filter(c => c.status !== 'inactive'))
     setLoading(false)
   }
@@ -209,6 +214,10 @@ export default function TasksPage() {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading...</div>
+      ) : tasksError ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#791F1F', background: '#FCEBEB', borderRadius: '12px' }}>
+          Couldn't load tasks. <button onClick={fetchAll} style={{ background: 'none', border: 'none', color: '#0f4c81', textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit' }}>Tap to retry</button>
+        </div>
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999', background: '#f8f9fa', borderRadius: '12px' }}>
           No tasks here — you're all caught up! 🎉
@@ -259,7 +268,11 @@ export default function TasksPage() {
 
       {activeTab === 'Inquiries' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {inquiries.length === 0 ? (
+          {inquiriesError ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: '#791F1F', background: '#FCEBEB', borderRadius: '12px' }}>
+              Couldn't load inquiries. <button onClick={fetchInquiries} style={{ background: 'none', border: 'none', color: '#0f4c81', textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit' }}>Tap to retry</button>
+            </div>
+          ) : inquiries.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3rem', color: '#999', background: '#f8f9fa', borderRadius: '12px' }}>
               No inquiries yet — click "+ Add inquiry" to log one.
             </div>

@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { fetchJSON } from '../lib/fetchJSON'
 
 const DOC_TYPES = [
   { value: 'Initial Evaluation', label: 'Initial Evaluation', info: 'Reprint only — no fee', amount: 0, custom: false },
@@ -37,6 +38,7 @@ export default function DocumentsPage() {
   const [payForm, setPayForm] = useState({ amount: 0, mop: 'Cash', use_credit: false, split: false, split_credit: 0, split_cash: 0, reference: '' })
   const [clientCredit, setClientCredit] = useState(0)
   const [filterStatus, setFilterStatus] = useState('Pending')
+  const [loadError, setLoadError] = useState(false)
 
   const [form, setForm] = useState({
     client_name: '', therapists: [], 
@@ -49,13 +51,14 @@ export default function DocumentsPage() {
 
   async function fetchAll() {
     setLoading(true)
-    const [rRes, cRes, tRes] = await Promise.all([
-      fetch('/api/documents'),
-      fetch('/api/clients'),
-      fetch('/api/therapists')
+    setLoadError(false)
+    const [rJson, cJson, tJson] = await Promise.all([
+      fetchJSON('/api/documents'),
+      fetchJSON('/api/clients'),
+      fetchJSON('/api/therapists')
     ])
-    const [rJson, cJson, tJson] = await Promise.all([rRes.json(), cRes.json(), tRes.json()])
     if (rJson.success) setReports(rJson.data)
+    else setLoadError(true)
     if (cJson.success) setClients(cJson.data.filter(c => c.status !== 'inactive'))
     if (tJson.success) setTherapists(tJson.data)
     setLoading(false)
@@ -510,6 +513,10 @@ export default function DocumentsPage() {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading...</div>
+      ) : loadError ? (
+        <div style={{ textAlign: 'center', padding: '3rem', color: '#791F1F', background: '#FCEBEB', borderRadius: '12px' }}>
+          Couldn't load document requests. <button onClick={fetchAll} style={{ background: 'none', border: 'none', color: '#0f4c81', textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit' }}>Tap to retry</button>
+        </div>
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999', background: '#f8f9fa', borderRadius: '12px' }}>
           No document requests yet

@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import PaymentScreenshotReader from '@/components/PaymentScreenshotReader'
 import { SESSION_TYPES_BY_SPECIALTY as SESSION_TYPES, SESSION_TYPE_RATES } from '../lib/sessionTypes'
+import { fetchJSON } from '../lib/fetchJSON'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
@@ -220,8 +221,7 @@ export default function SchedulePage() {
 
   async function initializePage() {
     setLoading(true)
-    const [tRes, cRes] = await Promise.all([fetch('/api/therapists'), fetch('/api/clients')])
-    const [tJson, cJson] = await Promise.all([tRes.json(), cRes.json()])
+    const [tJson, cJson] = await Promise.all([fetchJSON('/api/therapists'), fetchJSON('/api/clients')])
     if (tJson.success) setTherapistData(tJson.data)
     if (cJson.success) setClients(cJson.data.filter(c => c.status !== 'inactive'))
 
@@ -232,12 +232,10 @@ export default function SchedulePage() {
       setTimeout(() => setNotification(null), 4000)
     }
 
-    const bRes = await fetch('/api/blocked')
-    const bJson = await bRes.json()
+    const bJson = await fetchJSON('/api/blocked')
     if (bJson.success) setBlockedSlots(bJson.data)
 
-    const weeksRes = await fetch('/api/weeks')
-    const weeksJson = await weeksRes.json()
+    const weeksJson = await fetchJSON('/api/weeks')
     if (weeksJson.success && weeksJson.data.length > 0) {
       setWeeks(weeksJson.data)
       const today = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
@@ -291,8 +289,7 @@ export default function SchedulePage() {
   }
 
   async function fetchSessions(weekKey) {
-    const res = await fetch(`/api/sessions?week=${weekKey}`)
-    const json = await res.json()
+    const json = await fetchJSON(`/api/sessions?week=${weekKey}`)
     if (json.success) setSessions(json.data)
   }
 
@@ -326,8 +323,7 @@ export default function SchedulePage() {
 
   async function fetchMaster(showLoading = false) {
     if (showLoading) setMasterLoading(true)
-    const res = await fetch('/api/master')
-    const json = await res.json()
+    const json = await fetchJSON('/api/master')
     if (json.success) setMaster(json.data)
     setMasterLoading(false)
   }
@@ -336,8 +332,7 @@ export default function SchedulePage() {
     setSelectedWeek(week)
     selectedWeekRef.current = week
     localStorage.setItem('selected_week', week.key)
-    const bRes = await fetch('/api/blocked')
-    const bJson = await bRes.json()
+    const bJson = await fetchJSON('/api/blocked')
     if (bJson.success) {
       setBlockedSlots(bJson.data)
         const absentByDay = {}
