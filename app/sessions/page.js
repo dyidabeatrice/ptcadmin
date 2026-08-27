@@ -207,7 +207,9 @@ export default function SchedulePage() {
       fetchSessions(selectedWeekRef.current.key)
     }
 
-    const interval = setInterval(refetch, 30000)
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') refetch()
+    }, 30000)
     window.addEventListener('focus', refetch)
 
     return () => {
@@ -385,10 +387,10 @@ export default function SchedulePage() {
     const json = await res.json()
     if (json.success) setClientCredit(Number(json.credit_balance) || 0)
     // Fetch latest advance payment details for credit verification
-    const payRes = await fetch('/api/payments')
+    const payRes = await fetch(`/api/payments?client=${encodeURIComponent(session.client_name)}&type=advance`)
     const payJson = await payRes.json()
     if (payJson.success) {
-      const advances = payJson.data.filter(p => p.client_name === session.client_name && p.payment_type === 'advance')
+      const advances = payJson.data
       const latest = advances.length > 0 ? advances[advances.length - 1] : null
       setCreditNotes({
         mop: latest?.mop || '',
@@ -404,9 +406,9 @@ export default function SchedulePage() {
     let creditRef = ''
     let creditMop = 'Credit'
     if (payForm.use_credit || payForm.split) {
-      const payData = await fetch('/api/payments').then(r => r.json())
+      const payData = await fetch(`/api/payments?client=${encodeURIComponent(payModal.client_name)}&type=advance`).then(r => r.json())
       if (payData.success) {
-        const advances = payData.data.filter(p => p.client_name === payModal.client_name && p.payment_type === 'advance')
+        const advances = payData.data
         const latestAdvance = advances.length > 0 ? advances[advances.length - 1] : null
         creditRef = latestAdvance?.reference || ''
         creditMop = latestAdvance?.mop || 'Credit'

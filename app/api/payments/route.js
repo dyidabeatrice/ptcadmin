@@ -63,7 +63,7 @@ export async function GET(request) {
     const data = await getSheetData('payments')
     const [, ...rows] = data
     if (!rows || rows.length === 0) return Response.json({ success: true, data: [] })
-    const payments = rows.filter(r => r && r[0]).map((row, i) => ({
+    let payments = rows.filter(r => r && r[0]).map((row, i) => ({
       index: i,
       id: row[0], client_name: row[1], therapist: row[2],
       session_id: row[3], amount: row[4], mop: row[5],
@@ -73,6 +73,16 @@ export async function GET(request) {
       verified_by: row[10] || '',
       comments: row[11] || '',
     }))
+
+    // Optional server-side filters — avoids sending the whole sheet across
+    // the wire when the caller only needs one client's or one session's rows.
+    const clientFilter = searchParams.get('client')
+    const typeFilter = searchParams.get('type')
+    const sessionIdFilter = searchParams.get('session_id')
+    if (clientFilter) payments = payments.filter(p => p.client_name === clientFilter)
+    if (typeFilter) payments = payments.filter(p => p.payment_type === typeFilter)
+    if (sessionIdFilter) payments = payments.filter(p => p.session_id === sessionIdFilter)
+
     return Response.json({ success: true, data: payments })
   } catch (error) {
     return Response.json({ success: false, error: error.message })

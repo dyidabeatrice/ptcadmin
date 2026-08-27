@@ -190,7 +190,7 @@ export default function DocumentsPage() {
     ]
     // Also delete associated payment record if document was paid
     if (report.status === 'Paid' || report.amount > 0) {
-      const payRes = await fetch('/api/payments')
+      const payRes = await fetch(`/api/payments?session_id=${encodeURIComponent(`DOC-${report.id}`)}`)
       const payJson = await payRes.json()
       if (payJson.success) {
         const docPayment = payJson.data.find(p => p.session_id === `DOC-${report.id}`)

@@ -706,10 +706,10 @@ function OutstandingByDayTab({ clients, onSettle }) {
     const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
     const json = await res.json()
     if (json.success) setClientCredit(Number(json.credit_balance) || 0)
-    const payRes = await fetch('/api/payments')
+    const payRes = await fetch(`/api/payments?client=${encodeURIComponent(session.client_name)}&type=advance`)
     const payJson = await payRes.json()
     if (payJson.success) {
-      const advances = payJson.data.filter(p => p.client_name === session.client_name && p.payment_type === 'advance')
+      const advances = payJson.data
       const latest = advances.length > 0 ? advances[advances.length - 1] : null
       setCreditNotes({
         mop: latest?.mop || '',
@@ -742,9 +742,9 @@ function OutstandingByDayTab({ clients, onSettle }) {
       let creditRef = ''
       let creditMop = 'Credit'
       if (payForm.use_credit || payForm.split) {
-        const payData = await fetch('/api/payments').then(r => r.json())
+        const payData = await fetch(`/api/payments?client=${encodeURIComponent(payModal.client_name)}&type=advance`).then(r => r.json())
         if (payData.success) {
-          const advances = payData.data.filter(p => p.client_name === payModal.client_name && p.payment_type === 'advance')
+          const advances = payData.data
           const latestAdvance = advances.length > 0 ? advances[advances.length - 1] : null
           creditRef = latestAdvance?.reference || ''
           creditMop = latestAdvance?.mop || 'Credit'
@@ -907,10 +907,10 @@ async function openSettle(session) {
     const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
     const json = await res.json()
     if (json.success) setClientCredit(Number(json.credit_balance) || 0)
-    const payRes = await fetch('/api/payments')
+    const payRes = await fetch(`/api/payments?client=${encodeURIComponent(session.client_name)}&type=advance`)
     const payJson = await payRes.json()
     if (payJson.success) {
-      const advances = payJson.data.filter(p => p.client_name === session.client_name && p.payment_type === 'advance')
+      const advances = payJson.data
       const latest = advances.length > 0 ? advances[advances.length - 1] : null
       setCreditNotes({
         mop: latest?.mop || '',
@@ -944,9 +944,9 @@ async function openSettle(session) {
         let creditRef = ''
         let creditMop = 'Credit'
         if (payForm.use_credit || payForm.split) {
-          const payData = await fetch('/api/payments').then(r => r.json())
+          const payData = await fetch(`/api/payments?client=${encodeURIComponent(payModal.client_name)}&type=advance`).then(r => r.json())
           if (payData.success) {
-            const advances = payData.data.filter(p => p.client_name === payModal.client_name && p.payment_type === 'advance')
+            const advances = payData.data
             const latestAdvance = advances.length > 0 ? advances[advances.length - 1] : null
             creditRef = latestAdvance?.reference || ''
             creditMop = latestAdvance?.mop || 'Credit'
@@ -1094,11 +1094,11 @@ function CreditHistory({ clientName }) {
   const [saving, setSaving] = useState(false)
 
   function loadLatest() {
-    fetch('/api/payments')
+    fetch(`/api/payments?client=${encodeURIComponent(clientName)}&type=advance`)
       .then(r => r.json())
       .then(json => {
         if (json.success) {
-          const advances = json.data.filter(p => p.client_name === clientName && p.payment_type === 'advance')
+          const advances = json.data
           if (advances.length > 0) {
             const l = advances[advances.length - 1]
             setLatest(l)
