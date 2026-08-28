@@ -142,6 +142,16 @@ export async function POST(request) {
 
     if (body.action === 'forfeit') {
       const result = await updateClientBalances(body.client_name, -body.amount, 0)
+
+      // Pull MOP/reference from the client's latest advance payment, so the
+      // forfeit record shows how the money actually came in, instead of 'N/A'.
+      const payData = await getSheetData('payments')
+      const [, ...payRows] = payData
+      const advances = payRows.filter(r => r && r[1] === body.client_name && r[8] === 'advance')
+      const latestAdvance = advances.length > 0 ? advances[advances.length - 1] : null
+      const mop = latestAdvance?.[5] || 'N/A'
+      const reference = latestAdvance?.[9] || ''
+
       // Whole amount goes to the clinic — no therapist involved, full center cut.
       await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
@@ -150,10 +160,10 @@ export async function POST(request) {
           Date.now().toString(),
           body.client_name, '-',
           'FORFEIT-' + Date.now(),
-          body.amount, 'N/A',
+          body.amount, mop,
           'Reservation Fee (Forfeited)', now,
           'forfeit',
-          '',              // reference
+          reference,
           '',              // verified_by
           body.note || '', // comments
           0,                // custom_cut — none, whole amount to clinic
