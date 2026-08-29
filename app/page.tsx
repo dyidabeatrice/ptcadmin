@@ -12,8 +12,6 @@ export default function HomePage() {
   const FEEDBACK_IMAGES = ['/feedback1.png', '/feedback2.png', '/feedback3.png', '/feedback4.png', '/feedback5.png', '/feedback6.png', '/feedback7.png', '/feedback8.png']
   const [feedbackIndex, setFeedbackIndex] = useState(0)
   const [feedbackPerView, setFeedbackPerView] = useState(2)
-  const [openTestimonial, setOpenTestimonial] = useState<number | null>(null)
-  const [testimonialsPage, setTestimonialsPage] = useState(0)
 
   const SONGS = ['/song1.mp3', '/song2.mp3']
   const SONG_TITLES = ['Unlock The Best Ver. 1', 'Unlock The Best Ver. 2']
@@ -36,10 +34,11 @@ export default function HomePage() {
         ? <mark key={i} style={{ background: 'linear-gradient(to right, rgba(252,194,0,0.3), rgba(252,194,0,0.1))', borderRadius: '3px', padding: '1px 3px', fontWeight: '500', color: '#333', fontStyle: 'inherit' }}>{seg.text}</mark>
         : <span key={i} style={{ whiteSpace: 'pre-line' }}>{seg.text}</span>
     )
-  
+
   const [facilityIndex, setFacilityIndex] = useState(0)
   const [lightbox, setLightbox] = useState<string | null>(null)
   const [openService, setOpenService] = useState<number | null>(null)
+  const [openTestimonial, setOpenTestimonial] = useState<number | null>(null)
 
   const updateSlideshow = (id: string, index: number) => {
     slideState.current[id] = index
@@ -147,10 +146,10 @@ export default function HomePage() {
   const clinicCards = [
     { photo: '/clinic-new1.jpeg', label: 'A Warm Welcome', title: "You're in good hands from day one", body: 'Our reception team is your first point of contact — ready to guide you through enrollment, scheduling, and everything in between.', tag: 'Friendly & organized' },
     { photo: '/clinic-new2.jpg', label: 'Our Facility', title: 'Spaces built for your child to thrive', body: 'From sensory swings to climbing walls and slides, our facility is purpose-built to support every type of therapeutic and developmental need.', tag: 'Purpose-built spaces' },
-    { photo: '/clinic-new4.jpg', label: 'Individualized Care', title: 'Every child gets a program built just for them', body: "Whether in individual or group settings, every session is guided by a plan designed specifically around your child's goals, strengths, and pace.", tag: 'Personalized programs' },
+    { photo: '/clinic-new3.jpg', label: 'Evidence-Based Tools', title: 'The right tools for every session', body: "Hundreds of carefully selected therapy materials, games, and activities — all organized and ready to support your child's specific goals.", tag: 'Well-resourced' },
+    { photo: '/clinic-new4.jpg', label: 'Individualized Care', title: 'Every child gets a program built just for them', body: 'Whether in individual or group settings, every session is guided by a plan designed specifically around your child\'s goals, strengths, and pace.', tag: 'Personalized programs' },
     { photo: '/clinic-new5.jpg', label: 'Play-Based Learning', title: 'Therapy that feels like play', body: 'We use age-appropriate toys, sensory tools, and play-based activities to make therapy engaging, motivating, and effective for every child.', tag: 'Play-based approach' },
     { photo: '/clinic-new6.jpg', label: 'Structured & Systematic', title: 'Nothing left to chance', body: 'Our therapists work from a vast, meticulously organized library of evidence-based materials — ensuring every session is targeted and intentional.', tag: 'Systematic & thorough' },
-    { photo: '/clinic-new3.jpg', label: 'Well-Resourced', title: 'The right tools for every session', body: "Hundreds of carefully selected therapy materials, games, and activities — all organized and ready to support your child's specific goals.", tag: 'Evidence-based tools' },
     { photo: '/clinic-new7.jpg', label: 'Family Partnership', title: "We don't just work with your child — we work with you", body: "Therapy doesn't stop at the clinic door. We partner closely with families, keeping parents informed, involved, and equipped to support their child's progress at home.", tag: 'Family-centered care' },
   ]
 
@@ -615,112 +614,120 @@ export default function HomePage() {
         <div style={{ position: 'absolute', width: '220px', height: '220px', background: 'rgba(252,194,0,0.08)', borderRadius: '50% 50% 40% 60%', bottom: '-60px', left: '-60px', pointerEvents: 'none', zIndex: 0 }} />
         <div style={{ position: 'absolute', width: '140px', height: '140px', background: 'rgba(252,194,0,0.06)', borderRadius: '40% 60% 70% 30%', bottom: '30%', left: '40px', pointerEvents: 'none', zIndex: 0 }} />
 
-        <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-          <div className="reveal" style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-            <div style={{ fontSize: '11px', letterSpacing: '0.18em', color: '#fcc200', fontWeight: '600', marginBottom: '10px', textTransform: 'uppercase' }}>What We Offer</div>
-            <h2 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 14px', fontWeight: '800' }}>Our Therapy Services</h2>
-            <p style={{ color: '#666', fontSize: '15px', maxWidth: '500px', margin: '0 auto', lineHeight: '1.75', fontWeight: '300' }}>
-              Comprehensive, evidence-based therapies tailored to each child's unique needs.
-            </p>
-          </div>
-
-          {/* Master-detail layout */}
-          <div className="reveal d2" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 24px rgba(15,76,129,0.12)', minHeight: '440px' }}>
-            {/* Left — navy list */}
-            <div style={{ background: '#0e68b7', overflowY: 'auto' }}>
-              {services.map((s, i) => (
-                <div key={i} onClick={() => setOpenService(i)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '12px',
-                    padding: '13px 18px', cursor: 'pointer',
-                    borderBottom: '1px solid rgba(255,255,255,0.08)',
-                    borderRight: openService === i ? '3px solid #fcc200' : '3px solid transparent',
-                    background: openService === i ? 'rgba(252,194,0,0.15)' : 'transparent',
-                    color: openService === i ? '#fff' : 'rgba(255,255,255,0.65)',
-                    transition: 'all 0.15s',
-                  }}
-                  onMouseEnter={e => { if (openService !== i) { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#fff' }}}
-                  onMouseLeave={e => { if (openService !== i) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }}}
-                >
-                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: openService === i ? 'rgba(252,194,0,0.2)' : 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0, transition: 'background 0.2s' }}>{s.icon}</div>
-                  <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', flex: 1, lineHeight: '1.3', color: 'inherit' }}>{s.name}</div>
-                  <div style={{ fontSize: '11px', color: openService === i ? '#fcc200' : 'rgba(255,255,255,0.3)', transition: 'color 0.2s' }}>›</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Right — white detail */}
-            <div style={{ background: '#fff', padding: '2.5rem', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <div style={{ position: 'absolute', width: '200px', height: '200px', background: 'rgba(252,194,0,0.06)', borderRadius: '50%', bottom: '-60px', right: '-60px', pointerEvents: 'none' }} />
-              {openService === null ? (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '12px' }}>
-                  <div style={{ fontSize: '36px', opacity: 0.3 }}>👆</div>
-                  <div style={{ fontSize: '13px', color: '#bbb', fontFamily: "'DM Sans', sans-serif" }}>Select a service to learn more</div>
-                </div>
-              ) : (
-                <div key={openService} style={{ animation: 'slideIn 0.3s ease both' }}>
-                  <style>{`@keyframes slideIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }`}</style>
-                  <div style={{ width: '52px', height: '52px', borderRadius: '14px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', marginBottom: '1rem' }}>{services[openService].icon}</div>
-                  <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '22px', fontWeight: '800', color: '#0f4c81', marginBottom: '1.25rem', lineHeight: '1.2' }}>{services[openService].name}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {[{ label: 'What is it?', text: services[openService].what }, { label: 'Who is it for?', text: services[openService].who }, { label: 'What to expect?', text: services[openService].expect }].map(item => (
-                      <div key={item.label}>
-                        <div style={{ fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fcc200', fontWeight: '700', marginBottom: '4px', fontFamily: "'Nunito', sans-serif" }}>{item.label}</div>
-                        <div style={{ fontSize: '13px', color: '#666', lineHeight: '1.7' }}>{item.text}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Mobile fallback — simple accordion */}
-          <style>{`
-            .svc-mob { display: none; }
+        <style>{`
+            .services-grid {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 14px;
+            }
+            .service-card {
+              background: #fff;
+              border-radius: 14px;
+              border: 1px solid #e8edf5;
+              cursor: pointer;
+              overflow: hidden;
+              transition: border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+            }
+            .service-card.open {
+              border-color: #fcc200;
+              background: #fffbec;
+              box-shadow: 0 8px 24px rgba(252,194,0,0.15);
+              grid-column: span 3;
+            }
+            .service-card-top {
+              display: flex;
+              align-items: center;
+              gap: 12px;
+              padding: 1.1rem 1.25rem;
+            }
+            .service-card-icon {
+              width: 46px; height: 46px; border-radius: 12px;
+              background: #f0f4fa; display: flex;
+              align-items: center; justify-content: center;
+              font-size: 22px; flex-shrink: 0;
+              transition: background 0.25s;
+            }
+            .service-card.open .service-card-icon { background: #fef3c7; }
+            .service-card-name {
+              font-family: 'Nunito', sans-serif;
+              font-size: 16px; font-weight: 700;
+              color: #0f4c81; flex: 1; line-height: 1.3;
+            }
+            .service-card-chevron {
+              font-size: 11px; color: #ccc;
+              transition: transform 0.25s, color 0.25s;
+              flex-shrink: 0;
+            }
+            .service-card.open .service-card-chevron { transform: rotate(180deg); color: #fcc200; }
+            .service-card-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+            .service-card.open .service-card-body { max-height: 600px; }
+            .service-card-body-inner {
+              padding: 1rem 1.25rem 1.25rem;
+              border-top: 1px solid rgba(252,194,0,0.2);
+              display: grid;
+              grid-template-columns: 1fr 1fr 1fr;
+              gap: 1.25rem;
+            }
+            .service-body-label {
+              font-size: 10px; letter-spacing: 0.12em;
+              text-transform: uppercase; color: #fcc200;
+              font-weight: 700; margin-bottom: 6px;
+              font-family: 'Nunito', sans-serif;
+            }
+            .service-body-text { font-size: 13px; color: #777; line-height: 1.7; }
             @media (max-width: 768px) {
-              .svc-desktop { display: none !important; }
-              .svc-mob { display: block; }
-              .svc-mob-item { background: #fff; border-radius: 12px; border: 1px solid #e8edf5; margin-bottom: 8px; overflow: hidden; }
-              .svc-mob-item.open { border-color: #fcc200; }
-              .svc-mob-header { display: flex; align-items: center; gap: 12px; padding: 13px 16px; cursor: pointer; }
-              .svc-mob-icon { width: 36px; height: 36px; border-radius: 10px; background: #f0f4fa; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-              .svc-mob-item.open .svc-mob-icon { background: #fef3c7; }
-              .svc-mob-name { font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700; color: #0f4c81; flex: 1; }
-              .svc-mob-chevron { font-size: 11px; color: #ccc; transition: transform 0.2s; }
-              .svc-mob-item.open .svc-mob-chevron { transform: rotate(180deg); color: #fcc200; }
-              .svc-mob-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
-              .svc-mob-item.open .svc-mob-body { max-height: 500px; }
-              .svc-mob-body-inner { padding: 0 16px 14px; display: flex; flex-direction: column; gap: 10px; }
-              .svc-mob-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #fcc200; font-weight: 700; margin-bottom: 3px; font-family: 'Nunito', sans-serif; }
-              .svc-mob-text { font-size: 13px; color: #777; line-height: 1.65; }
+              .services-grid { grid-template-columns: 1fr; }
+              .service-card.open { grid-column: span 1; }
+              .service-card-body-inner { grid-template-columns: 1fr; gap: 1rem; }
             }
           `}</style>
 
-          {/* Desktop layout */}
-          <div className="svc-desktop" />
+          <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+              <div style={{ fontSize: '11px', letterSpacing: '0.18em', color: '#fcc200', fontWeight: '600', marginBottom: '10px', textTransform: 'uppercase' }}>
+                What We Offer
+              </div>
+              <h2 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 14px', fontWeight: '800' }}>
+                Our Therapy Services
+              </h2>
+              <p style={{ color: '#666', fontSize: '15px', maxWidth: '500px', margin: '0 auto', lineHeight: '1.75', fontWeight: '300' }}>
+                Comprehensive, evidence-based therapies tailored to each child's unique needs.
+              </p>
+            </div>
 
-          {/* Mobile accordion */}
-          <div className="svc-mob">
-            {services.map((s, i) => (
-              <div key={i} className={`svc-mob-item${openService === i ? ' open' : ''}`} onClick={() => setOpenService(openService === i ? null : i)}>
-                <div className="svc-mob-header">
-                  <div className="svc-mob-icon">{s.icon}</div>
-                  <div className="svc-mob-name">{s.name}</div>
-                  <div className="svc-mob-chevron">▼</div>
-                </div>
-                <div className="svc-mob-body">
-                  <div className="svc-mob-body-inner">
-                    <div><div className="svc-mob-label">What is it?</div><div className="svc-mob-text">{s.what}</div></div>
-                    <div><div className="svc-mob-label">Who is it for?</div><div className="svc-mob-text">{s.who}</div></div>
-                    <div><div className="svc-mob-label">What to expect?</div><div className="svc-mob-text">{s.expect}</div></div>
+            <div className="services-grid">
+              {services.map((s, i) => (
+                <div
+                  key={i}
+                  className={`service-card${openService === i ? ' open' : ''}`}
+                  onClick={() => setOpenService(openService === i ? null : i)}
+                >
+                  <div className="service-card-top">
+                    <div className="service-card-icon">{s.icon}</div>
+                    <div className="service-card-name">{s.name}</div>
+                    <div className="service-card-chevron">▼</div>
+                  </div>
+                  <div className="service-card-body">
+                    <div className="service-card-body-inner">
+                      <div>
+                        <div className="service-body-label">What is it?</div>
+                        <div className="service-body-text">{s.what}</div>
+                      </div>
+                      <div>
+                        <div className="service-body-label">Who is it for?</div>
+                        <div className="service-body-text">{s.who}</div>
+                      </div>
+                      <div>
+                        <div className="service-body-label">What to expect?</div>
+                        <div className="service-body-text">{s.expect}</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
       {/* ── HOW TO AVAIL ── yellow-heavy: large yellow bottom-right, small navy top-left */}
       <section id="how-to-avail" style={{ padding: '6rem 2rem', background: '#e9ebee', position: 'relative', overflow: 'hidden' }}>
@@ -810,7 +817,7 @@ export default function HomePage() {
 
           <div className="t-grid">
             {testimonials.map((t, i) => (
-              <div key={i} className={`reveal d${Math.min(i + 1, 8)} t-card`} onClick={() => setOpenService(i)}>
+              <div key={i} className={`reveal d${Math.min(i + 1, 8)} t-card`} onClick={() => setOpenTestimonial(i)}>
                 <div style={{ height: '160px', overflow: 'hidden' }}>
                   <img src={t.photo} alt="Session" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 </div>
@@ -827,17 +834,17 @@ export default function HomePage() {
           </div>
 
           {/* Modal */}
-          {openService !== null && (
-            <div className="t-modal-overlay" onClick={() => setOpenService(null)}>
+          {openTestimonial !== null && (
+            <div className="t-modal-overlay" onClick={() => setOpenTestimonial(null)}>
               <div className="t-modal" onClick={e => e.stopPropagation()}>
-                <button className="t-modal-close" onClick={() => setOpenService(null)}>✕</button>
+                <button className="t-modal-close" onClick={() => setOpenTestimonial(null)}>✕</button>
                 <div className="t-modal-photo">
-                  <img src={testimonials[openService].photo} alt="Session" />
+                  <img src={testimonials[openTestimonial].photo} alt="Session" />
                 </div>
                 <div className="t-modal-body">
-                  <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '14px', fontWeight: '800', color: '#0f4c81', marginBottom: '2px' }}>{testimonials[openService].name}</div>
+                  <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '14px', fontWeight: '800', color: '#0f4c81', marginBottom: '2px' }}>{testimonials[openTestimonial].name}</div>
                   <div style={{ fontSize: '14px', color: '#555', lineHeight: '1.85' }}>
-                    {renderHighlighted(testimonials[openService].full)}
+                    {renderHighlighted(testimonials[openTestimonial].full)}
                   </div>
                 </div>
               </div>
