@@ -808,12 +808,9 @@ export default function HomePage() {
             <p style={{ color: '#666', fontSize: '15px', maxWidth: '480px', margin: '0 auto', lineHeight: '1.75', fontWeight: '300' }}>Real stories from families we've had the privilege of walking alongside.</p>
           </div>
 
-        <div style={{ position: 'relative' }}>
           <div className="t-grid">
-            {testimonials.slice(testimonialsPage * 3, testimonialsPage * 3 + 3).map((t, i) => {
-              const globalIndex = testimonialsPage * 3 + i
-              return (
-              <div key={i} className={`reveal d${Math.min(i + 1, 8)} t-card`} onClick={() => setOpenTestimonial(globalIndex)}>
+            {testimonials.map((t, i) => (
+              <div key={i} className={`reveal d${Math.min(i + 1, 8)} t-card`} onClick={() => setOpenService(i)}>
                 <div style={{ height: '160px', overflow: 'hidden' }}>
                   <img src={t.photo} alt="Session" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                 </div>
@@ -826,39 +823,21 @@ export default function HomePage() {
                   </div>
                 </div>
               </div>
-              )
-              })}
-            </div>
-
-              {/* Arrows + dots */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginTop: '1.5rem' }}>
-                <button onClick={() => setTestimonialsPage(p => Math.max(0, p - 1))}
-                  disabled={testimonialsPage === 0}
-                  style={{ width: '38px', height: '38px', borderRadius: '50%', background: testimonialsPage === 0 ? '#f0f0f0' : '#fff', border: '1px solid #e0e0e0', cursor: testimonialsPage === 0 ? 'not-allowed' : 'pointer', fontSize: '16px', color: testimonialsPage === 0 ? '#ccc' : '#0f4c81', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', transition: 'all 0.2s' }}>‹</button>
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  {Array.from({ length: Math.ceil(testimonials.length / 3) }).map((_, i) => (
-                    <button key={i} onClick={() => setTestimonialsPage(i)} style={{ width: i === testimonialsPage ? '20px' : '7px', height: '7px', borderRadius: '4px', border: 'none', background: i === testimonialsPage ? '#fcc200' : '#0f4c81', opacity: i === testimonialsPage ? 1 : 0.2, cursor: 'pointer', transition: 'all 0.2s', padding: 0 }} />
-                  ))}
-                </div>
-                <button onClick={() => setTestimonialsPage(p => Math.min(Math.ceil(testimonials.length / 3) - 1, p + 1))}
-                  disabled={testimonialsPage === Math.ceil(testimonials.length / 3) - 1}
-                  style={{ width: '38px', height: '38px', borderRadius: '50%', background: testimonialsPage === Math.ceil(testimonials.length / 3) - 1 ? '#f0f0f0' : '#fff', border: '1px solid #e0e0e0', cursor: testimonialsPage === Math.ceil(testimonials.length / 3) - 1 ? 'not-allowed' : 'pointer', fontSize: '16px', color: testimonialsPage === Math.ceil(testimonials.length / 3) - 1 ? '#ccc' : '#0f4c81', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', transition: 'all 0.2s' }}>›</button>
-              </div>
+            ))}
           </div>
-          
 
           {/* Modal */}
-          {openTestimonial !== null && (
+          {openService !== null && (
             <div className="t-modal-overlay" onClick={() => setOpenService(null)}>
               <div className="t-modal" onClick={e => e.stopPropagation()}>
                 <button className="t-modal-close" onClick={() => setOpenService(null)}>✕</button>
                 <div className="t-modal-photo">
-                  <img src={testimonials[openTestimonial].photo} alt="Session" />
+                  <img src={testimonials[openService].photo} alt="Session" />
                 </div>
                 <div className="t-modal-body">
-                  <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '14px', fontWeight: '800', color: '#0f4c81', marginBottom: '2px' }}>{testimonials[openTestimonial].name}</div>
+                  <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '14px', fontWeight: '800', color: '#0f4c81', marginBottom: '2px' }}>{testimonials[openService].name}</div>
                   <div style={{ fontSize: '14px', color: '#555', lineHeight: '1.85' }}>
-                    {renderHighlighted(testimonials[openTestimonial].full)}
+                    {renderHighlighted(testimonials[openService].full)}
                   </div>
                 </div>
               </div>
@@ -866,7 +845,7 @@ export default function HomePage() {
           )}
 
           {/* Music Player */}
-          <div className="reveal d3" style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
+          <div className="reveal d4" style={{ display: 'flex', justifyContent: 'center', marginTop: '3rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 18px', borderRadius: '40px', border: '1px solid #e0e0e0', background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', fontFamily: "'Nunito', sans-serif", maxWidth: '380px', width: '100%' }}>
               <button onClick={skipToPrevSong} disabled={musicTrack === 0} style={{ flexShrink: 0, width: '28px', height: '28px', borderRadius: '50%', border: 'none', background: musicTrack === 0 ? '#f0f0f0' : '#f0f4fa', color: musicTrack === 0 ? '#ccc' : '#0f4c81', cursor: musicTrack === 0 ? 'not-allowed' : 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⏮</button>
               <button onClick={toggleMusic} style={{ flexShrink: 0, width: '32px', height: '32px', borderRadius: '50%', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{musicPlaying ? '⏸' : '▶'}</button>
