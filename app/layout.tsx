@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { href: '/payments', label: 'Payments' },
   { href: '/documents', label: 'Reports' },
   { href: '/messages', label: 'Messages' },
+  { href: '/parent-requests', label: 'Parent Requests' },
   { href: '/therapists', label: 'Therapists' },
   { href: '/announcements', label: 'Announcements' },
   { href: '/help', label: 'Help' },
