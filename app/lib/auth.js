@@ -30,3 +30,17 @@ export async function getTherapistFromCookie() {
     return null
   }
 }
+
+// Same idea, but for a parent — returns { id, email } from the badge, or null.
+export async function getParentFromCookie() {
+  try {
+    const cookieStore = await cookies()
+    const token = cookieStore.get('ptc_parent_auth')?.value
+    if (!token) return null
+    const payload = verifyToken(token)
+    if (payload.role !== 'parent' || !payload.id || !payload.email) return null
+    return { id: payload.id, email: payload.email }
+  } catch {
+    return null
+  }
+}
