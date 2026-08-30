@@ -12,6 +12,8 @@ export default function HomePage() {
   const FEEDBACK_IMAGES = ['/feedback1.png', '/feedback2.png', '/feedback3.png', '/feedback4.png', '/feedback5.png', '/feedback6.png', '/feedback7.png', '/feedback8.png']
   const [feedbackIndex, setFeedbackIndex] = useState(0)
   const [feedbackPerView, setFeedbackPerView] = useState(2)
+  const [showLoginMenu, setShowLoginMenu] = useState(false)
+  const [showParentComingSoon, setShowParentComingSoon] = useState(false)
 
   const SONGS = ['/song1.mp3', '/song2.mp3']
   const SONG_TITLES = ['Unlock The Best Ver. 1', 'Unlock The Best Ver. 2']
@@ -39,6 +41,7 @@ export default function HomePage() {
   const [lightbox, setLightbox] = useState<string | null>(null)
   const [openService, setOpenService] = useState<number | null>(null)
   const [openTestimonial, setOpenTestimonial] = useState<number | null>(null)
+  const [testimonialsStart, setTestimonialsStart] = useState(0)
 
   const updateSlideshow = (id: string, index: number) => {
     slideState.current[id] = index
@@ -169,12 +172,30 @@ export default function HomePage() {
   ]
 
   const steps = [
-    { title: 'Get a Referral', content: 'Obtain a referral from a developmental pediatrician. Your child may be recommended for Physical Therapy, Occupational Therapy, Speech Therapy, or Playschool Services.' },
-    { title: 'Initial Contact', content: 'Call or visit Potentials Therapy Center to check service availability, enrollment steps, new client acceptance, and cost of services.' },
-    { title: 'Assessment & Evaluation', content: 'Schedule the initial assessment to determine needs and create a therapy plan. Bring relevant records and referral letters.' },
-    { title: 'Enroll in Services', content: 'Fill out registration forms with personal and medical details. Schedule therapy sessions right after registration.' },
-    { title: 'Attend Sessions', content: 'Attend sessions as recommended. Complete home exercises provided by therapists to support progress.' },
-    { title: 'Monitor Progress', content: "Communicate regularly with your child's therapists about goals, progress, and any concerns." },
+    {
+      title: 'Initial Contact',
+      content: 'Reach out to us via Facebook, email, or phone to express your interest. Let us know a bit about your child — their age, concerns, and what type of therapy you\'re looking into. We\'ll check slot availability and walk you through the next steps. A referral from a developmental pediatrician is helpful but not always required — we can guide you on this during your inquiry.'
+    },
+    {
+      title: 'Enroll in Services',
+      content: 'Once we confirm availability, we\'ll set your child\'s schedule — including how many sessions per week works best for your family. You\'ll be informed of our clinic policies, session guidelines, and everything you need to know before your child\'s first visit.'
+    },
+    {
+      title: 'Assessment & Evaluation',
+      content: 'We\'ll conduct either an Initial Evaluation (IE) or Functional Evaluation (FE). This will help us understand your child\'s current strengths, challenges, and developmental profile — giving us the foundation to build the right program for them.'
+    },
+    {
+      title: 'Program Planning',
+      content: 'Based on the evaluation results, your child\'s therapist will design an individualized program tailored to their specific goals, pace, and learning style. We\'ll walk you through the plan and make sure you understand every part of it.'
+    },
+    {
+      title: 'Attend Sessions',
+      content: 'Your child begins therapy! Sessions are structured around their individualized plan, using play-based and evidence-based approaches. We\'ll also provide home exercises and activities so progress continues beyond the clinic.'
+    },
+    {
+      title: 'Monitor Progress',
+      content: 'We believe in keeping families in the loop. After every session, we share feedback on how your child did. We conduct regular progress reviews and adjust the program as your child grows and achieves their goals.'
+    },
   ]
 
   const testimonials = [
@@ -449,8 +470,21 @@ export default function HomePage() {
               style={{ fontSize: '14px', color: scrolled ? '#0f4c81' : '#545454', textDecoration: 'none', fontWeight: '500', transition: 'opacity 0.2s' }}>{l.label}</a>
           ))}
           <span onClick={() => setShowJoinUs(true)} style={{ fontSize: '14px', color: scrolled ? '#0f4c81' : '#545454', fontWeight: '500', cursor: 'pointer' }}>Join us</span>
-          <a href="/therapist/login" style={{ padding: '9px 20px', borderRadius: '6px', background: '#0f4c81', color: 'white', textDecoration: 'none', fontSize: '13px', fontWeight: '700' }}>Therapist Login</a>
-          <Link href="/login" style={{ padding: '9px 20px', borderRadius: '6px', background: '#fcc200', color: '#0f4c81', textDecoration: 'none', fontSize: '13px', fontWeight: '700' }}>Staff Login</Link>
+          <div style={{ position: 'relative' }}>
+            <button onClick={() => setShowLoginMenu(!showLoginMenu)} style={{ padding: '9px 20px', borderRadius: '6px', background: '#fcc200', color: '#0f4c81', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '700', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              Login ▾
+            </button>
+            {showLoginMenu && (
+              <>
+                <div onClick={() => setShowLoginMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 149 }} />
+                <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, background: 'white', borderRadius: '10px', boxShadow: '0 12px 32px rgba(15,76,129,0.18)', border: '1px solid #eee', width: '180px', overflow: 'hidden', zIndex: 150 }}>
+                  <div onClick={() => { setShowLoginMenu(false); setShowParentComingSoon(true) }} style={{ padding: '13px 18px', cursor: 'pointer', fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', color: '#0f4c81', borderBottom: '1px solid #f5f5f5' }}>Parent Login</div>
+                  <a href="/therapist/login" style={{ display: 'block', padding: '13px 18px', cursor: 'pointer', fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', color: '#0f4c81', borderBottom: '1px solid #f5f5f5', textDecoration: 'none' }}>Therapist Login</a>
+                  <Link href="/login" style={{ display: 'block', padding: '13px 18px', cursor: 'pointer', fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', color: '#0f4c81', textDecoration: 'none' }}>Staff Login</Link>
+                </div>
+              </>
+            )}
+          </div>
         </div>
         <button className="hamburger-btn" onClick={() => {
           const menu = document.getElementById('public-mobile-menu')
@@ -478,12 +512,10 @@ export default function HomePage() {
         ))}
         <span onClick={() => { setShowJoinUs(true); const menu = document.getElementById('public-mobile-menu'); if (menu) menu.style.display = 'none' }}
           style={{ display: 'block', padding: '13px 24px', fontSize: '14px', color: '#0f4c81', fontWeight: '500', borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}>Join us</span>
-        <div style={{ padding: '12px 24px 0' }}>
-          <a href="/therapist/login" style={{ display: 'block', padding: '10px 20px', borderRadius: '6px', background: '#0f4c81', color: 'white', textAlign: 'center', textDecoration: 'none', fontSize: '13px', fontWeight: '700' }}>Therapist Login</a>
-        </div>
-        <div style={{ padding: '12px 24px' }}>
-          <Link href="/login" style={{ display: 'block', padding: '10px 20px', borderRadius: '6px', background: '#fcc200', color: '#0f4c81', textAlign: 'center', textDecoration: 'none', fontSize: '13px', fontWeight: '700' }}>Staff Login</Link>
-        </div>
+        <div onClick={() => { const menu = document.getElementById('public-mobile-menu'); if (menu) menu.style.display = 'none'; setShowParentComingSoon(true) }}
+          style={{ display: 'block', padding: '13px 24px', fontSize: '14px', color: '#0f4c81', fontWeight: '700', borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}>Parent Login</div>
+        <a href="/therapist/login" style={{ display: 'block', padding: '13px 24px', fontSize: '14px', color: '#0f4c81', fontWeight: '700', borderBottom: '1px solid #f0f0f0', textDecoration: 'none' }}>Therapist Login</a>
+        <Link href="/login" style={{ display: 'block', padding: '13px 24px', fontSize: '14px', color: '#0f4c81', fontWeight: '700', textDecoration: 'none' }}>Staff Login</Link>
       </div>
 
       {/* Hero */}
@@ -788,7 +820,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── REACHING POTENTIALS ── navy-heavy: navy top-left, yellow top-right accent */}
+      {/* ── REACHING POTENTIALS ── */}
       <section id="reaching-potentials" style={{ padding: '6rem 2rem', background: '#f8f9fb', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', width: '340px', height: '340px', background: 'rgba(15,76,129,0.06)', borderRadius: '50% 40% 60% 40%', top: '-80px', left: '-80px', pointerEvents: 'none', zIndex: 0 }} />
         <div style={{ position: 'absolute', width: '200px', height: '200px', background: 'rgba(15,76,129,0.04)', borderRadius: '40% 60% 50% 50%', top: '20%', left: '20px', pointerEvents: 'none', zIndex: 0 }} />
@@ -796,79 +828,109 @@ export default function HomePage() {
         <div style={{ position: 'absolute', width: '260px', height: '260px', background: 'rgba(15,76,129,0.05)', borderRadius: '60% 40% 30% 70%', bottom: '-60px', right: '-60px', pointerEvents: 'none', zIndex: 0 }} />
 
         <style>{`
-          .t-card { background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid #e8edf5; box-shadow: 0 2px 12px rgba(15,76,129,0.06); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; }
+          .t-card { background: #fff; border-radius: 16px; overflow: hidden; border: 1px solid #e8edf5; box-shadow: 0 2px 12px rgba(15,76,129,0.06); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; display: flex; flex-direction: column; }
           .t-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(15,76,129,0.12); border-color: #fcc200; }
-          .t-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-          @media (max-width: 768px) { .t-grid { grid-template-columns: 1fr; } }
           .t-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1rem; }
           .t-modal { background: #fff; border-radius: 20px; max-width: 580px; width: 100%; max-height: 88vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.2); position: relative; }
           .t-modal-photo { height: 220px; overflow: hidden; flex-shrink: 0; }
           .t-modal-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
           .t-modal-body { padding: 1.75rem; overflow-y: auto; flex: 1; }
           .t-modal-close { position: absolute; top: 12px; right: 12px; width: 30px; height: 30px; border-radius: 50%; background: white; border: none; cursor: pointer; font-size: 14px; font-weight: 700; color: #333; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10; display: flex; align-items: center; justify-content: center; }
+          .t-nav-btn { width: 38px; height: 38px; border-radius: 50%; background: #fff; border: 1px solid #e0e0e0; cursor: pointer; font-size: 18px; color: #0f4c81; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.2s; flex-shrink: 0; }
+          .t-nav-btn:hover:not(:disabled) { background: #fcc200; color: #0f4c81; border-color: #fcc200; }
+          .t-nav-btn:disabled { background: #f0f0f0; color: #ccc; border-color: #e0e0e0; cursor: not-allowed; box-shadow: none; }
+          .t-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; flex: 1; }
+          @media (max-width: 768px) { .t-grid { grid-template-columns: 1fr; } }
         `}</style>
 
-        <div style={{ maxWidth: '1000px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+
+          {/* Header */}
           <div className="reveal" style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <div style={{ fontSize: '11px', letterSpacing: '0.18em', color: '#fcc200', fontWeight: '600', marginBottom: '10px', textTransform: 'uppercase' }}>In Their Words</div>
             <h2 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 10px', fontWeight: '800' }}>Reaching Potentials</h2>
             <p style={{ color: '#666', fontSize: '15px', maxWidth: '480px', margin: '0 auto', lineHeight: '1.75', fontWeight: '300' }}>Real stories from families we've had the privilege of walking alongside.</p>
           </div>
 
-          <div className="t-grid">
-            {testimonials.map((t, i) => (
-              <div key={i} className={`reveal d${Math.min(i + 1, 8)} t-card`} onClick={() => setOpenTestimonial(i)}>
-                <div style={{ height: '160px', overflow: 'hidden' }}>
-                  <img src={t.photo} alt="Session" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                </div>
-                <div style={{ padding: '1.25rem' }}>
-                  <div style={{ fontSize: '32px', color: '#fcc200', lineHeight: '0.6', marginBottom: '8px', fontFamily: 'Georgia, serif', opacity: 0.7 }}>"</div>
-                  <div style={{ fontSize: '13px', color: '#555', lineHeight: '1.7', fontStyle: 'italic', marginBottom: '10px' }}>{t.pull}</div>
-                  <div style={{ fontSize: '11px', color: '#0f4c81', fontWeight: '700', fontFamily: "'Nunito', sans-serif", marginBottom: '10px' }}>Read full story →</div>
-                  <div style={{ paddingTop: '10px', borderTop: '1px solid #f0f4fa' }}>
-                    <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '12px', fontWeight: '800', color: '#0f4c81' }}>{t.name}</div>
+          {/* Cards + side arrows */}
+          <div className="reveal d2" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+
+            {/* Left arrow */}
+            <button
+              className="t-nav-btn"
+              onClick={() => setTestimonialsStart(p => (p - 1 + testimonials.length) % testimonials.length)}
+            >‹</button>
+
+            {/* Card grid */}
+            <div className="t-grid">
+              {[0, 1, 2].map((offset) => {
+                const globalIndex = (testimonialsStart + offset) % testimonials.length
+                const t = testimonials[globalIndex]
+                return (
+                  <div key={globalIndex} className="t-card" onClick={() => setOpenTestimonial(globalIndex)}>
+                    <div style={{ height: '160px', overflow: 'hidden', flexShrink: 0 }}>
+                      <img src={t.photo} alt="Session" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    </div>
+                    <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                      <div style={{ fontSize: '32px', color: '#fcc200', lineHeight: '0.6', marginBottom: '8px', fontFamily: 'Georgia, serif', opacity: 0.7 }}>"</div>
+                      <div style={{ fontSize: '13px', color: '#555', lineHeight: '1.7', fontStyle: 'italic', marginBottom: '10px', flex: 1 }}>{t.pull}</div>
+                      <div style={{ fontSize: '11px', color: '#0f4c81', fontWeight: '700', fontFamily: "'Nunito', sans-serif", marginBottom: '10px' }}>Read full story →</div>
+                      <div style={{ paddingTop: '10px', borderTop: '1px solid #f0f4fa' }}>
+                        <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '12px', fontWeight: '800', color: '#0f4c81' }}>{t.name}</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                )
+              })}
+            </div>
+
+            {/* Right arrow */}
+            <button
+              className="t-nav-btn"
+              onClick={() => setTestimonialsStart(p => (p + 1) % testimonials.length)}
+            >›</button>
+
+    </div>
+
+    {/* Modal */}
+    {openTestimonial !== null && (
+      <div className="t-modal-overlay" onClick={() => setOpenTestimonial(null)}>
+        <div className="t-modal" onClick={e => e.stopPropagation()}>
+          <button className="t-modal-close" onClick={() => setOpenTestimonial(null)}>✕</button>
+          <div className="t-modal-photo">
+            <img src={testimonials[openTestimonial].photo} alt="Session" />
           </div>
-
-          {/* Modal */}
-          {openTestimonial !== null && (
-            <div className="t-modal-overlay" onClick={() => setOpenTestimonial(null)}>
-              <div className="t-modal" onClick={e => e.stopPropagation()}>
-                <button className="t-modal-close" onClick={() => setOpenTestimonial(null)}>✕</button>
-                <div className="t-modal-photo">
-                  <img src={testimonials[openTestimonial].photo} alt="Session" />
-                </div>
-                <div className="t-modal-body">
-                  <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '14px', fontWeight: '800', color: '#0f4c81', marginBottom: '2px' }}>{testimonials[openTestimonial].name}</div>
-                  <div style={{ fontSize: '14px', color: '#555', lineHeight: '1.85' }}>
-                    {renderHighlighted(testimonials[openTestimonial].full)}
-                  </div>
-                </div>
-              </div>
+          <div className="t-modal-body">
+            <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '14px', fontWeight: '800', color: '#0f4c81', marginBottom: '1.25rem' }}>
+              {testimonials[openTestimonial].name}
             </div>
-          )}
-
-          {/* Music Player */}
-          <div className="reveal d4" style={{ display: 'flex', justifyContent: 'center', marginTop: '3rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 18px', borderRadius: '40px', border: '1px solid #e0e0e0', background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', fontFamily: "'Nunito', sans-serif", maxWidth: '380px', width: '100%' }}>
-              <button onClick={skipToPrevSong} disabled={musicTrack === 0} style={{ flexShrink: 0, width: '28px', height: '28px', borderRadius: '50%', border: 'none', background: musicTrack === 0 ? '#f0f0f0' : '#f0f4fa', color: musicTrack === 0 ? '#ccc' : '#0f4c81', cursor: musicTrack === 0 ? 'not-allowed' : 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⏮</button>
-              <button onClick={toggleMusic} style={{ flexShrink: 0, width: '32px', height: '32px', borderRadius: '50%', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{musicPlaying ? '⏸' : '▶'}</button>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
-                  <span style={{ fontSize: '11px', color: '#999', fontWeight: '600' }}>{SONG_TITLES[musicTrack]}</span>
-                  <span style={{ fontSize: '11px', color: '#999' }}>{formatTime(musicCurrentTime)} / {formatTime(musicDuration)}</span>
-                </div>
-                <input type="range" min={0} max={musicDuration || 0} value={musicCurrentTime} onChange={seekMusic} style={{ width: '100%', accentColor: '#fcc200', height: '4px', cursor: 'pointer' }} />
-              </div>
-              <button onClick={skipToNextSong} disabled={musicTrack === 1} style={{ flexShrink: 0, width: '28px', height: '28px', borderRadius: '50%', border: 'none', background: musicTrack === 1 ? '#f0f0f0' : '#f0f4fa', color: musicTrack === 1 ? '#ccc' : '#0f4c81', cursor: musicTrack === 1 ? 'not-allowed' : 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⏭</button>
+            <div style={{ fontSize: '14px', color: '#555', lineHeight: '1.85' }}>
+              {renderHighlighted(testimonials[openTestimonial].full)}
             </div>
-            <audio ref={audioRef} src={SONGS[musicTrack]} onEnded={handleSongEnded} onTimeUpdate={e => setMusicCurrentTime(e.currentTarget.currentTime)} onLoadedMetadata={e => setMusicDuration(e.currentTarget.duration)} />
           </div>
         </div>
-      </section>
+      </div>
+    )}
+
+    {/* Music Player */}
+    <div className="reveal d3" style={{ display: 'flex', justifyContent: 'center', marginTop: '3rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 18px', borderRadius: '40px', border: '1px solid #e0e0e0', background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', fontFamily: "'Nunito', sans-serif", maxWidth: '380px', width: '100%' }}>
+        <button onClick={skipToPrevSong} disabled={musicTrack === 0} style={{ flexShrink: 0, width: '28px', height: '28px', borderRadius: '50%', border: 'none', background: musicTrack === 0 ? '#f0f0f0' : '#f0f4fa', color: musicTrack === 0 ? '#ccc' : '#0f4c81', cursor: musicTrack === 0 ? 'not-allowed' : 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⏮</button>
+        <button onClick={toggleMusic} style={{ flexShrink: 0, width: '32px', height: '32px', borderRadius: '50%', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{musicPlaying ? '⏸' : '▶'}</button>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+            <span style={{ fontSize: '11px', color: '#999', fontWeight: '600' }}>{SONG_TITLES[musicTrack]}</span>
+            <span style={{ fontSize: '11px', color: '#999' }}>{formatTime(musicCurrentTime)} / {formatTime(musicDuration)}</span>
+          </div>
+          <input type="range" min={0} max={musicDuration || 0} value={musicCurrentTime} onChange={seekMusic} style={{ width: '100%', accentColor: '#fcc200', height: '4px', cursor: 'pointer' }} />
+        </div>
+        <button onClick={skipToNextSong} disabled={musicTrack === 1} style={{ flexShrink: 0, width: '28px', height: '28px', borderRadius: '50%', border: 'none', background: musicTrack === 1 ? '#f0f0f0' : '#f0f4fa', color: musicTrack === 1 ? '#ccc' : '#0f4c81', cursor: musicTrack === 1 ? 'not-allowed' : 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⏭</button>
+      </div>
+      <audio ref={audioRef} src={SONGS[musicTrack]} onEnded={handleSongEnded} onTimeUpdate={e => setMusicCurrentTime(e.currentTarget.currentTime)} onLoadedMetadata={e => setMusicDuration(e.currentTarget.duration)} />
+    </div>
+
+  </div>
+</section>
 
       {/* ── LOCATION ── yellow-heavy: yellow bottom-left, tiny navy top-right */}
       <section id="location" style={{ padding: '6rem 2rem', background: '#fff', position: 'relative', overflow: 'hidden' }}>
@@ -951,6 +1013,22 @@ export default function HomePage() {
         </div>
       )}
 
+      {showParentComingSoon && (
+        <div onClick={() => setShowParentComingSoon(false)} style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15,25,40,0.55)', zIndex: 200,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem'
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '18px', padding: '2.5rem 2rem', width: '380px', maxWidth: '100%', textAlign: 'center', boxShadow: '0 24px 60px rgba(0,0,0,0.25)', position: 'relative' }}>
+            <button onClick={() => setShowParentComingSoon(false)} style={{ position: 'absolute', top: '14px', right: '16px', border: 'none', background: 'none', fontSize: '18px', color: '#bbb', cursor: 'pointer' }}>✕</button>
+            <div style={{ fontSize: '40px', marginBottom: '14px' }}>👪</div>
+            <div style={{ fontFamily: "'Nunito', sans-serif", fontWeight: '800', fontSize: '19px', color: '#0f4c81', marginBottom: '8px' }}>Parent Portal is coming soon!</div>
+            <div style={{ fontSize: '13.5px', color: '#7a7f87', lineHeight: '1.6', marginBottom: '1.5rem' }}>We're building a space where you can check your child's upcoming sessions, attendance, and payments. Hang tight — we'll let you know once it's ready.</div>
+            <button onClick={() => setShowParentComingSoon(false)} style={{ fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', padding: '10px 26px', borderRadius: '8px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer' }}>Got it</button>
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <footer style={{ background: '#0f4c81', color: 'rgba(255,255,255,0.7)', padding: '2rem', textAlign: 'center', borderTop: '3px solid #fcc200' }}>
         <div style={{ fontSize: '13px', marginBottom: '8px', fontFamily: "'Nunito', sans-serif", fontWeight: '600', color: 'rgba(255,255,255,0.8)' }}>
@@ -959,8 +1037,6 @@ export default function HomePage() {
         <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', fontSize: '13px', fontFamily: "'Nunito', sans-serif", flexWrap: 'wrap' }}>
           <a href="/privacy" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Privacy Policy</a>
           <a target="_blank" rel="noopener noreferrer" href="mailto:potentialstherapycenter@gmail.com" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Contact</a>
-          <Link href="/login" style={{ color: '#fcc200', textDecoration: 'none', fontWeight: '700' }}>Staff Login</Link>
-          <Link href="/therapist/login" style={{ color: '#fcc200', textDecoration: 'none', fontWeight: '700' }}>Therapist Login</Link>
         </div>
       </footer>
     </div>
