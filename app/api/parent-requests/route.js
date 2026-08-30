@@ -11,7 +11,8 @@ export async function GET() {
       status: row[3] || 'pending',
       requested_children: row[4] || '',
       linked_clients: row[5] || '',
-      created_at: row[6] || ''
+      created_at: row[6] || '',
+      pending_additional_children: row[7] || ''
     }))
     return Response.json({ success: true, data: accounts })
   } catch (error) {
@@ -47,6 +48,30 @@ export async function PATCH(request) {
         range: `parent_accounts!D${sheetRow}`,
         valueInputOption: 'RAW',
         requestBody: { values: [['rejected']] }
+      })
+      return Response.json({ success: true })
+    }
+
+    if (body.action === 'approve_additional') {
+      const newClients = (body.linked_clients || []).join('; ')
+      if (!newClients) return Response.json({ success: false, error: 'Please link at least one child' })
+      const existingLinked = rows[rowIndex][5] || ''
+      const combined = existingLinked ? `${existingLinked}; ${newClients}` : newClients
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `parent_accounts!F${sheetRow}:H${sheetRow}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[combined, rows[rowIndex][6] || '', '']] }
+      })
+      return Response.json({ success: true })
+    }
+
+    if (body.action === 'reject_additional') {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `parent_accounts!H${sheetRow}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [['']] }
       })
       return Response.json({ success: true })
     }

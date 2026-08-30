@@ -21,6 +21,10 @@ export default function ParentDashboard() {
   const [children, setChildren] = useState([])
   const [activeChild, setActiveChild] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [addChildModal, setAddChildModal] = useState(false)
+  const [newChildNames, setNewChildNames] = useState([''])
+  const [addChildSaving, setAddChildSaving] = useState(false)
+  const [addChildSuccess, setAddChildSuccess] = useState(false)
   const router = useRouter()
 
   useEffect(() => { fetchDashboard() }, [])
@@ -40,6 +44,31 @@ export default function ParentDashboard() {
   async function logout() {
     await fetch('/api/parent/auth', { method: 'DELETE' })
     router.push('/parent/login')
+  }
+
+  function updateNewChild(i, value) {
+    setNewChildNames(prev => prev.map((c, idx) => idx === i ? value : c))
+  }
+
+  function addNewChildField() {
+    setNewChildNames(prev => [...prev, ''])
+  }
+
+  function removeNewChildField(i) {
+    setNewChildNames(prev => prev.filter((_, idx) => idx !== i))
+  }
+
+  async function submitAddChild() {
+    const cleanNames = newChildNames.map(c => c.trim()).filter(Boolean)
+    if (cleanNames.length === 0) return
+    setAddChildSaving(true)
+    await fetch('/api/parent/request-add-child', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ children: cleanNames })
+    })
+    setAddChildSaving(false)
+    setAddChildSuccess(true)
   }
 
   if (loading) {
@@ -70,22 +99,61 @@ export default function ParentDashboard() {
               {getGreeting()} 👋
             </div>
 
-            {children.length > 1 && (
-              <div style={{ display: 'flex', gap: '10px', marginBottom: '2rem', flexWrap: 'wrap' }}>
-                {children.map((child, i) => (
-                  <div key={child.name} onClick={() => setActiveChild(i)} style={{
-                    display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 18px 8px 10px', borderRadius: '40px',
-                    background: 'white', border: `2px solid ${activeChild === i ? '#fcc200' : 'transparent'}`, cursor: 'pointer'
-                  }}>
-                    <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: AVATAR_COLORS[i % AVATAR_COLORS.length], color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Nunito', sans-serif", fontWeight: '800', fontSize: '14px' }}>
-                      {initials(child.name)}
-                    </div>
-                    <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', color: '#0f4c81' }}>{child.name.split(',')[1]?.trim() || child.name}</span>
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '2rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              {children.map((child, i) => (
+                <div key={child.name} onClick={() => setActiveChild(i)} style={{
+                  display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 18px 8px 10px', borderRadius: '40px',
+                  background: 'white', border: `2px solid ${activeChild === i ? '#fcc200' : 'transparent'}`, cursor: 'pointer'
+                }}>
+                  <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: AVATAR_COLORS[i % AVATAR_COLORS.length], color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Nunito', sans-serif", fontWeight: '800', fontSize: '14px' }}>
+                    {initials(child.name)}
                   </div>
-                ))}
-              </div>
-            )}
+                  <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', color: '#0f4c81' }}>{child.name.split(',')[1]?.trim() || child.name}</span>
+                </div>
+              ))}
+              <button onClick={() => { setAddChildModal(true); setNewChildNames(['']); setAddChildSuccess(false) }} style={{
+                padding: '8px 16px', borderRadius: '40px', border: '2px dashed #ccc', background: 'transparent',
+                color: '#999', cursor: 'pointer', fontSize: '12px', fontFamily: "'Nunito', sans-serif", fontWeight: '700'
+              }}>+ Add a child</button>
+            </div>
           </div>
+
+          {addChildModal && (
+            <div onClick={() => setAddChildModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,25,40,0.55)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '18px', padding: '2rem', width: '420px', maxWidth: '100%' }}>
+                {addChildSuccess ? (
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '36px', marginBottom: '10px' }}>✅</div>
+                    <h3 style={{ fontFamily: "'Nunito', sans-serif", color: '#0f4c81', marginBottom: '8px' }}>Request sent!</h3>
+                    <p style={{ fontSize: '13px', color: '#7a7f87', lineHeight: '1.6', marginBottom: '1.25rem' }}>Our clinic will review and link the new child to your account shortly.</p>
+                    <button onClick={() => setAddChildModal(false)} style={{ padding: '9px 22px', borderRadius: '8px', border: 'none', background: '#0f4c81', color: 'white', fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>Close</button>
+                  </div>
+                ) : (
+                  <>
+                    <h3 style={{ fontFamily: "'Nunito', sans-serif", color: '#0f4c81', marginBottom: '4px' }}>Add a child</h3>
+                    <p style={{ fontSize: '12px', color: '#999', marginBottom: '1.25rem' }}>Newly enrolled another child? Let us know their name and we'll link them to your account.</p>
+                    {newChildNames.map((name, i) => (
+                      <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                        <input value={name} onChange={e => updateNewChild(i, e.target.value)}
+                          placeholder="e.g. Santos, Maria"
+                          style={{ flex: 1, padding: '9px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box' }} />
+                        {newChildNames.length > 1 && (
+                          <button onClick={() => removeNewChildField(i)} style={{ padding: '0 12px', borderRadius: '8px', border: '1px solid #fcc', background: '#fff5f5', color: '#c00', cursor: 'pointer' }}>✕</button>
+                        )}
+                      </div>
+                    ))}
+                    <button onClick={addNewChildField} style={{ fontSize: '12px', padding: '6px 12px', borderRadius: '6px', border: '1px solid #0f4c81', background: 'white', color: '#0f4c81', cursor: 'pointer', marginBottom: '1.25rem' }}>+ Add another</button>
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                      <button onClick={() => setAddChildModal(false)} style={{ padding: '9px 18px', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
+                      <button onClick={submitAddChild} disabled={addChildSaving} style={{ padding: '9px 22px', borderRadius: '8px', border: 'none', background: '#fcc200', color: '#0f4c81', fontFamily: "'Nunito', sans-serif", fontWeight: '800', fontSize: '13px', cursor: 'pointer', opacity: addChildSaving ? 0.7 : 1 }}>
+                        {addChildSaving ? 'Sending...' : 'Send request'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
 
           {children.length === 0 ? (
             <div style={{ maxWidth: '480px', margin: '2rem auto', padding: '2rem', background: 'white', border: '1px dashed #ddd', borderRadius: '14px', textAlign: 'center', color: '#999', fontSize: '13px' }}>

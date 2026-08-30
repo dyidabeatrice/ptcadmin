@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-function AccountCard({ account, clients, onApprove, onReject }) {
+function AccountCard({ account, clients, onApprove, onReject, onApproveAdditional, onRejectAdditional }) {
   const [selectedClients, setSelectedClients] = useState([])
   const [clientInput, setClientInput] = useState('')
   const [processing, setProcessing] = useState(false)
@@ -62,6 +62,10 @@ function AccountCard({ account, clients, onApprove, onReject }) {
         </div>
       )}
 
+      {account.status === 'active' && account.pending_additional_children && (
+        <AddChildRequest account={account} clients={clients} onApprove={onApproveAdditional} onReject={onRejectAdditional} />
+      )}
+
       {account.status === 'pending' && (
         <>
           <div style={{ marginBottom: '10px' }}>
@@ -101,6 +105,65 @@ function AccountCard({ account, clients, onApprove, onReject }) {
   )
 }
 
+function AddChildRequest({ account, clients, onApprove, onReject }) {
+  const [selectedClients, setSelectedClients] = useState([])
+  const [clientInput, setClientInput] = useState('')
+  const [processing, setProcessing] = useState(false)
+
+  function addClient() {
+    const match = clients.find(c => c.name === clientInput)
+    if (!match || selectedClients.includes(match.name)) { setClientInput(''); return }
+    setSelectedClients(prev => [...prev, match.name])
+    setClientInput('')
+  }
+
+  async function handleApprove() {
+    setProcessing(true)
+    await onApprove(account.id, selectedClients)
+    setProcessing(false)
+  }
+
+  async function handleReject() {
+    setProcessing(true)
+    await onReject(account.id)
+    setProcessing(false)
+  }
+
+  return (
+    <div style={{ marginTop: '12px', padding: '12px 14px', background: '#FAEEDA', border: '1px solid #EF9F27', borderRadius: '10px' }}>
+      <div style={{ fontSize: '12px', color: '#633806', marginBottom: '8px' }}>
+        <strong>Requested to add:</strong> {account.pending_additional_children}
+      </div>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+        <input value={clientInput} onChange={e => setClientInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addClient())}
+          list={`add-client-list-${account.id}`} placeholder="Type or select the client to link..."
+          style={{ flex: 1, padding: '7px 10px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box' }} />
+        <datalist id={`add-client-list-${account.id}`}>
+          {clients.map(c => <option key={c.id} value={c.name} />)}
+        </datalist>
+        <button onClick={addClient} style={{ padding: '7px 12px', borderRadius: '6px', border: '1px solid #0f4c81', background: 'white', color: '#0f4c81', cursor: 'pointer', fontSize: '12px' }}>+ Add</button>
+      </div>
+      {selectedClients.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px' }}>
+          {selectedClients.map(name => (
+            <span key={name} style={{ fontSize: '12px', padding: '4px 10px', borderRadius: '14px', background: 'white', color: '#633806', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {name}
+              <button onClick={() => setSelectedClients(prev => prev.filter(c => c !== name))} style={{ border: 'none', background: 'none', color: '#633806', cursor: 'pointer' }}>✕</button>
+            </span>
+          ))}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+        <button onClick={handleReject} disabled={processing} style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #fcc', background: 'white', color: '#c00', cursor: 'pointer', fontSize: '12px' }}>Dismiss</button>
+        <button onClick={handleApprove} disabled={processing || selectedClients.length === 0} style={{ padding: '6px 14px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '500', opacity: (processing || selectedClients.length === 0) ? 0.5 : 1 }}>
+          {processing ? 'Adding...' : 'Approve & link'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function ParentRequestsPage() {
   const [accounts, setAccounts] = useState([])
   const [clients, setClients] = useState([])
@@ -132,6 +195,24 @@ export default function ParentRequestsPage() {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'reject', id })
+    })
+    fetchAll()
+  }
+
+  async function handleApproveAdditional(id, linkedClients) {
+    await fetch('/api/parent-requests', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'approve_additional', id, linked_clients: linkedClients })
+    })
+    fetchAll()
+  }
+
+  async function handleRejectAdditional(id) {
+    await fetch('/api/parent-requests', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reject_additional', id })
     })
     fetchAll()
   }
@@ -168,7 +249,7 @@ export default function ParentRequestsPage() {
         filtered
           .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
           .map(account => (
-            <AccountCard key={account.id} account={account} clients={clients} onApprove={handleApprove} onReject={handleReject} />
+            <AccountCard key={account.id} account={account} clients={clients} onApprove={handleApprove} onReject={handleReject} onApproveAdditional={handleApproveAdditional} onRejectAdditional={handleRejectAdditional} />
           ))
       )}
     </div>
