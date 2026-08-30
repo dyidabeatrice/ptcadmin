@@ -19,7 +19,7 @@ const NAV_LINKS = [
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isPublicPage = ['/', '/login', '/privacy'].includes(pathname) || pathname.startsWith('/therapist/')
+  const isPublicPage = ['/', '/login', '/privacy'].includes(pathname) || pathname.startsWith('/therapist/') || pathname.startsWith('/parent/')
 
   return (
     <html lang="en">
