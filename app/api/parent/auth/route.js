@@ -25,6 +25,9 @@ export async function POST(request) {
     if (accountRow[3] === 'rejected') {
       return Response.json({ success: false, error: 'This account is not active. Please contact the clinic.' })
     }
+    if (accountRow[3] === 'deleted') {
+      return Response.json({ success: false, error: 'This account has been deleted.' })
+    }
 
     const token = signToken({ role: 'parent', id: accountRow[0], email: normalizedEmail })
     const cookieStore = await cookies()

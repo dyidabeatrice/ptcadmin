@@ -25,6 +25,9 @@ export default function ParentDashboard() {
   const [newChildNames, setNewChildNames] = useState([''])
   const [addChildSaving, setAddChildSaving] = useState(false)
   const [addChildSuccess, setAddChildSuccess] = useState(false)
+  const [deleteModal, setDeleteModal] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [deleting, setDeleting] = useState(false)
   const router = useRouter()
 
   useEffect(() => { fetchDashboard() }, [])
@@ -43,6 +46,12 @@ export default function ParentDashboard() {
 
   async function logout() {
     await fetch('/api/parent/auth', { method: 'DELETE' })
+    router.push('/parent/login')
+  }
+
+  async function deleteAccount() {
+    setDeleting(true)
+    await fetch('/api/parent/delete-account', { method: 'POST' })
     router.push('/parent/login')
   }
 
@@ -204,8 +213,35 @@ export default function ParentDashboard() {
 
               </div>
             )
-          })()}
+          })(          )}
+
+          <div style={{ maxWidth: '760px', margin: '0 auto', padding: '0 2rem 2rem', textAlign: 'center' }}>
+            <button onClick={() => { setDeleteModal(true); setDeleteConfirmText('') }} style={{
+              background: 'none', border: 'none', color: '#bbb', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline'
+            }}>Delete my account</button>
+          </div>
         </>
+      )}
+
+      {deleteModal && (
+        <div onClick={() => !deleting && setDeleteModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,25,40,0.55)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '18px', padding: '2rem', width: '400px', maxWidth: '100%' }}>
+            <h3 style={{ fontFamily: "'Nunito', sans-serif", color: '#791F1F', marginBottom: '8px' }}>Delete your account?</h3>
+            <p style={{ fontSize: '13px', color: '#7a7f87', lineHeight: '1.6', marginBottom: '1rem' }}>
+              This removes your login access. It does not affect your child's records or sessions at the clinic — only your ability to view them here. This cannot be undone.
+            </p>
+            <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Type <strong>DELETE</strong> to confirm</label>
+            <input value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)}
+              style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '14px', boxSizing: 'border-box', marginBottom: '1.25rem' }} />
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setDeleteModal(false)} disabled={deleting} style={{ padding: '9px 18px', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
+              <button onClick={deleteAccount} disabled={deleting || deleteConfirmText !== 'DELETE'} style={{
+                padding: '9px 22px', borderRadius: '8px', border: 'none', background: '#E24B4A', color: 'white',
+                fontWeight: '600', fontSize: '13px', cursor: 'pointer', opacity: (deleting || deleteConfirmText !== 'DELETE') ? 0.5 : 1
+              }}>{deleting ? 'Deleting...' : 'Delete account'}</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
