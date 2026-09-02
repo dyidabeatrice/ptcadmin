@@ -134,7 +134,7 @@ export default function SchedulePage() {
   const [editMessageModal, setEditMessageModal] = useState(null) // { title, message, onConfirm } // { [`${day}:${type}`]: { current, total } }
   const [search, setSearch] = useState('')
   const [payModal, setPayModal] = useState(null)
-  const [payForm, setPayForm] = useState({ session_type: '', mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0 })
+  const [payForm, setPayForm] = useState({ session_type: '', mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0, payment_timeliness: '', actual_payment_date: '' })
   const [clientCredit, setClientCredit] = useState(0)
   const [creditNotes, setCreditNotes] = useState({ mop: '', reference: '', comments: '', date: '' })
   const [remindModal, setRemindModal] = useState(null)
@@ -501,7 +501,7 @@ export default function SchedulePage() {
     }
     await fetch('/api/sessions', {
       method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'pay', week_key: selectedWeek.key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payForm.session_type, mop: payForm.use_credit ? creditMop : payForm.split ? 'Split' : payForm.mop, amount: payForm.amount, use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, credit_balance: clientCredit, reference: payForm.reference || creditRef, custom_notes: payForm.custom_notes || '' })
+      body: JSON.stringify({ action: 'pay', week_key: selectedWeek.key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payForm.session_type, mop: payForm.use_credit ? creditMop : payForm.split ? 'Split' : payForm.mop, amount: payForm.amount, use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, credit_balance: clientCredit, reference: payForm.reference || creditRef, custom_notes: payForm.custom_notes || '', payment_timeliness: payForm.payment_timeliness, actual_payment_date: payForm.actual_payment_date })
     })
     setPayModal(null)
     fetchSessions(selectedWeek.key)
@@ -1612,6 +1612,12 @@ export default function SchedulePage() {
                 <div><span style={{ color: '#999' }}>Date paid:</span> <strong>{paymentDetails.date || '—'}</strong></div>
                 <div><span style={{ color: '#999' }}>MOP:</span> <strong>{paymentDetails.mop || '—'}</strong></div>
                 {paymentDetails.reference && <div><span style={{ color: '#999' }}>Reference:</span> <strong>{paymentDetails.reference}</strong></div>}
+                <div>
+                  <span style={{ color: '#999' }}>Paid when:</span>{' '}
+                  <strong style={{ color: paymentDetails.payment_timeliness === 'late' ? '#E69138' : '#27500A' }}>
+                    {paymentDetails.payment_timeliness === 'late' ? `Late${paymentDetails.actual_payment_date ? ` (${paymentDetails.actual_payment_date})` : ''}` : 'On time'}
+                  </strong>
+                </div>
                 {paymentDetails.comments && <div><span style={{ color: '#999' }}>Notes:</span> <strong>{paymentDetails.comments}</strong></div>}
               </div>
             )}
@@ -1728,14 +1734,37 @@ export default function SchedulePage() {
                 )}
               </div>
             )}
+            <div style={{ marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <label style={{ fontSize: '12px', color: '#666', flexShrink: 0 }}>Payment timing</label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                {[{ v: '', label: 'On time' }, { v: 'late', label: 'Late' }].map(opt => (
+                  <button key={opt.label} onClick={() => setPayForm({ ...payForm, payment_timeliness: opt.v, actual_payment_date: opt.v ? payForm.actual_payment_date : '' })} style={{
+                    padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
+                    border: payForm.payment_timeliness === opt.v ? `2px solid ${opt.v ? '#E69138' : '#97C459'}` : '1px solid #ddd',
+                    background: payForm.payment_timeliness === opt.v ? (opt.v ? '#FCE5CD' : '#EAF3DE') : 'white',
+                    color: payForm.payment_timeliness === opt.v ? (opt.v ? '#7F3F00' : '#27500A') : '#666',
+                    fontWeight: payForm.payment_timeliness === opt.v ? '500' : '400'
+                  }}>{opt.label}</button>
+                ))}
+                </div>
+              </div>
+              {payForm.payment_timeliness === 'late' && (
+                <div style={{ marginTop: '8px' }}>
+                  <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Actual date paid <span style={{ color: '#E24B4A' }}>*</span></label>
+                  <input type="date" value={payForm.actual_payment_date} onChange={e => setPayForm({ ...payForm, actual_payment_date: e.target.value })}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: !payForm.actual_payment_date ? '2px solid #EF9F27' : '1px solid #97C459', fontSize: '14px', boxSizing: 'border-box' }} />
+                </div>
+              )}
+            </div>
             <div style={{ background: '#EAF3DE', borderRadius: '8px', padding: '10px 14px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#27500A', fontWeight: '500' }}>Total</span>
               <span style={{ color: '#27500A', fontWeight: '700', fontSize: '18px' }}>₱{Number(payForm.amount || 0).toLocaleString()}</span>
             </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setPayModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
-              <button onClick={confirmPayment} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes)}
-                style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes)) ? 0.5 : 1 }}>
+              <button onClick={confirmPayment} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes) || (payForm.payment_timeliness === 'late' && !payForm.actual_payment_date)}
+                style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes) || (payForm.payment_timeliness === 'late' && !payForm.actual_payment_date)) ? 0.5 : 1 }}>
                 {saving ? 'Saving...' : `Confirm ₱${Number(payForm.amount || 0).toLocaleString()}`}
               </button>
             </div>

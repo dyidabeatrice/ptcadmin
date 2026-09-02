@@ -30,6 +30,8 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
   const [saving, setSaving] = useState(false)
   const prevMop = useRef(session.mop || '')
   const [isPaid, setIsPaid] = useState(session.is_paid)
+  const [paymentTimeliness, setPaymentTimeliness] = useState(session.payment_timeliness || '')
+  const [actualPaymentDate, setActualPaymentDate] = useState(session.actual_payment_date || '')
 
   const [deleted, setDeleted] = useState(false)
   if (deleted) return <tr style={{ display: 'none' }}><td colSpan={10} /></tr>
@@ -42,6 +44,8 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
     setCut(session.therapist_cut || 0)
     setCenter(session.center || 0)
     setIsPaid(session.is_paid)
+    setPaymentTimeliness(session.payment_timeliness || '')
+    setActualPaymentDate(session.actual_payment_date || '')
     prevMop.current = session.mop || ''
   }, [session.id, session.is_paid, session.mop])
 
@@ -202,6 +206,23 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
     })
   }
 
+  async function saveTimeliness(timeliness, dateVal) {
+    if (!session.payment_id) return
+    setPaymentTimeliness(timeliness)
+    setActualPaymentDate(dateVal)
+    if (timeliness === 'late' && !dateVal) return // wait for date before saving
+    await fetch('/api/payments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_timeliness',
+        id: session.payment_id,
+        payment_timeliness: timeliness,
+        actual_payment_date: dateVal
+      })
+    })
+  }
+
   async function sendRemind() {
     const res = await fetch('/api/messages', {
       method: 'POST',
@@ -220,6 +241,7 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
 
   const bg = !isPaid ? '#f99c9c'
     : (mop === 'BDO' || mop === 'Union Bank') && !reference ? '#fbff00'
+    : paymentTimeliness === 'late' ? '#FCE5CD'
     : 'white'
 
   return (
@@ -312,7 +334,25 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
         <input value={comments} onChange={e => setComments(e.target.value)} onBlur={saveComments}
           placeholder="Notes..." style={{ fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd', width: '100px', boxSizing: 'border-box' }} />
       </td>
-      <td style={{ padding: '8px 10px' }}>
+      <td style={{ padding: '8px 10px', background: bg }}>
+        {!session.payment_id ? (
+          <span style={{ fontSize: '11px', color: '#bbb' }}>—</span>
+        ) : (
+          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <button onClick={() => paymentTimeliness === 'late' ? saveTimeliness('', '') : saveTimeliness('late', actualPaymentDate)} style={{
+              fontSize: '10px', padding: '3px 10px', borderRadius: '5px',
+              border: paymentTimeliness === 'late' ? '1px solid #E69138' : '1px solid #97C459',
+              background: paymentTimeliness === 'late' ? '#FCE5CD' : '#EAF3DE',
+              color: paymentTimeliness === 'late' ? '#7F3F00' : '#27500A', cursor: 'pointer', fontWeight: '500'
+            }}>{paymentTimeliness === 'late' ? 'Late' : 'On time'}</button>
+            {paymentTimeliness === 'late' && (
+              <input type="date" value={actualPaymentDate} onChange={e => saveTimeliness('late', e.target.value)}
+                style={{ fontSize: '10px', padding: '3px 5px', borderRadius: '5px', border: !actualPaymentDate ? '1px solid #EF9F27' : '1px solid #ddd', width: '70px' }} />
+            )}
+          </div>
+        )}
+      </td>
+      <td style={{ padding: '8px 10px', background: bg }}>
         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
           <button onClick={() => applyDeduction(10)} title="Deduct 10% from cut, add to center"
             style={{ fontSize: '10px', padding: '3px 7px', borderRadius: '5px', border: '1px solid #EF9F27', background: '#FAEEDA', color: '#633806', cursor: 'pointer', fontWeight: '500' }}>-10%</button>
@@ -475,7 +515,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, allMonths = [], loade
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ background: '#f0f4f8' }}>
-                        {['Time', 'Client', 'Type of Service', 'MOP', 'Ref No.', 'Total', 'Cut', 'Center', 'Comments', 'Deduction'].map(h => (
+                        {['Time', 'Client', 'Type of Service', 'MOP', 'Ref No.', 'Total', 'Cut', 'Center', 'Comments', 'Paid When', 'Deduction'].map(h => (
                         <th key={h} style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0', whiteSpace: 'nowrap', fontSize: '12px' }}>{h}</th>
                       ))}
                     </tr>
@@ -511,7 +551,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, allMonths = [], loade
                         })
                         return [
                           <tr key={`date-${date}`} style={{ background: '#E6F1FB' }}>
-                            <td colSpan={10} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>
+                            <td colSpan={11} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>
                               {date} <span style={{ fontWeight: '400', color: '#666', marginLeft: '8px' }}>({sessions.length} session{sessions.length !== 1 ? 's' : ''})</span>
                             </td>
                           </tr>,
@@ -528,7 +568,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, allMonths = [], loade
                             <td colSpan={5} style={{ padding: '6px 10px', fontSize: '12px', color: '#666', fontStyle: 'italic' }}>{date} subtotal</td>
                             <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>₱{dateTotal.toLocaleString()}</td>
                             <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#1D9E75' }}>₱{dateCut.toLocaleString()}</td>
-                            <td colSpan={3} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#633806' }}>₱{dateCenter.toLocaleString()}</td>
+                            <td colSpan={4} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#633806' }}>₱{dateCenter.toLocaleString()}</td>
                           </tr>
                         ]
                       }
@@ -543,7 +583,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, allMonths = [], loade
                           <tr key={`period-${period}`} style={{ background: '#fffbe6', borderTop: '2px solid #fcc200', borderBottom: '2px solid #fcc200' }}>
                             <td colSpan={5} style={{ padding: '6px 10px', fontSize: '11px', color: '#0f4c81' }}>{periodLabel}</td>
                             <td colSpan={1} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>₱{periodCut.toLocaleString()}</td>
-                            <td colSpan={4} style={{ padding: '6px 10px' }}>
+                            <td colSpan={5} style={{ padding: '6px 10px' }}>
                               {release ? (
                                 <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A', fontWeight: '500' }}>
                                   ✓ Released {release.date_sent} via {release.sent_via}
@@ -570,7 +610,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, allMonths = [], loade
                         <>
                           {period1Dates.flatMap(renderDateRows)}
                           {renderPeriodRow(1)}
-                          <tr key="separator-1"><td colSpan={10} style={{ padding: '6px', background: '#f16a6a', borderTop: '1px solid #f16a6a', borderBottom: '1px solid #f16a6a' }}></td></tr>
+                          <tr key="separator-1"><td colSpan={11} style={{ padding: '6px', background: '#f16a6a', borderTop: '1px solid #f16a6a', borderBottom: '1px solid #f16a6a' }}></td></tr>
                           {period2Dates.flatMap(renderDateRows)}
                           {renderPeriodRow(2)}
                           <tr style={{ background: '#0f4c81', borderTop: '3px solid #fcc200' }}>
@@ -578,7 +618,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, allMonths = [], loade
                             <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: 'white' }}>₱{mTotal.toLocaleString()}</td>
                             <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: '#97C459' }}>₱{mCut.toLocaleString()}</td>
                             <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '700', color: '#fcc200' }}>₱{mCenter.toLocaleString()}</td>
-                            <td colSpan={2} />
+                            <td colSpan={3} />
                           </tr>
                         </>
                       )
@@ -679,13 +719,36 @@ function SettleModal({ payModal, payForm, setPayForm, clientCredit, creditNotes,
             )}
           </div>
         )}
+        <div style={{ marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <label style={{ fontSize: '12px', color: '#666', flexShrink: 0 }}>Payment timing</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+            {[{ v: '', label: 'On time' }, { v: 'late', label: 'Late' }].map(opt => (
+              <button key={opt.label} onClick={() => setPayForm({ ...payForm, payment_timeliness: opt.v, actual_payment_date: opt.v ? payForm.actual_payment_date : '' })} style={{
+                padding: '7px 16px', borderRadius: '20px', cursor: 'pointer', fontSize: '13px',
+                border: payForm.payment_timeliness === opt.v ? `2px solid ${opt.v ? '#E69138' : '#97C459'}` : '1px solid #ddd',
+                background: payForm.payment_timeliness === opt.v ? (opt.v ? '#FCE5CD' : '#EAF3DE') : 'white',
+                color: payForm.payment_timeliness === opt.v ? (opt.v ? '#7F3F00' : '#27500A') : '#666',
+                fontWeight: payForm.payment_timeliness === opt.v ? '500' : '400'
+              }}>{opt.label}</button>
+            ))}
+            </div>
+          </div>
+          {payForm.payment_timeliness === 'late' && (
+            <div style={{ marginTop: '8px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Actual date paid <span style={{ color: '#E24B4A' }}>*</span></label>
+              <input type="date" value={payForm.actual_payment_date} onChange={e => setPayForm({ ...payForm, actual_payment_date: e.target.value })}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: !payForm.actual_payment_date ? '2px solid #EF9F27' : '1px solid #97C459', fontSize: '14px', boxSizing: 'border-box' }} />
+            </div>
+          )}
+        </div>
         <div style={{ background: '#EAF3DE', borderRadius: '8px', padding: '10px 14px', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between' }}>
           <span style={{ color: '#27500A', fontWeight: '500' }}>Total due</span>
           <span style={{ color: '#27500A', fontWeight: '700', fontSize: '18px' }}>₱{Number(payModal.amount || 0).toLocaleString()}</span>
         </div>
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
-          <button onClick={onConfirm} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference)} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference)) ? 0.5 : 1 }}>
+          <button onClick={onConfirm} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.payment_timeliness === 'late' && !payForm.actual_payment_date)} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.payment_timeliness === 'late' && !payForm.actual_payment_date)) ? 0.5 : 1 }}>
             {saving ? 'Saving...' : `Confirm ₱${Number(payForm.amount || 0).toLocaleString()}`}
           </button>
         </div>
@@ -729,7 +792,7 @@ function OutstandingByDayTab({ clients, onSettle }) {
   async function openSettle(session) {
     setPayModal(session)
     const initialAmount = Number(session.amount) || 0
-    setPayForm({ mop: 'Cash', amount: initialAmount, use_credit: false, split: false, split_credit: 0, split_cash: initialAmount, session_type: session.session_type || '' })
+    setPayForm({ mop: 'Cash', amount: initialAmount, use_credit: false, split: false, split_credit: 0, split_cash: initialAmount, session_type: session.session_type || '', payment_timeliness: '', actual_payment_date: '' })
     const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
     const json = await res.json()
     if (json.success) setClientCredit(Number(json.credit_balance) || 0)
@@ -777,7 +840,7 @@ function OutstandingByDayTab({ clients, onSettle }) {
           creditMop = latestAdvance?.mop || 'Credit'
         }
       }
-      await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pay', week_key: payModal.week_key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payModal.session_type || 'Regular', mop: payForm.use_credit ? creditMop : payForm.split ? 'Split' : payForm.mop, amount: Number(payForm.amount) || Number(payModal.amount), use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, credit_balance: clientCredit, reference: payForm.reference || creditRef }) })
+      await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pay', week_key: payModal.week_key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payModal.session_type || 'Regular', mop: payForm.use_credit ? creditMop : payForm.split ? 'Split' : payForm.mop, amount: Number(payForm.amount) || Number(payModal.amount), use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, credit_balance: clientCredit, reference: payForm.reference || creditRef, payment_timeliness: payForm.payment_timeliness, actual_payment_date: payForm.actual_payment_date }) })
     }
     setPayModal(null)
     fetchOutstanding()
@@ -936,7 +999,7 @@ function OutstandingTab({ clients, onSettle }) {
 async function openSettle(session) {
   setPayModal(session)
   const initialAmount = Number(session.amount) || 0
-  setPayForm({ mop: 'Cash', amount: initialAmount, use_credit: false, split: false, split_credit: 0, split_cash: initialAmount, session_type: session.session_type || '' })
+  setPayForm({ mop: 'Cash', amount: initialAmount, use_credit: false, split: false, split_credit: 0, split_cash: initialAmount, session_type: session.session_type || '', payment_timeliness: '', actual_payment_date: '' })
     const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
     const json = await res.json()
     if (json.success) setClientCredit(Number(json.credit_balance) || 0)
@@ -985,7 +1048,7 @@ async function openSettle(session) {
             creditMop = latestAdvance?.mop || 'Credit'
           }
         }
-          await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pay', week_key: payModal.week_key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payModal.session_type || 'Regular', mop: payForm.use_credit ? creditMop : payForm.split ? 'Split' : payForm.mop, amount: Number(payForm.amount) || Number(payModal.amount), use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, credit_balance: clientCredit, reference: payForm.reference || creditRef }) })
+          await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pay', week_key: payModal.week_key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payModal.session_type || 'Regular', mop: payForm.use_credit ? creditMop : payForm.split ? 'Split' : payForm.mop, amount: Number(payForm.amount) || Number(payModal.amount), use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, credit_balance: clientCredit, reference: payForm.reference || creditRef, payment_timeliness: payForm.payment_timeliness, actual_payment_date: payForm.actual_payment_date }) })
       }
     }
     setPayModal(null)

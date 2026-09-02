@@ -383,7 +383,11 @@ if (body.action === 'status') {
           'session',
           body.reference || '',
           '', // col K — verified_by (empty, set later)
-          body.custom_notes || '' // col L — comments/notes
+          body.custom_notes || '', // col L — comments/notes
+          '', // col M — custom_cut (n/a for regular session payments)
+          '', // col N — custom_center (n/a for regular session payments)
+          body.payment_timeliness || '', // col O — 'late' or blank (on time)
+          body.actual_payment_date || '' // col P — only filled when late
         ]]}
       })
 

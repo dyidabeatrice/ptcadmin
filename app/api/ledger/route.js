@@ -162,7 +162,9 @@ export async function GET(request) {
           verified_by: row[10] || '',
           comments: row[11] || '',
           custom_cut: row[12] !== undefined && row[12] !== '' ? parseFloat(row[12]) : null,
-          custom_center: row[13] !== undefined && row[13] !== '' ? parseFloat(row[13]) : null
+          custom_center: row[13] !== undefined && row[13] !== '' ? parseFloat(row[13]) : null,
+          payment_timeliness: row[14] || '',
+          actual_payment_date: row[15] || ''
         }
       }
     })
@@ -214,7 +216,9 @@ export async function GET(request) {
           normal_cut: rates.therapistCut,
           center,
           therapist_level: therapistInfo?.level || '',
-          is_intern: therapistInfo?.is_intern || false
+          is_intern: therapistInfo?.is_intern || false,
+          payment_timeliness: payment?.payment_timeliness || '',
+          actual_payment_date: payment?.actual_payment_date || ''
         })
       })
     })
