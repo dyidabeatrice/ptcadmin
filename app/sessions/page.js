@@ -143,6 +143,9 @@ export default function SchedulePage() {
   const [addForm, setAddForm] = useState({ client_name: '', therapist: '', day: '', time_start: '', time_end: '' })
   const [saving, setSaving] = useState(false)
   const [absentConfirm, setAbsentConfirm] = useState(null)
+  const [paymentDetailsModal, setPaymentDetailsModal] = useState(null) // session object
+  const [paymentDetails, setPaymentDetails] = useState(null)
+  const [paymentDetailsLoading, setPaymentDetailsLoading] = useState(false)
   const [dragSession, setDragSession] = useState(null)
   const [dragOver, setDragOver] = useState(null)
   const [contextMenu, setContextMenu] = useState(null)
@@ -461,9 +464,19 @@ export default function SchedulePage() {
     setSaving(false)
   }
 
+  async function openPaymentDetails(session) {
+    setPaymentDetailsModal(session)
+    setPaymentDetailsLoading(true)
+    const json = await fetchJSON(`/api/payments?session_id=${encodeURIComponent(session.id)}`)
+    if (json.success && json.data.length > 0) setPaymentDetails(json.data[json.data.length - 1])
+    else setPaymentDetails(null)
+    setPaymentDetailsLoading(false)
+  }
+
   async function reversePayment(session) {
     if (!confirm(`Reverse payment for ${session.client_name}?`)) return
     await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'unpay', week_key: selectedWeek.key, rowIndex: session.index, session_id: session.id, client_name: session.client_name, amount: session.amount }) })
+    setPaymentDetailsModal(null)
     fetchSessions(selectedWeek.key)
     const cRes = await fetch('/api/clients')
     const cJson = await cRes.json()
@@ -836,7 +849,7 @@ export default function SchedulePage() {
                           {s.payment === 'Unpaid' ? (
                             <button onClick={() => openPayModal(s)} style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#FCEBEB', color: '#791F1F', cursor: 'pointer', fontWeight: '500' }}>Unpaid</button>
                           ) : (
-                            <button onClick={() => s.status === 'Absent' ? null : reversePayment(s)} disabled={s.status === 'Absent'} title={s.status === 'Absent' ? 'Payment moved to credit — cannot reverse' : 'Reverse payment'}
+                            <button onClick={() => s.status === 'Absent' ? null : openPaymentDetails(s)} disabled={s.status === 'Absent'} title={s.status === 'Absent' ? 'Payment moved to credit — cannot reverse' : 'View payment details'}
                               style={{ fontSize: '8px', padding: '1px 4px', borderRadius: '3px', border: 'none', background: '#EAF3DE', color: s.status === 'Absent' ? '#aaa' : '#27500A', cursor: s.status === 'Absent' ? 'not-allowed' : 'pointer' }}>Paid ✓</button>
                           )}
                           <button onClick={async () => {
@@ -1534,6 +1547,37 @@ export default function SchedulePage() {
       )}
 
       {/* Modals */}
+      {paymentDetailsModal && (
+        <div onClick={() => setPaymentDetailsModal(null)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '380px', maxWidth: '100%' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Payment details</h3>
+            <p style={{ margin: '0 0 1.25rem', fontSize: '13px', color: '#999' }}>{paymentDetailsModal.client_name}</p>
+
+            {paymentDetailsLoading ? (
+              <div style={{ textAlign: 'center', padding: '1.5rem', color: '#999' }}>Loading...</div>
+            ) : !paymentDetails ? (
+              <div style={{ textAlign: 'center', padding: '1.5rem', color: '#999', fontSize: '13px' }}>No payment record found.</div>
+            ) : (
+              <div style={{ background: '#f8f9fa', borderRadius: '8px', padding: '12px 14px', marginBottom: '1.25rem', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
+                <div><span style={{ color: '#999' }}>Date paid:</span> <strong>{paymentDetails.date || '—'}</strong></div>
+                <div><span style={{ color: '#999' }}>MOP:</span> <strong>{paymentDetails.mop || '—'}</strong></div>
+                {paymentDetails.reference && <div><span style={{ color: '#999' }}>Reference:</span> <strong>{paymentDetails.reference}</strong></div>}
+                {paymentDetails.comments && <div><span style={{ color: '#999' }}>Notes:</span> <strong>{paymentDetails.comments}</strong></div>}
+              </div>
+            )}
+
+            <div style={{ marginBottom: '1.25rem', padding: '10px 12px', background: '#FAEEDA', border: '1px solid #EF9F27', borderRadius: '8px', fontSize: '12px', color: '#633806' }}>
+              ⚠️ Reversing this payment will mark the session Unpaid again and remove this payment record. This cannot be undone.
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setPaymentDetailsModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Close</button>
+              <button onClick={() => reversePayment(paymentDetailsModal)} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#E24B4A', color: 'white', cursor: 'pointer', fontWeight: '500' }}>Reverse payment</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {absentConfirm && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '400px', maxWidth: '90vw' }}>

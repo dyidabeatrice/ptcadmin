@@ -1036,7 +1036,10 @@ async function openSettle(session) {
                     <span>
                       {clientName}
                       <button onClick={async () => {
-                        const sessionDetails = clientSessions.map(s => `${s.date} (${s.session_type || 'session'} - ${s.therapist})`).join(', ')
+                        const sessionDetails = clientSessions
+                          .sort((a, b) => parseDate(a.date) - parseDate(b.date))
+                          .map(s => `• ${s.date} — ${s.session_type || 'Session'} (T. ${s.therapist})`)
+                          .join('\n')
                         await fetch('/api/messages', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
@@ -1045,7 +1048,7 @@ async function openSettle(session) {
                             client_name: clientName,
                             psid: client?.psid || '',
                             type: 'outstanding',
-                            message: `Hi! This is a friendly reminder that ${clientName} has an outstanding balance of ₱${totalOwed.toLocaleString()} for the following: ${sessionDetails}. Please settle at your earliest convenience. Thank you!`
+                            message: `Hi po! This is a friendly reminder that ${clientName} has an outstanding balance of *₱${totalOwed.toLocaleString()}* for the following:\n\n${sessionDetails}\n\nPlease settle at your earliest convenience. Thank you!`
                             })
                           })
                             alert('Reminder added to message drafts!')
