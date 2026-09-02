@@ -12,11 +12,23 @@ export async function GET(request) {
         .filter(t => t.startsWith('week_'))
         .sort()
 
+      // Sessions written off via the "clear outstanding before June" cleanup —
+      // still genuinely Unpaid in their week sheet, but excluded from these
+      // views since the debt itself was forgiven.
+      let writtenOffIds = new Set()
+      try {
+        const writtenOffData = await getSheetData('written_off_sessions')
+        const [, ...writtenOffRows] = writtenOffData
+        writtenOffIds = new Set(writtenOffRows.filter(r => r && r[2]).map(r => r[2]))
+      } catch {
+        // Tab doesn't exist yet or is empty — treat as nothing written off
+      }
+
       const unpaid = []
       for (const weekKey of weekSheets) {
         const data = await getSheetData(weekKey)
         const [, ...rows] = data
-        rows.filter(r => r && r[0] && r[9] === 'Unpaid' && (r[8] === 'Present' || r[8] === 'Cancelled')).forEach(row => {
+        rows.filter(r => r && r[0] && r[9] === 'Unpaid' && (r[8] === 'Present' || r[8] === 'Cancelled') && !writtenOffIds.has(r[0])).forEach(row => {
           unpaid.push({
             week_key: weekKey,
             index: rows.indexOf(row),

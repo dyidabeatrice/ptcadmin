@@ -162,6 +162,11 @@ export default function SchedulePage() {
   const [archiveChecking, setArchiveChecking] = useState(false)
   const [archiveProgress, setArchiveProgress] = useState(null) // { current, total, currentWeek }
   const [archiveResults, setArchiveResults] = useState([]) // [{ week, success, error? }]
+  const [clearingOutstanding, setClearingOutstanding] = useState(false)
+  const [recalcModal, setRecalcModal] = useState(false)
+  const [recalcPreview, setRecalcPreview] = useState(null)
+  const [recalcLoading, setRecalcLoading] = useState(false)
+  const [recalcApplying, setRecalcApplying] = useState(false)
   const [blockType, setBlockType] = useState('blocked')
   const [blockLabel, setBlockLabel] = useState('')
   const [savingBlock, setSavingBlock] = useState(false)
@@ -394,6 +399,48 @@ export default function SchedulePage() {
     }
     setArchiveProgress(null)
     setArchiveWeeks(prev => prev.filter(w => !results.find(r => r.week === w && r.success)))
+  }
+
+  async function clearOldOutstanding() {
+    if (!confirm('Clear all outstanding balances from sessions dated before June 1, 2026?\n\nThis removes them from By Client/By Day and reduces each client\'s outstanding balance — it does NOT mark the sessions as paid. This cannot be undone from within the app.')) return
+    setClearingOutstanding(true)
+    try {
+      const res = await fetch('/api/clear-old-outstanding', { method: 'POST' })
+      const json = await res.json()
+      if (json.success) {
+        alert(`Cleared ${json.cleared} session(s) across ${json.clients} client(s).`)
+      } else {
+        alert('Failed: ' + json.error)
+      }
+    } catch (err) {
+      alert('Failed: ' + err.message)
+    }
+    setClearingOutstanding(false)
+  }
+
+  async function openRecalcPreview() {
+    setRecalcModal(true)
+    setRecalcLoading(true)
+    setRecalcPreview(null)
+    const res = await fetch('/api/recalculate-outstanding')
+    const json = await res.json()
+    setRecalcLoading(false)
+    if (json.success) setRecalcPreview(json.preview)
+    else alert('Failed to load preview: ' + json.error)
+  }
+
+  async function applyRecalc() {
+    if (!confirm(`Apply these ${recalcPreview.length} change(s) to outstanding balances? This cannot be undone.`)) return
+    setRecalcApplying(true)
+    const res = await fetch('/api/recalculate-outstanding', { method: 'POST' })
+    const json = await res.json()
+    setRecalcApplying(false)
+    if (json.success) {
+      alert(`Updated ${json.updated} client balance(s).`)
+      setRecalcModal(false)
+    } else {
+      alert('Failed: ' + json.error)
+    }
   }
 
   async function updateStatus(session, status) {
@@ -1303,6 +1350,9 @@ export default function SchedulePage() {
             <button onClick={openArchiveModal} style={{ padding: '7px 14px', borderRadius: '6px', border: '1px solid #999', background: 'white', color: '#666', cursor: 'pointer', fontWeight: '500', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '6px', lineHeight: '1' }}>
             <span style={{ fontSize: '13px' }}>📦</span> Archive old weeks
           </button>
+          <button onClick={openRecalcPreview} style={{ padding: '7px 14px', borderRadius: '6px', border: '1px solid #999', background: 'white', color: '#666', cursor: 'pointer', fontWeight: '500', fontSize: '12px' }}>
+            Recalculate outstanding
+          </button>
         </div>
       </div>
 
@@ -1783,6 +1833,56 @@ export default function SchedulePage() {
                 {saving ? 'Adding...' : 'Add session'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {recalcModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', width: '560px', maxWidth: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81' }}>Recalculate outstanding balances</h3>
+            <p style={{ margin: '0 0 1.25rem', fontSize: '13px', color: '#999' }}>
+              Recomputes each client's outstanding balance from actual unpaid sessions and document fees, excluding written-off sessions. Only clients whose number would change are shown below.
+            </p>
+
+            {recalcLoading ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>Checking...</div>
+            ) : !recalcPreview || recalcPreview.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2rem', color: '#1D9E75', background: '#EAF3DE', borderRadius: '10px' }}>
+                Everything already matches — nothing to update.
+              </div>
+            ) : (
+              <>
+                <div style={{ maxHeight: '340px', overflowY: 'auto', marginBottom: '1rem', border: '1px solid #eee', borderRadius: '8px' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                    <thead>
+                      <tr style={{ background: '#f8f9fa', position: 'sticky', top: 0 }}>
+                        <th style={{ padding: '8px 10px', textAlign: 'left' }}>Client</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'right' }}>Current</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'right' }}>Correct</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'right' }}>Change</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recalcPreview.map((p, i) => (
+                        <tr key={i} style={{ borderTop: '1px solid #f0f0f0' }}>
+                          <td style={{ padding: '6px 10px' }}>{p.name}</td>
+                          <td style={{ padding: '6px 10px', textAlign: 'right' }}>₱{p.current.toLocaleString()}</td>
+                          <td style={{ padding: '6px 10px', textAlign: 'right', fontWeight: '600', color: '#0f4c81' }}>₱{p.correct.toLocaleString()}</td>
+                          <td style={{ padding: '6px 10px', textAlign: 'right', color: p.diff < 0 ? '#27500A' : '#791F1F' }}>{p.diff > 0 ? '+' : ''}₱{p.diff.toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                  <button onClick={() => setRecalcModal(false)} disabled={recalcApplying} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Cancel</button>
+                  <button onClick={applyRecalc} disabled={recalcApplying} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: recalcApplying ? 0.6 : 1 }}>
+                    {recalcApplying ? 'Applying...' : `Apply ${recalcPreview.length} change(s)`}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
