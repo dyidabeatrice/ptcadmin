@@ -30,8 +30,10 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
   const [saving, setSaving] = useState(false)
   const prevMop = useRef(session.mop || '')
   const [isPaid, setIsPaid] = useState(session.is_paid)
-  const [paymentTimeliness, setPaymentTimeliness] = useState(session.payment_timeliness || '')
+  const [paymentTimeliness, setPaymentTimeliness] = useState(session.is_paid ? (session.payment_timeliness || '') : null)
   const [actualPaymentDate, setActualPaymentDate] = useState(session.actual_payment_date || '')
+  const [editingCutoff, setEditingCutoff] = useState(false)
+  const [cutoffDateInput, setCutoffDateInput] = useState('')
 
   const [deleted, setDeleted] = useState(false)
   if (deleted) return <tr style={{ display: 'none' }}><td colSpan={10} /></tr>
@@ -44,7 +46,7 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
     setCut(session.therapist_cut || 0)
     setCenter(session.center || 0)
     setIsPaid(session.is_paid)
-    setPaymentTimeliness(session.payment_timeliness || '')
+    setPaymentTimeliness(session.is_paid ? (session.payment_timeliness || '') : null)
     setActualPaymentDate(session.actual_payment_date || '')
     prevMop.current = session.mop || ''
   }, [session.id, session.is_paid, session.mop])
@@ -102,6 +104,18 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
           })
         })
       } else {
+        if (paymentTimeliness === null) {
+          alert('Please set whether this payment is On time or Late before saving.')
+          setMop(prevMop.current)
+          setSaving(false)
+          return
+        }
+        if (paymentTimeliness === 'late' && !actualPaymentDate) {
+          alert('Please enter the actual date paid for a late payment.')
+          setMop(prevMop.current)
+          setSaving(false)
+          return
+        }
         // New payment — create entry
         await fetch('/api/sessions', {
           method: 'PATCH',
@@ -123,7 +137,9 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
             split_cash: Number(total),
             credit_balance: 0,
             reference: reference || '',
-            custom_notes: comments || ''
+            custom_notes: comments || '',
+            payment_timeliness: paymentTimeliness,
+            actual_payment_date: actualPaymentDate
           })
         })
       }
@@ -223,6 +239,22 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
     })
   }
 
+  async function saveCutoffOverride(dateVal) {
+    if (!session.override_anchor_id) return
+    await fetch('/api/payments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_cutoff_override',
+        id: session.override_anchor_id,
+        cutoff_date_override: dateVal,
+        cutoff_week_key: dateVal ? session.week_key : ''
+      })
+    })
+    setEditingCutoff(false)
+    if (onPaid) onPaid()
+  }
+
   async function sendRemind() {
     const res = await fetch('/api/messages', {
       method: 'POST',
@@ -248,8 +280,27 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
     <tr style={{ background: bg, borderBottom: '1px solid #eee' }}>
       <td style={{ padding: '8px 10px', fontSize: '12px', color: '#666', whiteSpace: 'nowrap' }}>{session.time_start}</td>
       <td style={{ padding: '8px 10px', fontSize: '13px', fontWeight: '500', color: '#0f4c81' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
           {session.client_name}
+          {session.override_anchor_id && (
+            <button onClick={() => { setEditingCutoff(!editingCutoff); setCutoffDateInput('') }} title="Move to a different pay cutoff"
+              style={{ border: 'none', background: 'none', color: session.cutoff_overridden ? '#9C27B0' : '#ccc', cursor: 'pointer', fontSize: '11px', padding: 0 }}>✎</button>
+          )}
+          {session.cutoff_overridden && (
+            <span title={`Originally ${session.original_date}`} style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '8px', background: '#F3E6FB', color: '#4C0C7C' }}>moved</span>
+          )}
+          {editingCutoff && (
+            <span style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              <input type="date" value={cutoffDateInput} onChange={e => setCutoffDateInput(e.target.value)}
+                style={{ fontSize: '10px', padding: '2px 4px', borderRadius: '4px', border: '1px solid #ddd', width: '110px' }} />
+              <button onClick={() => saveCutoffOverride(cutoffDateInput ? new Date(cutoffDateInput + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '')}
+                style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer' }}>Save</button>
+              {session.cutoff_overridden && (
+                <button onClick={() => saveCutoffOverride('')} title="Reset to original date"
+                  style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Reset</button>
+              )}
+            </span>
+          )}
           {creditBalance > 0 && (
             <span style={{ fontSize: '10px', padding: '1px 5px', borderRadius: '6px', background: '#EAF3DE', color: '#27500A' }}>
               💳 ₱{creditBalance.toLocaleString()}
@@ -335,8 +386,19 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
           placeholder="Notes..." style={{ fontSize: '12px', padding: '4px 6px', borderRadius: '6px', border: '1px solid #ddd', width: '100px', boxSizing: 'border-box' }} />
       </td>
       <td style={{ padding: '8px 10px', background: bg }}>
-        {!session.payment_id ? (
-          <span style={{ fontSize: '11px', color: '#bbb' }}>—</span>
+        {!isPaid ? (
+          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <button onClick={() => setPaymentTimeliness(paymentTimeliness === 'late' ? null : (paymentTimeliness === null ? '' : 'late'))} style={{
+              fontSize: '10px', padding: '3px 10px', borderRadius: '5px',
+              border: paymentTimeliness === null ? '1px solid #ddd' : paymentTimeliness === 'late' ? '1px solid #E69138' : '1px solid #97C459',
+              background: paymentTimeliness === null ? '#f5f5f5' : paymentTimeliness === 'late' ? '#FCE5CD' : '#EAF3DE',
+              color: paymentTimeliness === null ? '#999' : paymentTimeliness === 'late' ? '#7F3F00' : '#27500A', cursor: 'pointer', fontWeight: '500'
+            }}>{paymentTimeliness === null ? 'Set...' : paymentTimeliness === 'late' ? 'Late' : 'On time'}</button>
+            {paymentTimeliness === 'late' && (
+              <input type="date" value={actualPaymentDate} onChange={e => setActualPaymentDate(e.target.value)}
+                style={{ fontSize: '10px', padding: '3px 5px', borderRadius: '5px', border: !actualPaymentDate ? '1px solid #EF9F27' : '1px solid #ddd', width: '110px' }} />
+            )}
+          </div>
         ) : (
           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
             <button onClick={() => paymentTimeliness === 'late' ? saveTimeliness('', '') : saveTimeliness('late', actualPaymentDate)} style={{
@@ -347,7 +409,7 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
             }}>{paymentTimeliness === 'late' ? 'Late' : 'On time'}</button>
             {paymentTimeliness === 'late' && (
               <input type="date" value={actualPaymentDate} onChange={e => saveTimeliness('late', e.target.value)}
-                style={{ fontSize: '10px', padding: '3px 5px', borderRadius: '5px', border: !actualPaymentDate ? '1px solid #EF9F27' : '1px solid #ddd', width: '70px' }} />
+                style={{ fontSize: '10px', padding: '3px 5px', borderRadius: '5px', border: !actualPaymentDate ? '1px solid #EF9F27' : '1px solid #ddd', width: '110px' }} />
             )}
           </div>
         )}
@@ -748,7 +810,7 @@ function SettleModal({ payModal, payForm, setPayForm, clientCredit, creditNotes,
         </div>
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
-          <button onClick={onConfirm} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.payment_timeliness === 'late' && !payForm.actual_payment_date)} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.payment_timeliness === 'late' && !payForm.actual_payment_date)) ? 0.5 : 1 }}>
+          <button onClick={onConfirm} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || payForm.payment_timeliness === null || (payForm.payment_timeliness === 'late' && !payForm.actual_payment_date)} style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || payForm.payment_timeliness === null || (payForm.payment_timeliness === 'late' && !payForm.actual_payment_date)) ? 0.5 : 1 }}>
             {saving ? 'Saving...' : `Confirm ₱${Number(payForm.amount || 0).toLocaleString()}`}
           </button>
         </div>
@@ -792,7 +854,7 @@ function OutstandingByDayTab({ clients, onSettle }) {
   async function openSettle(session) {
     setPayModal(session)
     const initialAmount = Number(session.amount) || 0
-    setPayForm({ mop: 'Cash', amount: initialAmount, use_credit: false, split: false, split_credit: 0, split_cash: initialAmount, session_type: session.session_type || '', payment_timeliness: '', actual_payment_date: '' })
+    setPayForm({ mop: 'Cash', amount: initialAmount, use_credit: false, split: false, split_credit: 0, split_cash: initialAmount, session_type: session.session_type || '', payment_timeliness: null, actual_payment_date: '' })
     const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
     const json = await res.json()
     if (json.success) setClientCredit(Number(json.credit_balance) || 0)
@@ -999,7 +1061,7 @@ function OutstandingTab({ clients, onSettle }) {
 async function openSettle(session) {
   setPayModal(session)
   const initialAmount = Number(session.amount) || 0
-  setPayForm({ mop: 'Cash', amount: initialAmount, use_credit: false, split: false, split_credit: 0, split_cash: initialAmount, session_type: session.session_type || '', payment_timeliness: '', actual_payment_date: '' })
+  setPayForm({ mop: 'Cash', amount: initialAmount, use_credit: false, split: false, split_credit: 0, split_cash: initialAmount, session_type: session.session_type || '', payment_timeliness: null, actual_payment_date: '' })
     const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
     const json = await res.json()
     if (json.success) setClientCredit(Number(json.credit_balance) || 0)

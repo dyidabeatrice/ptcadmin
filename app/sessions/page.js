@@ -134,7 +134,7 @@ export default function SchedulePage() {
   const [editMessageModal, setEditMessageModal] = useState(null) // { title, message, onConfirm } // { [`${day}:${type}`]: { current, total } }
   const [search, setSearch] = useState('')
   const [payModal, setPayModal] = useState(null)
-  const [payForm, setPayForm] = useState({ session_type: '', mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0, payment_timeliness: '', actual_payment_date: '' })
+  const [payForm, setPayForm] = useState({ session_type: '', mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0, payment_timeliness: null, actual_payment_date: '' })
   const [clientCredit, setClientCredit] = useState(0)
   const [creditNotes, setCreditNotes] = useState({ mop: '', reference: '', comments: '', date: '' })
   const [remindModal, setRemindModal] = useState(null)
@@ -466,7 +466,7 @@ export default function SchedulePage() {
     const matchedType = types.find(t => t.value === session.session_type)
     const defaultType = matchedType ? session.session_type : types[0].value
     const amount = matchedType ? matchedType.amount : types[0].amount
-    setPayForm({ session_type: defaultType, mop: 'Cash', amount, use_credit: false, split: false, split_credit: 0, split_cash: amount })
+    setPayForm({ session_type: defaultType, mop: 'Cash', amount, use_credit: false, split: false, split_credit: 0, split_cash: amount, payment_timeliness: null, actual_payment_date: '' })
     setPayModal(session)
     const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
     const json = await res.json()
@@ -1763,8 +1763,8 @@ export default function SchedulePage() {
             </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
               <button onClick={() => setPayModal(null)} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
-              <button onClick={confirmPayment} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes) || (payForm.payment_timeliness === 'late' && !payForm.actual_payment_date)}
-                style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes) || (payForm.payment_timeliness === 'late' && !payForm.actual_payment_date)) ? 0.5 : 1 }}>
+              <button onClick={confirmPayment} disabled={saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes) || payForm.payment_timeliness === null || (payForm.payment_timeliness === 'late' && !payForm.actual_payment_date)}
+                style={{ padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#1D9E75', color: 'white', cursor: 'pointer', fontWeight: '500', opacity: (saving || !payForm.amount || ((payForm.mop === 'BDO' || payForm.mop === 'Union Bank') && !payForm.use_credit && !payForm.reference) || (payForm.session_type === 'Custom Amount' && !payForm.custom_notes) || payForm.payment_timeliness === null || (payForm.payment_timeliness === 'late' && !payForm.actual_payment_date)) ? 0.5 : 1 }}>
                 {saving ? 'Saving...' : `Confirm ₱${Number(payForm.amount || 0).toLocaleString()}`}
               </button>
             </div>

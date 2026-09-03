@@ -141,9 +141,21 @@ export async function GET(request) {
 
     // --- Full data build (used for both unbounded/export and month-scoped requests) ---
 
-    const relevantWeekSheets = monthFilter
+    let relevantWeekSheets = monthFilter
       ? weekSheets.filter(wk => weekOverlapsMonth(wk, monthFilter))
       : weekSheets
+
+    if (monthFilter) {
+      const overrideWeekKeys = new Set()
+      payRows.filter(r => r && r[0] && r[16] && r[17]).forEach(row => {
+        if (dateInMonth(row[16], monthFilter) && weekSheets.includes(row[17])) {
+          overrideWeekKeys.add(row[17])
+        }
+      })
+      overrideWeekKeys.forEach(wk => {
+        if (!relevantWeekSheets.includes(wk)) relevantWeekSheets.push(wk)
+      })
+    }
 
     const paymentData = await getSheetData('payments')
     const [, ...payRows] = paymentData
@@ -164,8 +176,25 @@ export async function GET(request) {
           custom_cut: row[12] !== undefined && row[12] !== '' ? parseFloat(row[12]) : null,
           custom_center: row[13] !== undefined && row[13] !== '' ? parseFloat(row[13]) : null,
           payment_timeliness: row[14] || '',
-          actual_payment_date: row[15] || ''
+          actual_payment_date: row[15] || '',
+          cutoff_date_override: row[16] || '',
+          cutoff_week_key: row[17] || ''
         }
+      }
+    })
+
+    // Separate lookup for unpaid sessions' "attendance"/"cancellation" tracking
+    // rows — these exist purely as an anchor point for cutoff overrides before
+    // an actual payment record exists. Kept separate from paymentMap on purpose:
+    // paymentMap drives MOP/amount/comments display, and mixing these in would
+    // leak "UNPAID" placeholder values into those fields.
+    const trackingMap = {}
+    payRows.filter(r => r && r[0] && (r[8] === 'attendance' || r[8] === 'cancellation')).forEach(row => {
+      const sessionId = row[3]
+      trackingMap[sessionId] = {
+        tracking_id: row[0],
+        cutoff_date_override: row[16] || '',
+        cutoff_week_key: row[17] || ''
       }
     })
 
@@ -175,10 +204,17 @@ export async function GET(request) {
     relevantWeekSheets.forEach((weekKey, weekIdx) => {
       const data = weekDataResults[weekIdx]
       const [, ...rows] = data
-      rows.filter(r => r && r[0] && (r[8] === 'Present' || r[8] === 'Cancelled') && dateInMonth(r[3], monthFilter)).forEach(row => {
+      rows.filter(r => {
+        if (!r || !r[0] || (r[8] !== 'Present' && r[8] !== 'Cancelled')) return false
+        const payment = paymentMap[r[0]]
+        const tracking = trackingMap[r[0]]
+        const effectiveDate = payment?.cutoff_date_override || tracking?.cutoff_date_override || r[3]
+        return dateInMonth(effectiveDate, monthFilter)
+      }).forEach(row => {
         const sessionId = row[0]
         const therapistInfo = therapistMap[row[2]]
         const payment = paymentMap[sessionId]
+        const tracking = trackingMap[sessionId]
         const sessionType = payment?.session_type || row[7] || 'Regular'
         const recordedAmount = payment ? payment.amount : parseFloat(row[11] || 0)
         const comments = payment?.comments || ''
@@ -193,6 +229,7 @@ export async function GET(request) {
         const total = rates.total
         const therapistCut = payment?.custom_cut !== null && payment?.custom_cut !== undefined ? payment.custom_cut : rates.therapistCut
         const center = payment?.custom_center !== null && payment?.custom_center !== undefined ? payment.custom_center : rates.center
+        const effectiveDate = payment?.cutoff_date_override || tracking?.cutoff_date_override || row[3]
 
         allSessions.push({
           id: sessionId,
@@ -200,7 +237,8 @@ export async function GET(request) {
           index: rows.indexOf(row),
           client_name: row[1],
           therapist: row[2],
-          date: row[3],
+          date: effectiveDate,
+          original_date: row[3],
           day: row[4],
           time_start: row[5],
           time_end: row[6],
@@ -211,6 +249,7 @@ export async function GET(request) {
           reference: payment?.reference || '',
           comments: comments,
           payment_id: payment?.payment_id || '',
+          override_anchor_id: payment?.payment_id || tracking?.tracking_id || '',
           total,
           therapist_cut: therapistCut,
           normal_cut: rates.therapistCut,
@@ -218,7 +257,8 @@ export async function GET(request) {
           therapist_level: therapistInfo?.level || '',
           is_intern: therapistInfo?.is_intern || false,
           payment_timeliness: payment?.payment_timeliness || '',
-          actual_payment_date: payment?.actual_payment_date || ''
+          actual_payment_date: payment?.actual_payment_date || '',
+          cutoff_overridden: !!(payment?.cutoff_date_override || tracking?.cutoff_date_override)
         })
       })
     })

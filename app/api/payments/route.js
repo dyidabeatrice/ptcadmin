@@ -253,6 +253,20 @@ export async function PATCH(request) {
       return Response.json({ success: true })
     }
 
+    if (body.action === 'update_cutoff_override') {
+      const data = await getSheetData('payments')
+      const [, ...rows] = data
+      const rowIndex = rows.findIndex(r => r && r[0] === body.id)
+      if (rowIndex === -1) return Response.json({ success: false, error: 'Not found' })
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `payments!Q${rowIndex + 2}:R${rowIndex + 2}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[body.cutoff_date_override || '', body.cutoff_week_key || '']] }
+      })
+      return Response.json({ success: true })
+    }
+
     return Response.json({ success: false, error: 'Unknown action' })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
