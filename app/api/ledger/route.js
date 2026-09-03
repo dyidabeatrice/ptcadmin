@@ -140,11 +140,12 @@ export async function GET(request) {
     }
 
     // --- Full data build (used for both unbounded/export and month-scoped requests) ---
+    const paymentData = await getSheetData('payments')
+    const [, ...payRows] = paymentData
 
     let relevantWeekSheets = monthFilter
       ? weekSheets.filter(wk => weekOverlapsMonth(wk, monthFilter))
       : weekSheets
-
     if (monthFilter) {
       const overrideWeekKeys = new Set()
       payRows.filter(r => r && r[0] && r[16] && r[17]).forEach(row => {
@@ -157,8 +158,6 @@ export async function GET(request) {
       })
     }
 
-    const paymentData = await getSheetData('payments')
-    const [, ...payRows] = paymentData
     const paymentMap = {}
     payRows.filter(r => r && r[0]).forEach(row => {
       const sessionId = row[3]
