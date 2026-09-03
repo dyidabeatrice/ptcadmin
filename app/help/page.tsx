@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { statusLabel } from '../lib/labels'
 
 const sections = [
   { id: 'dashboard', label: '📊 Dashboard', emoji: '📊' },
@@ -221,7 +222,7 @@ export default function HelpPage() {
                 { status: 'Cancelled', desc: 'Last-minute cancellation — may incur a No Show fee' },
               ].map((s, i) => (
                 <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '6px', fontSize: '12px' }}>
-                  <span style={{ fontWeight: '600', color: '#0f4c81', minWidth: '90px' }}>{s.status}</span>
+                  <span style={{ fontWeight: '600', color: '#0f4c81', minWidth: '90px' }}>{statusLabel(s.status)}</span>
                   <span style={{ color: '#666' }}>{s.desc}</span>
                 </div>
               ))}

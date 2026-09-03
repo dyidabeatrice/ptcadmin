@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { statusLabel, sessionTypeLabel } from '../../lib/labels'
 
 function getGreeting() {
   const hour = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' })).getHours()
@@ -269,12 +270,12 @@ function SessionCard({ session, upcoming }) {
           <div style={{ fontSize: '10px', color: upcoming ? '#0f4c81' : '#999', textTransform: 'uppercase', fontWeight: '700', opacity: 0.75 }}>{month}</div>
         </div>
         <div>
-          <div style={{ fontSize: '14px', fontWeight: '600', color: '#33363d' }}>{session.session_type}</div>
+          <div style={{ fontSize: '14px', fontWeight: '600', color: '#33363d' }}>{sessionTypeLabel(session.session_type)}</div>
           <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>{session.day} · {session.time_start} – {session.time_end}</div>
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px' }}>
-        <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', background: sc.bg, color: sc.color }}>{session.status}</span>
+        <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', background: sc.bg, color: sc.color }}>{statusLabel(session.status)}</span>
         {!upcoming && (
           <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', background: session.payment === 'Paid' ? '#EAF3DE' : '#FCEBEB', color: session.payment === 'Paid' ? '#27500A' : '#7B0000' }}>
             {session.payment}

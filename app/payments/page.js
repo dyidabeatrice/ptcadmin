@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { ALL_SESSION_TYPE_OPTIONS } from '../lib/sessionTypes'
 import { fetchJSON } from '../lib/fetchJSON'
+import { statusLabel, sessionTypeLabel } from '../lib/labels'
 
 const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
 
@@ -19,7 +20,7 @@ function parseDate(dateStr) {
   return new Date(parseInt(parts[2]), months[parts[0]], parseInt(parts[1]))
 }
 
-function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
+function LedgerRow({ session, onPaid, onLoadMonth, clients, onOverride = () => {} }) {
   const [mop, setMop] = useState(session.mop || '')
   const [reference, setReference] = useState(session.reference || '')
   const [comments, setComments] = useState(session.comments || '')
@@ -239,6 +240,12 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
     })
   }
 
+  function monthKeyFromDateStr(dateStr) {
+    const d = new Date(dateStr)
+    if (isNaN(d)) return null
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  }
+
   async function saveCutoffOverride(dateVal) {
     if (!session.override_anchor_id) return
     await fetch('/api/payments', {
@@ -252,7 +259,17 @@ function LedgerRow({ session, onPaid, clients, onOverride = () => {} }) {
       })
     })
     setEditingCutoff(false)
-    if (onPaid) onPaid()
+
+    // Refresh both the month it's leaving and the month it's landing in, so
+    // both update live without needing a full page reload.
+    const originMonth = monthKeyFromDateStr(session.date)
+    const targetMonth = monthKeyFromDateStr(dateVal || session.original_date)
+    if (onLoadMonth) {
+      if (originMonth) onLoadMonth(originMonth, true)
+      if (targetMonth && targetMonth !== originMonth) onLoadMonth(targetMonth, true)
+    } else if (onPaid) {
+      onPaid() // fallback if onLoadMonth wasn't passed down for some reason
+    }
   }
 
   async function sendRemind() {
@@ -622,6 +639,7 @@ function LedgerTab({ therapistData, therapistName, onPaid, allMonths = [], loade
                               key={s.id}
                               session={s}
                               onPaid={onPaid}
+                              onLoadMonth={onLoadMonth}
                               clients={clients}
                               onOverride={(id, t, c, ce) => setOverrides(prev => ({ ...prev, [id]: { total: t, cut: c, center: ce } }))}
                             />
@@ -1008,7 +1026,7 @@ function OutstandingByDayTab({ clients, onSettle }) {
                                       {s.client_name}
                                       {client?.credit_balance > 0 && <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 6px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A' }}>💳 ₱{Number(client.credit_balance).toLocaleString()} credit</span>}
                                     </div>
-                                    <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}>{s.time_start}–{s.time_end} · {s.status} · {s.session_type || 'Regular'}</div>
+                                    <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}>{s.time_start}–{s.time_end} · {statusLabel(s.status)} · {sessionTypeLabel(s.session_type || 'Regular')}</div>
                                   </div>
                                   <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
                                     <span style={{ fontSize: '13px', fontWeight: '500', color: '#E24B4A' }}>₱{Number(s.amount || 0).toLocaleString()}</span>
@@ -1194,7 +1212,7 @@ async function openSettle(session) {
                             {s.client_name}
                             {client?.credit_balance > 0 && <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 6px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A' }}>💳 ₱{Number(client.credit_balance).toLocaleString()} credit</span>}                        
                           </div>
-                          <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}><strong>{s.date}</strong> · {s.time_start}–{s.time_end} · {s.therapist} · {s.status} · {s.session_type || 'Regular'}</div>
+                          <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}><strong>{s.date}</strong> · {s.time_start}–{s.time_end} · {s.therapist} · {statusLabel(s.status)} · {sessionTypeLabel(s.session_type || 'Regular')}</div>
                         </div>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
                           <span style={{ fontSize: '13px', fontWeight: '500', color: '#E24B4A' }}>₱{Number(s.amount || 0).toLocaleString()}</span>

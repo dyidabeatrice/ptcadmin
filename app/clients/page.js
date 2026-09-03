@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { statusLabel } from '../lib/labels'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
@@ -559,7 +560,7 @@ export default function ClientsPage() {
                           fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: '500',
                           background: s.status === 'Present' ? '#EAF3DE' : s.status === 'Absent' ? '#FCEBEB' : '#f8f9fa',
                           color: s.status === 'Present' ? '#27500A' : s.status === 'Absent' ? '#791F1F' : '#666'
-                        }}>{s.status}</span>
+                        }}>{statusLabel(s.status)}</span>
                       </td>
                       <td style={{ padding: '8px 10px' }}>
                         <span style={{

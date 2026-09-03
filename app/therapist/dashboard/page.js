@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { statusLabel, sessionTypeLabel } from '../../lib/labels'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
@@ -404,7 +405,7 @@ export default function TherapistDashboard() {
                           fontSize: '11px', padding: '3px 10px', borderRadius: '10px', fontWeight: '500',
                           background: s.status === 'Present' ? '#EAF3DE' : s.status === 'Absent' ? '#FCEBEB' : s.status === 'Cancelled' ? '#F1EFE8' : '#E6F1FB',
                           color: s.status === 'Present' ? '#27500A' : s.status === 'Absent' ? '#791F1F' : s.status === 'Cancelled' ? '#5F5E5A' : '#0C447C'
-                        }}>{s.status}</span>
+                        }}>{statusLabel(s.status)}</span>
                       </div>
                     ))
                   })()}
@@ -469,7 +470,7 @@ export default function TherapistDashboard() {
                                     <tr key={key} style={{ borderBottom: '1px solid #f0f0f0', opacity: s.status === 'Absent' ? 0.6 : 1 }}>
                                       <td style={{ padding: '8px 10px', color: '#666', whiteSpace: 'nowrap' }}>{s.date}</td>
                                       <td style={{ padding: '8px 10px', fontWeight: '500', color: '#0f4c81' }}>{s.client_name}</td>
-                                      <td style={{ padding: '8px 10px', color: '#555' }}>{s.session_type}</td>
+                                      <td style={{ padding: '8px 10px', color: '#555' }}>{sessionTypeLabel(s.session_type)}</td>
                                       <td style={{ padding: '8px 10px', fontWeight: '500', color: '#1D9E75' }}>₱{(s.therapist_cut || 0).toLocaleString()}</td>
                                       <td style={{ padding: '8px 10px', color: '#999', fontSize: '11px' }}>{s.comments || '—'}</td>
                                     </tr>
