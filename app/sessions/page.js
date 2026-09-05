@@ -1250,7 +1250,7 @@ export default function SchedulePage() {
                                     {s.payment === 'Unpaid' ? (
                                       <button onClick={() => openPayModal(s)} style={{ fontSize: '11px', padding: '5px 10px', borderRadius: '5px', border: 'none', background: '#FCEBEB', color: '#791F1F', cursor: 'pointer' }}>Unpaid</button>
                                     ) : (
-                                      <button onClick={() => s.status === 'Absent' ? null : reversePayment(s)} disabled={s.status === 'Absent'}
+                                      <button onClick={() => s.status === 'Absent' ? null : openPaymentDetails(s)} disabled={s.status === 'Absent'} title={s.status === 'Absent' ? 'Payment moved to credit — cannot reverse' : 'View payment details'}
                                         style={{ fontSize: '11px', padding: '5px 10px', borderRadius: '5px', border: 'none', background: '#EAF3DE', color: s.status === 'Absent' ? '#aaa' : '#27500A', cursor: s.status === 'Absent' ? 'not-allowed' : 'pointer' }}>Paid ✓</button>
                                     )}
                                     <button onClick={() => setRemindModal(s)} style={{ fontSize: '11px', padding: '5px 10px', borderRadius: '5px', border: '1px solid #B5D4F4', background: '#E6F1FB', color: '#0C447C', cursor: 'pointer' }}>💬</button>

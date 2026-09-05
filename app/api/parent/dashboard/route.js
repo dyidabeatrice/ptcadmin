@@ -60,7 +60,8 @@ export async function GET() {
           time_end: row[6],
           session_type: row[7] || 'Regular',
           status: row[8] || 'Pencil',
-          payment: row[9] || 'Unpaid'
+          payment: row[9] || 'Unpaid',
+          amount: parseFloat(row[11] || 0)
         })
       })
     })
@@ -68,6 +69,24 @@ export async function GET() {
     // Client balances
     const clientsData = await getSheetData('clients')
     const [, ...clientRows] = clientsData
+
+    // Outstanding document requests, for the payment-upload checklist
+    let reportsByClient = {}
+    try {
+      const reportsData = await getSheetData('reports')
+      const [, ...reportRows] = reportsData
+      reportRows.filter(r => r && r[0] && linkedClientNames.includes(r[1]) && r[8] === 'Outstanding').forEach(row => {
+        const name = row[1]
+        if (!reportsByClient[name]) reportsByClient[name] = []
+        reportsByClient[name].push({
+          id: row[0],
+          doc_type: row[6] || 'Document',
+          amount: parseFloat(row[7] || 0)
+        })
+      })
+    } catch {
+      // reports tab issue — skip document items rather than fail the whole dashboard
+    }
 
     const children = linkedClientNames.map(name => {
       const clientRow = clientRows.find(r => r && r[1] === name)
@@ -93,12 +112,18 @@ export async function GET() {
       upcoming.sort((a, b) => (parsePHDate(a.date) - parsePHDate(b.date)) || (parseTime(a.time_start) - parseTime(b.time_start)))
       past.sort((a, b) => (parsePHDate(b.date) - parsePHDate(a.date)) || (parseTime(b.time_start) - parseTime(a.time_start)))
 
+      const unpaidItems = sessions
+        .filter(s => s.payment === 'Unpaid' && (s.status === 'Present' || s.status === 'Cancelled'))
+        .map(s => ({ id: s.id, label: `${s.date} — ${s.session_type}`, amount: s.amount || 0 }))
+
       return {
         name,
         credit_balance: parseFloat(clientRow?.[9] || 0),
         outstanding_balance: parseFloat(clientRow?.[10] || 0),
         upcoming,
-        past
+        past,
+        unpaid_sessions: unpaidItems,
+        outstanding_documents: reportsByClient[name] || []
       }
     })
 

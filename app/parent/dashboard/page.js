@@ -27,6 +27,12 @@ export default function ParentDashboard() {
   const [addChildSaving, setAddChildSaving] = useState(false)
   const [addChildSuccess, setAddChildSuccess] = useState(false)
   const [deleteModal, setDeleteModal] = useState(false)
+  const [uploadModal, setUploadModal] = useState(false)
+  const [uploadFile, setUploadFile] = useState(null)
+  const [checkedItems, setCheckedItems] = useState({}) // { "childName:itemId": true }
+  const [uploadSaving, setUploadSaving] = useState(false)
+  const [uploadSuccess, setUploadSuccess] = useState(false)
+  const [uploadError, setUploadError] = useState('')
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [deleting, setDeleting] = useState(false)
   const router = useRouter()
@@ -81,6 +87,53 @@ export default function ParentDashboard() {
     setAddChildSuccess(true)
   }
 
+  function toggleItem(key) {
+    setCheckedItems(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  function selectedTotal() {
+    let total = 0
+    children.forEach(child => {
+      ;(child.unpaid_sessions || []).forEach(item => {
+        if (checkedItems[`${child.name}:${item.id}`]) total += item.amount
+      })
+      ;(child.outstanding_documents || []).forEach(item => {
+        if (checkedItems[`${child.name}:${item.id}`]) total += item.amount
+      })
+    })
+    return total
+  }
+
+  async function submitUpload() {
+    if (!uploadFile) { setUploadError('Please choose a screenshot'); return }
+    setUploadSaving(true)
+    setUploadError('')
+
+    const selectedLabels = []
+    children.forEach(child => {
+      ;(child.unpaid_sessions || []).forEach(item => {
+        if (checkedItems[`${child.name}:${item.id}`]) selectedLabels.push(`${child.name}: ${item.label}`)
+      })
+      ;(child.outstanding_documents || []).forEach(item => {
+        if (checkedItems[`${child.name}:${item.id}`]) selectedLabels.push(`${child.name}: ${item.doc_type} (document)`)
+      })
+    })
+    const notes = selectedLabels.length > 0 ? `Covers: ${selectedLabels.join('; ')}` : 'General / not specified'
+
+    const formData = new FormData()
+    formData.append('file', uploadFile)
+    formData.append('notes', notes)
+
+    const res = await fetch('/api/parent/upload-payment', { method: 'POST', body: formData })
+    const json = await res.json()
+    setUploadSaving(false)
+    if (json.success) {
+      setUploadSuccess(true)
+    } else {
+      setUploadError(json.error || 'Upload failed. Please try again.')
+    }
+  }
+
   if (loading) {
     return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontFamily: 'sans-serif' }}>Loading...</div>
   }
@@ -108,6 +161,88 @@ export default function ParentDashboard() {
             <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '24px', fontWeight: '800', color: '#0f4c81', marginBottom: '1.75rem' }}>
               {getGreeting()} 👋
             </div>
+
+          <div style={{ maxWidth: '760px', margin: '0 auto', padding: '0 2rem 1rem', display: 'flex', justifyContent: 'flex-end' }}>
+            <button onClick={() => { setUploadModal(true); setUploadFile(null); setCheckedItems({}); setUploadSuccess(false); setUploadError('') }} style={{
+              padding: '9px 20px', borderRadius: '8px', border: '1.5px dashed #ccc', background: 'white',
+              color: '#0f4c81', fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', cursor: 'pointer'
+            }}>+ Upload payment</button>
+          </div>
+
+          {uploadModal && (
+            <div onClick={() => !uploadSaving && setUploadModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,25,40,0.55)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '18px', padding: '2rem', width: '440px', maxWidth: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
+                {uploadSuccess ? (
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '36px', marginBottom: '10px' }}>✅</div>
+                    <h3 style={{ fontFamily: "'Nunito', sans-serif", color: '#0f4c81', marginBottom: '8px' }}>Uploaded!</h3>
+                    <p style={{ fontSize: '13px', color: '#7a7f87', lineHeight: '1.6', marginBottom: '1.25rem' }}>Our clinic will review your payment shortly.</p>
+                    <button onClick={() => setUploadModal(false)} style={{ padding: '9px 22px', borderRadius: '8px', border: 'none', background: '#0f4c81', color: 'white', fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>Close</button>
+                  </div>
+                ) : (
+                  <>
+                    <h3 style={{ fontFamily: "'Nunito', sans-serif", color: '#0f4c81', marginBottom: '4px' }}>Upload a payment</h3>
+                    <p style={{ fontSize: '12px', color: '#999', marginBottom: '1.25rem' }}>Upload your payment screenshot — we'll review it shortly.</p>
+
+                    {uploadError && (
+                      <div style={{ background: '#FCEBEB', color: '#791F1F', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', marginBottom: '1rem' }}>{uploadError}</div>
+                    )}
+
+                    <label style={{
+                      display: 'block', border: '2px dashed #ccc', borderRadius: '14px', padding: '1.5rem', textAlign: 'center',
+                      color: uploadFile ? '#0f4c81' : '#999', fontSize: '13px', cursor: 'pointer', marginBottom: '1.25rem'
+                    }}>
+                      {uploadFile ? `📎 ${uploadFile.name}` : '📎 Click to upload screenshot'}
+                      <input type="file" accept="image/jpeg,image/png" style={{ display: 'none' }}
+                        onChange={e => setUploadFile(e.target.files[0] || null)} />
+                    </label>
+
+                    {children.length > 0 && (children.some(c => (c.unpaid_sessions?.length || 0) + (c.outstanding_documents?.length || 0) > 0)) && (
+                      <div style={{ marginBottom: '1rem' }}>
+                        <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>
+                          What is this payment for? <span style={{ color: '#999', fontWeight: '400' }}>(check all that apply)</span>
+                        </label>
+                        {children.map(child => {
+                          const items = [
+                            ...(child.unpaid_sessions || []).map(i => ({ ...i, isDoc: false })),
+                            ...(child.outstanding_documents || []).map(i => ({ ...i, label: `${i.doc_type} (document)`, isDoc: true }))
+                          ]
+                          if (items.length === 0) return null
+                          return (
+                            <div key={child.name}>
+                              <div style={{ fontSize: '11px', fontWeight: '700', color: '#0f4c81', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '10px 0 6px' }}>{child.name.split(',')[1]?.trim() || child.name}</div>
+                              {items.map(item => {
+                                const key = `${child.name}:${item.id}`
+                                return (
+                                  <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', borderRadius: '8px', border: '1px solid #eee', marginBottom: '6px', cursor: 'pointer' }}>
+                                    <input type="checkbox" checked={!!checkedItems[key]} onChange={() => toggleItem(key)} />
+                                    <span style={{ flex: 1, fontSize: '13px' }}>{item.label}</span>
+                                    <span style={{ fontSize: '12px', fontWeight: '600', color: '#7B0000' }}>₱{item.amount.toLocaleString()}</span>
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    <div style={{ background: '#EAF3DE', border: '1px solid #97C459', borderRadius: '8px', padding: '10px 14px', marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ color: '#27500A', fontWeight: '600', fontSize: '13px' }}>Total selected</span>
+                      <span style={{ color: '#27500A', fontWeight: '800', fontSize: '16px' }}>₱{selectedTotal().toLocaleString()}</span>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                      <button onClick={() => setUploadModal(false)} disabled={uploadSaving} style={{ padding: '9px 18px', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
+                      <button onClick={submitUpload} disabled={uploadSaving} style={{ padding: '9px 22px', borderRadius: '8px', border: 'none', background: '#fcc200', color: '#0f4c81', fontFamily: "'Nunito', sans-serif", fontWeight: '800', fontSize: '13px', cursor: 'pointer', opacity: uploadSaving ? 0.7 : 1 }}>
+                        {uploadSaving ? 'Uploading...' : 'Upload'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
 
             <div style={{ display: 'flex', gap: '10px', marginBottom: '2rem', flexWrap: 'wrap', alignItems: 'center' }}>
               {children.map((child, i) => (

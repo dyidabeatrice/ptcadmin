@@ -1,11 +1,13 @@
 import { google } from 'googleapis'
-
 const auth = new google.auth.GoogleAuth({
   credentials: {
     client_email: process.env.GOOGLE_SHEETS_CLIENT_EMAIL,
     private_key: process.env.GOOGLE_SHEETS_PRIVATE_KEY?.replace(/\\n/g, '\n'),
   },
-  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  scopes: [
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive'
+  ],
 })
 
 export async function getSheetData(sheetName) {
@@ -54,4 +56,9 @@ export async function findRowIndexById(sheetName, id) {
   const data = await getSheetData(sheetName)
   const [, ...rows] = data
   return rows.findIndex(r => r && r[0] === id)
+}
+
+// Added function to get the folder ID for payment uploads
+export function getGoogleDrive() {
+  return google.drive({ version: 'v3', auth })
 }
