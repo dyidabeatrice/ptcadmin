@@ -398,19 +398,19 @@ export default function HomePage() {
         .service-card-top { display: flex; align-items: center; gap: 12px; padding: 1.1rem 1.25rem; }
         .service-card-icon { width: 46px; height: 46px; border-radius: 12px; background: #f0f4fa; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; transition: background 0.25s; }
         .service-card.open .service-card-icon { background: #fef3c7; }
-        .service-card-name { font-family: 'Nunito', sans-serif; font-size: 16px; font-weight: 700; color: #0f4c81; flex: 1; line-height: 1.3; }
+        .service-card-name { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 16px; font-weight: 700; color: #0f4c81; flex: 1; line-height: 1.3; }
         .service-card-chevron { font-size: 11px; color: #ccc; transition: transform 0.25s, color 0.25s; flex-shrink: 0; }
         .service-card.open .service-card-chevron { transform: rotate(180deg); color: #fcc200; }
         .service-card-body { max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
         .service-card.open .service-card-body { max-height: 600px; }
         .service-card-body-inner { padding: 1rem 1.25rem 1.25rem; border-top: 1px solid rgba(252,194,0,0.2); display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; }
-        .service-body-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #fcc200; font-weight: 700; margin-bottom: 6px; font-family: 'Nunito', sans-serif; }
+        .service-body-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #fcc200; font-weight: 700; margin-bottom: 6px; font-family: 'Plus Jakarta Sans', sans-serif; }
         .service-body-text { font-size: 13px; color: #777; line-height: 1.7; }
 
         .stepper-row { display: flex; align-items: flex-start; }
         .step { flex: 1; display: flex; flex-direction: column; align-items: center; cursor: pointer; }
         .step-top { display: flex; align-items: center; width: 100%; }
-        .step-circle { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #e8edf5; background: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 800; color: #ccc; flex-shrink: 0; transition: all 0.25s; z-index: 1; }
+        .step-circle { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #e8edf5; background: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 800; color: #ccc; flex-shrink: 0; transition: all 0.25s; z-index: 1; }
         .step.active .step-circle { background: #0f4c81; border-color: #0f4c81; color: #fff; transform: scale(1.1); }
         .step.done .step-circle { background: #fcc200; border-color: #fcc200; color: #0f4c81; }
         .step-line { flex: 1; height: 2px; background: #e0e0e0; transition: background 0.25s; }
@@ -419,14 +419,14 @@ export default function HomePage() {
         .step.active .step-label { color: #0f4c81; font-weight: 700; }
         .step.done .step-label { color: #b89a00; }
         .step-content-box { background: #fff; border-radius: 14px; border: 2px solid #0f4c81; padding: 1.5rem; margin-top: 1.5rem; }
-        .step-nav-btn { padding: 9px 22px; border-radius: 40px; font-size: 13px; font-weight: 700; font-family: 'Nunito', sans-serif; cursor: pointer; border: none; transition: all 0.2s; }
+        .step-nav-btn { padding: 9px 22px; border-radius: 40px; font-size: 13px; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; cursor: pointer; border: none; transition: all 0.2s; }
         .step-nav-btn:hover { opacity: 0.85; }
         .mob-item { background: #fff; border-radius: 12px; border: 1px solid #e8edf5; margin-bottom: 8px; overflow: hidden; transition: border-color 0.2s; }
         .mob-item.active { border-color: #0f4c81; }
         .mob-header { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; }
-        .mob-num { width: 34px; height: 34px; border-radius: 50%; background: #f0f4fa; display: flex; align-items: center; justify-content: center; font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 800; color: #0f4c81; flex-shrink: 0; transition: all 0.2s; }
+        .mob-num { width: 34px; height: 34px; border-radius: 50%; background: #f0f4fa; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 13px; font-weight: 800; color: #0f4c81; flex-shrink: 0; transition: all 0.2s; }
         .mob-item.active .mob-num { background: #0f4c81; color: #fff; }
-        .mob-title { font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700; color: #0f4c81; flex: 1; }
+        .mob-title { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; font-weight: 700; color: #0f4c81; flex: 1; }
         .mob-chevron { font-size: 11px; color: #ccc; transition: transform 0.2s; }
         .mob-item.active .mob-chevron { transform: rotate(180deg); color: #0f4c81; }
         .mob-body { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
@@ -478,9 +478,9 @@ export default function HomePage() {
               <>
                 <div onClick={() => setShowLoginMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 149 }} />
                 <div style={{ position: 'absolute', top: 'calc(100% + 10px)', right: 0, background: 'white', borderRadius: '10px', boxShadow: '0 12px 32px rgba(15,76,129,0.18)', border: '1px solid #eee', width: '180px', overflow: 'hidden', zIndex: 150 }}>
-                  <div onClick={() => { setShowLoginMenu(false); setShowParentComingSoon(true) }} style={{ padding: '13px 18px', cursor: 'pointer', fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', color: '#0f4c81', borderBottom: '1px solid #f5f5f5' }}>Parent Login</div>
-                  <a href="/therapist/login" style={{ display: 'block', padding: '13px 18px', cursor: 'pointer', fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', color: '#0f4c81', borderBottom: '1px solid #f5f5f5', textDecoration: 'none' }}>Therapist Login</a>
-                  <Link href="/login" style={{ display: 'block', padding: '13px 18px', cursor: 'pointer', fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', color: '#0f4c81', textDecoration: 'none' }}>Staff Login</Link>
+                  <div onClick={() => { setShowLoginMenu(false); setShowParentComingSoon(true) }} style={{ padding: '13px 18px', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '700', fontSize: '13px', color: '#0f4c81', borderBottom: '1px solid #f5f5f5' }}>Parent Login</div>
+                  <a href="/therapist/login" style={{ display: 'block', padding: '13px 18px', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '700', fontSize: '13px', color: '#0f4c81', borderBottom: '1px solid #f5f5f5', textDecoration: 'none' }}>Therapist Login</a>
+                  <Link href="/login" style={{ display: 'block', padding: '13px 18px', cursor: 'pointer', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '700', fontSize: '13px', color: '#0f4c81', textDecoration: 'none' }}>Staff Login</Link>
                 </div>
               </>
             )}
@@ -526,14 +526,14 @@ export default function HomePage() {
         textAlign: 'center', padding: '8rem 2rem 4rem', position: 'relative', overflow: 'hidden'
       }}>
         <img src="/logobig.png" alt="Potentials Therapy Center" className="hero-logo" style={{ width: '300px', objectFit: 'contain', marginBottom: '1.5rem' }} />
-        <h1 className="hero-title" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: '#545454', fontWeight: '800', margin: '0 0 1rem', lineHeight: '1.2', maxWidth: '700px', fontFamily: "'Nunito', sans-serif" }}>Potentials Therapy Center</h1>
+        <h1 className="hero-title" style={{ fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: '#545454', fontWeight: '800', margin: '0 0 1rem', lineHeight: '1.2', maxWidth: '700px', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Potentials Therapy Center</h1>
         <p className="hero-tagline" style={{ fontSize: 'clamp(1rem, 2vw, 1.2rem)', color: '#545454', maxWidth: '560px', lineHeight: '1.7', margin: '0 0 2.5rem' }}>
           🔹 unlocking your child's best 🔸
         </p>
         <div className="hero-buttons" style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
-          <a target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/potentialstherapycenter" style={{ padding: '14px 32px', borderRadius: '40px', background: '#fcc200', color: '#0f4c81', textDecoration: 'none', fontSize: '15px', fontWeight: '700', fontFamily: "'Nunito', sans-serif" }}>Book an Appointment</a>
-          <a href="#services" style={{ padding: '14px 32px', borderRadius: '40px', background: '#0f4c81', color: '#fff', textDecoration: 'none', fontSize: '15px', fontWeight: '600', fontFamily: "'Nunito', sans-serif" }}>Our Services</a>
-          <a href="#location" style={{ padding: '14px 32px', borderRadius: '40px', background: 'transparent', color: '#545454', textDecoration: 'none', fontSize: '15px', fontWeight: '600', border: '1.5px solid #545454', fontFamily: "'Nunito', sans-serif" }}>Find Us</a>
+          <a target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/potentialstherapycenter" style={{ padding: '14px 32px', borderRadius: '40px', background: '#fcc200', color: '#0f4c81', textDecoration: 'none', fontSize: '15px', fontWeight: '700', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Book an Appointment</a>
+          <a href="#services" style={{ padding: '14px 32px', borderRadius: '40px', background: '#0f4c81', color: '#fff', textDecoration: 'none', fontSize: '15px', fontWeight: '600', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Our Services</a>
+          <a href="#location" style={{ padding: '14px 32px', borderRadius: '40px', background: 'transparent', color: '#545454', textDecoration: 'none', fontSize: '15px', fontWeight: '600', border: '1.5px solid #545454', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Find Us</a>
         </div>
       </section>
 
@@ -547,7 +547,7 @@ export default function HomePage() {
         {/* Header */}
         <div className="reveal" style={{ textAlign: 'center', marginBottom: '3rem', position: 'relative', zIndex: 1 }}>
           <div style={{ fontSize: '11px', letterSpacing: '0.18em', color: '#fcc200', fontWeight: '600', marginBottom: '10px', textTransform: 'uppercase' }}>Who are we</div>
-          <h2 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 14px', fontWeight: '800' }}>Get to Know Us</h2>
+          <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 14px', fontWeight: '800' }}>Get to Know Us</h2>
           <p style={{ color: '#666', fontSize: '15px', maxWidth: '540px', margin: '0 auto', lineHeight: '1.75', fontWeight: '300' }}>
             Potentials Therapy Center is a special needs therapy center built to become partners with families that are committed to unlocking their child's best through individualized programs created, executed, and managed by our excellent roster of clinicians and teachers.
           </p>
@@ -578,7 +578,7 @@ export default function HomePage() {
               )
             })}
             <button onClick={() => setStackIndex((stackIndex + 1) % clinicCards.length)}
-              style={{ position: 'absolute', bottom: '-48px', left: '50%', transform: 'translateX(-50%)', padding: '9px 24px', borderRadius: '40px', background: '#0f4c81', color: '#fff', border: 'none', fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', cursor: 'pointer', transition: 'background 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ position: 'absolute', bottom: '-48px', left: '50%', transform: 'translateX(-50%)', padding: '9px 24px', borderRadius: '40px', background: '#0f4c81', color: '#fff', border: 'none', fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', fontWeight: '700', cursor: 'pointer', transition: 'background 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}
               onMouseEnter={e => (e.currentTarget.style.background = '#fcc200')}
               onMouseLeave={e => (e.currentTarget.style.background = '#0f4c81')}>
               Next ›
@@ -587,10 +587,10 @@ export default function HomePage() {
 
           {/* Right — Description */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '11px', fontWeight: '800', color: '#fcc200', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '10px' }}>{clinicCards[stackIndex].label}</div>
-            <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '22px', fontWeight: '800', color: '#0f4c81', marginBottom: '12px', lineHeight: '1.25' }}>{clinicCards[stackIndex].title}</div>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '11px', fontWeight: '800', color: '#fcc200', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '10px' }}>{clinicCards[stackIndex].label}</div>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '22px', fontWeight: '800', color: '#0f4c81', marginBottom: '12px', lineHeight: '1.25' }}>{clinicCards[stackIndex].title}</div>
             <div style={{ fontSize: '14px', color: '#777', lineHeight: '1.75', fontWeight: '300' }}>{clinicCards[stackIndex].body}</div>
-            <div style={{ display: 'inline-block', marginTop: '16px', padding: '5px 16px', borderRadius: '40px', background: '#fef3c7', color: '#0f4c81', fontSize: '12px', fontWeight: '700', fontFamily: "'Nunito', sans-serif" }}>{clinicCards[stackIndex].tag}</div>
+            <div style={{ display: 'inline-block', marginTop: '16px', padding: '5px 16px', borderRadius: '40px', background: '#fef3c7', color: '#0f4c81', fontSize: '12px', fontWeight: '700', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{clinicCards[stackIndex].tag}</div>
             <div style={{ display: 'flex', gap: '6px', marginTop: '1.5rem' }}>
               {clinicCards.map((_, i) => (
                 <button key={i} onClick={() => setStackIndex(i)} style={{ width: i === stackIndex ? '20px' : '7px', height: '7px', borderRadius: '4px', border: 'none', background: i === stackIndex ? '#fcc200' : '#0f4c81', opacity: i === stackIndex ? 1 : 0.2, cursor: 'pointer', transition: 'all 0.2s', padding: 0 }} />
@@ -610,7 +610,7 @@ export default function HomePage() {
         <div className="reveal d3" style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '14px' }}>
             <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
-            <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>Our Team</div>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>Our Team</div>
             <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
           </div>
           <div style={{ position: 'relative', overflow: 'hidden' }}>
@@ -628,7 +628,7 @@ export default function HomePage() {
         <div className="reveal d4" style={{ maxWidth: '1100px', margin: '2.5rem auto 0', position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '14px' }}>
             <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
-            <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>Follow Us</div>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', fontWeight: '700', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#0f4c81' }}>Follow Us</div>
             <div style={{ flex: 1, maxWidth: '120px', height: '1px', background: 'rgba(15,76,129,0.15)' }} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem', width: '100%' }}>
@@ -681,7 +681,7 @@ export default function HomePage() {
             }
             .service-card.open .service-card-icon { background: #fef3c7; }
             .service-card-name {
-              font-family: 'Nunito', sans-serif;
+              font-family: 'Plus Jakarta Sans', sans-serif;
               font-size: 16px; font-weight: 700;
               color: #0f4c81; flex: 1; line-height: 1.3;
             }
@@ -704,7 +704,7 @@ export default function HomePage() {
               font-size: 10px; letter-spacing: 0.12em;
               text-transform: uppercase; color: #fcc200;
               font-weight: 700; margin-bottom: 6px;
-              font-family: 'Nunito', sans-serif;
+              font-family: 'Plus Jakarta Sans', sans-serif;
             }
             .service-body-text { font-size: 13px; color: #777; line-height: 1.7; }
             @media (max-width: 768px) {
@@ -719,7 +719,7 @@ export default function HomePage() {
               <div style={{ fontSize: '11px', letterSpacing: '0.18em', color: '#fcc200', fontWeight: '600', marginBottom: '10px', textTransform: 'uppercase' }}>
                 What We Offer
               </div>
-              <h2 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 14px', fontWeight: '800' }}>
+              <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 14px', fontWeight: '800' }}>
                 Our Therapy Services
               </h2>
               <p style={{ color: '#666', fontSize: '15px', maxWidth: '500px', margin: '0 auto', lineHeight: '1.75', fontWeight: '300' }}>
@@ -771,7 +771,7 @@ export default function HomePage() {
         <div style={{ maxWidth: '1100px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <div className="reveal" style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <div style={{ fontSize: '11px', letterSpacing: '0.18em', color: '#fcc200', fontWeight: '600', marginBottom: '10px', textTransform: 'uppercase' }}>How to Avail Our Services</div>
-            <h2 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: 0, fontWeight: '800' }}>Get Started With Us</h2>
+            <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: 0, fontWeight: '800' }}>Get Started With Us</h2>
           </div>
 
           {/* Desktop Stepper */}
@@ -788,8 +788,8 @@ export default function HomePage() {
               ))}
             </div>
             <div className="reveal d3 step-content-box">
-              <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '11px', fontWeight: '800', color: '#fcc200', letterSpacing: '0.1em', marginBottom: '6px' }}>STEP 0{stepIndex + 1}</div>
-              <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '20px', fontWeight: '800', color: '#0f4c81', marginBottom: '8px' }}>{steps[stepIndex].title}</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '11px', fontWeight: '800', color: '#fcc200', letterSpacing: '0.1em', marginBottom: '6px' }}>STEP 0{stepIndex + 1}</div>
+              <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '20px', fontWeight: '800', color: '#0f4c81', marginBottom: '8px' }}>{steps[stepIndex].title}</div>
               <div style={{ fontSize: '14px', color: '#777', lineHeight: '1.7' }}>{steps[stepIndex].content}</div>
               <div style={{ display: 'flex', gap: '10px', marginTop: '1.25rem' }}>
                 {stepIndex > 0 && <button className="step-nav-btn" style={{ background: '#f0f4fa', color: '#0f4c81' }} onClick={() => setStepIndex(stepIndex - 1)}>← Back</button>}
@@ -813,7 +813,7 @@ export default function HomePage() {
           </div>
 
           <div className="reveal d4" style={{ textAlign: 'center', marginTop: '3rem' }}>
-            <h3 style={{ color: '#0f4c81', fontWeight: '700', fontFamily: "'Nunito', sans-serif" }}>
+            <h3 style={{ color: '#0f4c81', fontWeight: '700', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               Work with us to unlock the best in your child! 💙💛
             </h3>
           </div>
@@ -848,7 +848,7 @@ export default function HomePage() {
           {/* Header */}
           <div className="reveal" style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <div style={{ fontSize: '11px', letterSpacing: '0.18em', color: '#fcc200', fontWeight: '600', marginBottom: '10px', textTransform: 'uppercase' }}>In Their Words</div>
-            <h2 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 10px', fontWeight: '800' }}>Reaching Potentials</h2>
+            <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 10px', fontWeight: '800' }}>Reaching Potentials</h2>
             <p style={{ color: '#666', fontSize: '15px', maxWidth: '480px', margin: '0 auto', lineHeight: '1.75', fontWeight: '300' }}>Real stories from families we've had the privilege of walking alongside.</p>
           </div>
 
@@ -874,9 +874,9 @@ export default function HomePage() {
                     <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
                       <div style={{ fontSize: '32px', color: '#fcc200', lineHeight: '0.6', marginBottom: '8px', fontFamily: 'Georgia, serif', opacity: 0.7 }}>"</div>
                       <div style={{ fontSize: '13px', color: '#555', lineHeight: '1.7', fontStyle: 'italic', marginBottom: '10px', flex: 1 }}>{t.pull}</div>
-                      <div style={{ fontSize: '11px', color: '#0f4c81', fontWeight: '700', fontFamily: "'Nunito', sans-serif", marginBottom: '10px' }}>Read full story →</div>
+                      <div style={{ fontSize: '11px', color: '#0f4c81', fontWeight: '700', fontFamily: "'Plus Jakarta Sans', sans-serif", marginBottom: '10px' }}>Read full story →</div>
                       <div style={{ paddingTop: '10px', borderTop: '1px solid #f0f4fa' }}>
-                        <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '12px', fontWeight: '800', color: '#0f4c81' }}>{t.name}</div>
+                        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '12px', fontWeight: '800', color: '#0f4c81' }}>{t.name}</div>
                       </div>
                     </div>
                   </div>
@@ -901,7 +901,7 @@ export default function HomePage() {
             <img src={testimonials[openTestimonial].photo} alt="Session" />
           </div>
           <div className="t-modal-body">
-            <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '14px', fontWeight: '800', color: '#0f4c81', marginBottom: '1.25rem' }}>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '14px', fontWeight: '800', color: '#0f4c81', marginBottom: '1.25rem' }}>
               {testimonials[openTestimonial].name}
             </div>
             <div style={{ fontSize: '14px', color: '#555', lineHeight: '1.85' }}>
@@ -914,7 +914,7 @@ export default function HomePage() {
 
     {/* Music Player */}
     <div className="reveal d3" style={{ display: 'flex', justifyContent: 'center', marginTop: '3rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 18px', borderRadius: '40px', border: '1px solid #e0e0e0', background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', fontFamily: "'Nunito', sans-serif", maxWidth: '380px', width: '100%' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 18px', borderRadius: '40px', border: '1px solid #e0e0e0', background: 'white', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', fontFamily: "'Plus Jakarta Sans', sans-serif", maxWidth: '380px', width: '100%' }}>
         <button onClick={skipToPrevSong} disabled={musicTrack === 0} style={{ flexShrink: 0, width: '28px', height: '28px', borderRadius: '50%', border: 'none', background: musicTrack === 0 ? '#f0f0f0' : '#f0f4fa', color: musicTrack === 0 ? '#ccc' : '#0f4c81', cursor: musicTrack === 0 ? 'not-allowed' : 'pointer', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>⏮</button>
         <button onClick={toggleMusic} style={{ flexShrink: 0, width: '32px', height: '32px', borderRadius: '50%', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{musicPlaying ? '⏸' : '▶'}</button>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -942,7 +942,7 @@ export default function HomePage() {
         <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center', position: 'relative', zIndex: 1 }}>
           <div className="reveal">
             <div style={{ fontSize: '11px', letterSpacing: '0.18em', color: '#fcc200', fontWeight: '600', marginBottom: '10px', textTransform: 'uppercase' }}>Where to find us</div>
-            <h2 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 2rem', fontWeight: '800' }}>Visit Our Clinic</h2>
+            <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', color: '#0f4c81', margin: '0 0 2rem', fontWeight: '800' }}>Visit Our Clinic</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
               <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
@@ -980,12 +980,12 @@ export default function HomePage() {
                   <div style={{ fontSize: '12px', fontWeight: '600', color: '#333', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Follow Us</div>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <a target="_blank" rel="noopener noreferrer" href="https://www.facebook.com/potentialstherapycenter"
-                      style={{ padding: '8px 20px', borderRadius: '40px', background: '#0f4c81', color: '#fff', textDecoration: 'none', fontSize: '12px', fontWeight: '700', fontFamily: "'Nunito', sans-serif", display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      style={{ padding: '8px 20px', borderRadius: '40px', background: '#0f4c81', color: '#fff', textDecoration: 'none', fontSize: '12px', fontWeight: '700', fontFamily: "'Plus Jakarta Sans', sans-serif", display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
                       Facebook
                     </a>
                     <a target="_blank" rel="noopener noreferrer" href="https://www.instagram.com/potentialstherapycenter/"
-                      style={{ padding: '8px 20px', borderRadius: '40px', background: 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)', color: '#fff', textDecoration: 'none', fontSize: '12px', fontWeight: '700', fontFamily: "'Nunito', sans-serif", display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      style={{ padding: '8px 20px', borderRadius: '40px', background: 'linear-gradient(45deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)', color: '#fff', textDecoration: 'none', fontSize: '12px', fontWeight: '700', fontFamily: "'Plus Jakarta Sans', sans-serif", display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="white" stroke="none"/></svg>
                       Instagram
                     </a>
@@ -1022,19 +1022,19 @@ export default function HomePage() {
           <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '18px', padding: '2.5rem 2rem', width: '380px', maxWidth: '100%', textAlign: 'center', boxShadow: '0 24px 60px rgba(0,0,0,0.25)', position: 'relative' }}>
             <button onClick={() => setShowParentComingSoon(false)} style={{ position: 'absolute', top: '14px', right: '16px', border: 'none', background: 'none', fontSize: '18px', color: '#bbb', cursor: 'pointer' }}>✕</button>
             <div style={{ fontSize: '40px', marginBottom: '14px' }}>👪</div>
-            <div style={{ fontFamily: "'Nunito', sans-serif", fontWeight: '800', fontSize: '19px', color: '#0f4c81', marginBottom: '8px' }}>Parent Portal is coming soon!</div>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '800', fontSize: '19px', color: '#0f4c81', marginBottom: '8px' }}>Parent Portal is coming soon!</div>
             <div style={{ fontSize: '13.5px', color: '#7a7f87', lineHeight: '1.6', marginBottom: '1.5rem' }}>We're building a space where you can check your child's upcoming sessions, attendance, and payments. Hang tight — we'll let you know once it's ready.</div>
-            <button onClick={() => setShowParentComingSoon(false)} style={{ fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', padding: '10px 26px', borderRadius: '8px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer' }}>Got it</button>
+            <button onClick={() => setShowParentComingSoon(false)} style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '700', fontSize: '13px', padding: '10px 26px', borderRadius: '8px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer' }}>Got it</button>
           </div>
         </div>
       )}
 
       {/* Footer */}
       <footer style={{ background: '#0f4c81', color: 'rgba(255,255,255,0.7)', padding: '2rem', textAlign: 'center', borderTop: '3px solid #fcc200' }}>
-        <div style={{ fontSize: '13px', marginBottom: '8px', fontFamily: "'Nunito', sans-serif", fontWeight: '600', color: 'rgba(255,255,255,0.8)' }}>
+        <div style={{ fontSize: '13px', marginBottom: '8px', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '600', color: 'rgba(255,255,255,0.8)' }}>
           © {new Date().getFullYear()} Potentials Therapy Center · Quezon City, Philippines
         </div>
-        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', fontSize: '13px', fontFamily: "'Nunito', sans-serif", flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', fontSize: '13px', fontFamily: "'Plus Jakarta Sans', sans-serif", flexWrap: 'wrap' }}>
           <a href="/privacy" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Privacy Policy</a>
           <a target="_blank" rel="noopener noreferrer" href="mailto:potentialstherapycenter@gmail.com" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Contact</a>
         </div>

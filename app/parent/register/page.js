@@ -62,14 +62,14 @@ export default function ParentRegisterPage() {
       <div style={{ minHeight: '100vh', background: '#f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'sans-serif', padding: '1rem' }}>
         <div style={{ background: 'white', borderRadius: '18px', padding: '2.5rem 2rem', width: '420px', maxWidth: '100%', textAlign: 'center', boxShadow: '0 8px 32px rgba(15,76,129,0.1)' }}>
           <div style={{ fontSize: '40px', marginBottom: '14px' }}>✅</div>
-          <h2 style={{ fontFamily: "'Nunito', sans-serif", fontWeight: '800', color: '#0f4c81', marginBottom: '10px' }}>Account created!</h2>
+          <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '800', color: '#0f4c81', marginBottom: '10px' }}>Account created!</h2>
           <p style={{ fontSize: '14px', color: '#7a7f87', lineHeight: '1.6', marginBottom: '1.5rem' }}>
             Thank you for registering. Our clinic will review and link your account to your child's records shortly — you'll be able to see their schedule once that's done.
           </p>
           <Link href="/parent/login" style={{
             display: 'inline-block', padding: '10px 28px', borderRadius: '8px',
             background: '#0f4c81', color: 'white', textDecoration: 'none',
-            fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px'
+            fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '700', fontSize: '13px'
           }}>Go to Login</Link>
         </div>
       </div>
@@ -81,7 +81,7 @@ export default function ParentRegisterPage() {
       <div style={{ background: 'white', borderRadius: '18px', padding: '2.5rem 2rem', width: '440px', maxWidth: '100%', boxShadow: '0 8px 32px rgba(15,76,129,0.1)' }}>
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <img src="/logo.png" alt="Potentials Therapy Center" style={{ height: '60px', objectFit: 'contain', marginBottom: '1rem' }} />
-          <h2 style={{ fontFamily: "'Nunito', sans-serif", fontWeight: '800', color: '#0f4c81', marginBottom: '4px', fontSize: '20px' }}>Create your account</h2>
+          <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '800', color: '#0f4c81', marginBottom: '4px', fontSize: '20px' }}>Create your account</h2>
           <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>Register to view your child's therapy schedule and history.</p>
         </div>
 
@@ -132,7 +132,7 @@ export default function ParentRegisterPage() {
           <button type="submit" disabled={saving} style={{
             width: '100%', padding: '11px', borderRadius: '8px', border: 'none',
             background: '#fcc200', color: '#0f4c81', cursor: 'pointer',
-            fontFamily: "'Nunito', sans-serif", fontWeight: '800', fontSize: '14px',
+            fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '800', fontSize: '14px',
             opacity: saving ? 0.7 : 1
           }}>{saving ? 'Creating account...' : 'Create account'}</button>
         </form>

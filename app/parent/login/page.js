@@ -35,7 +35,7 @@ export default function ParentLoginPage() {
       <div style={{ background: 'white', borderRadius: '18px', padding: '2.5rem 2rem', width: '400px', maxWidth: '100%', boxShadow: '0 8px 32px rgba(15,76,129,0.1)' }}>
         <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
           <img src="/logo.png" alt="Potentials Therapy Center" style={{ height: '60px', objectFit: 'contain', marginBottom: '1rem' }} />
-          <h2 style={{ fontFamily: "'Nunito', sans-serif", fontWeight: '800', color: '#0f4c81', marginBottom: '4px', fontSize: '20px' }}>Welcome back</h2>
+          <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '800', color: '#0f4c81', marginBottom: '4px', fontSize: '20px' }}>Welcome back</h2>
           <p style={{ fontSize: '13px', color: '#999', margin: 0 }}>Log in to view your child's schedule.</p>
         </div>
 
@@ -59,7 +59,7 @@ export default function ParentLoginPage() {
           <button type="submit" disabled={loading} style={{
             width: '100%', padding: '11px', borderRadius: '8px', border: 'none',
             background: '#fcc200', color: '#0f4c81', cursor: 'pointer',
-            fontFamily: "'Nunito', sans-serif", fontWeight: '800', fontSize: '14px',
+            fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '800', fontSize: '14px',
             opacity: loading ? 0.7 : 1
           }}>{loading ? 'Logging in...' : 'Log in'}</button>
         </form>

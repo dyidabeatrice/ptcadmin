@@ -172,7 +172,7 @@ export default function ParentDashboard() {
       {status !== 'active' ? (
         <div style={{ maxWidth: '480px', margin: '4rem auto', padding: '2.5rem 2rem', background: 'white', borderRadius: '18px', textAlign: 'center', boxShadow: '0 8px 32px rgba(15,76,129,0.1)' }}>
           <div style={{ fontSize: '40px', marginBottom: '14px' }}>⏳</div>
-          <h2 style={{ fontFamily: "'Nunito', sans-serif", fontWeight: '800', color: '#0f4c81', marginBottom: '10px' }}>Waiting for approval</h2>
+          <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '800', color: '#0f4c81', marginBottom: '10px' }}>Waiting for approval</h2>
           <p style={{ fontSize: '14px', color: '#7a7f87', lineHeight: '1.6' }}>
             Our clinic is reviewing your registration and linking it to your child's records. Check back soon — you'll see their schedule here once it's approved.
           </p>
@@ -180,14 +180,14 @@ export default function ParentDashboard() {
       ) : (
         <>
           <div style={{ maxWidth: '760px', margin: '0 auto', padding: '2.5rem 2rem 0' }}>
-            <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '24px', fontWeight: '800', color: '#0f4c81', marginBottom: '1.75rem' }}>
+            <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '24px', fontWeight: '800', color: '#0f4c81', marginBottom: '1.75rem' }}>
               {getGreeting()} 👋
             </div>
 
           <div style={{ maxWidth: '760px', margin: '0 auto', padding: '0 2rem 1rem', display: 'flex', justifyContent: 'flex-end' }}>
             <button onClick={() => { setUploadModal(true); setUploadFile(null); setCheckedItems({}); setUploadSuccess(false); setUploadError('') }} style={{
               padding: '9px 20px', borderRadius: '8px', border: '1.5px dashed #ccc', background: 'white',
-              color: '#0f4c81', fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', cursor: 'pointer'
+              color: '#0f4c81', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '700', fontSize: '13px', cursor: 'pointer'
             }}>+ Upload payment</button>
           </div>
 
@@ -197,13 +197,13 @@ export default function ParentDashboard() {
                 {uploadSuccess ? (
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '36px', marginBottom: '10px' }}>✅</div>
-                    <h3 style={{ fontFamily: "'Nunito', sans-serif", color: '#0f4c81', marginBottom: '8px' }}>Uploaded!</h3>
+                    <h3 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#0f4c81', marginBottom: '8px' }}>Uploaded!</h3>
                     <p style={{ fontSize: '13px', color: '#7a7f87', lineHeight: '1.6', marginBottom: '1.25rem' }}>Our clinic will review your payment shortly.</p>
-                    <button onClick={() => setUploadModal(false)} style={{ padding: '9px 22px', borderRadius: '8px', border: 'none', background: '#0f4c81', color: 'white', fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>Close</button>
+                    <button onClick={() => setUploadModal(false)} style={{ padding: '9px 22px', borderRadius: '8px', border: 'none', background: '#0f4c81', color: 'white', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>Close</button>
                   </div>
                 ) : (
                   <>
-                    <h3 style={{ fontFamily: "'Nunito', sans-serif", color: '#0f4c81', marginBottom: '4px' }}>Upload a payment</h3>
+                    <h3 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#0f4c81', marginBottom: '4px' }}>Upload a payment</h3>
                     <p style={{ fontSize: '12px', color: '#999', marginBottom: '1.25rem' }}>Upload your payment screenshot — we'll review it shortly.</p>
 
                     {uploadError && (
@@ -256,7 +256,7 @@ export default function ParentDashboard() {
 
                     <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                       <button onClick={() => setUploadModal(false)} disabled={uploadSaving} style={{ padding: '9px 18px', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
-                      <button onClick={submitUpload} disabled={uploadSaving} style={{ padding: '9px 22px', borderRadius: '8px', border: 'none', background: '#fcc200', color: '#0f4c81', fontFamily: "'Nunito', sans-serif", fontWeight: '800', fontSize: '13px', cursor: 'pointer', opacity: uploadSaving ? 0.7 : 1 }}>
+                      <button onClick={submitUpload} disabled={uploadSaving} style={{ padding: '9px 22px', borderRadius: '8px', border: 'none', background: '#fcc200', color: '#0f4c81', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '800', fontSize: '13px', cursor: 'pointer', opacity: uploadSaving ? 0.7 : 1 }}>
                         {uploadSaving ? 'Uploading...' : 'Upload'}
                       </button>
                     </div>
@@ -272,15 +272,15 @@ export default function ParentDashboard() {
                   display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 18px 8px 10px', borderRadius: '40px',
                   background: 'white', border: `2px solid ${activeChild === i ? '#fcc200' : 'transparent'}`, cursor: 'pointer'
                 }}>
-                  <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: AVATAR_COLORS[i % AVATAR_COLORS.length], color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Nunito', sans-serif", fontWeight: '800', fontSize: '14px' }}>
+                  <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: AVATAR_COLORS[i % AVATAR_COLORS.length], color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '800', fontSize: '14px' }}>
                     {initials(child.name)}
                   </div>
-                  <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', color: '#0f4c81' }}>{child.name.split(',')[1]?.trim() || child.name}</span>
+                  <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '700', fontSize: '13px', color: '#0f4c81' }}>{child.name.split(',')[1]?.trim() || child.name}</span>
                 </div>
               ))}
               <button onClick={() => { setAddChildModal(true); setNewChildNames(['']); setAddChildSuccess(false) }} style={{
                 padding: '8px 16px', borderRadius: '40px', border: '2px dashed #ccc', background: 'transparent',
-                color: '#999', cursor: 'pointer', fontSize: '12px', fontFamily: "'Nunito', sans-serif", fontWeight: '700'
+                color: '#999', cursor: 'pointer', fontSize: '12px', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '700'
               }}>+ Add a child</button>
             </div>
           </div>
@@ -291,13 +291,13 @@ export default function ParentDashboard() {
                 {addChildSuccess ? (
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: '36px', marginBottom: '10px' }}>✅</div>
-                    <h3 style={{ fontFamily: "'Nunito', sans-serif", color: '#0f4c81', marginBottom: '8px' }}>Request sent!</h3>
+                    <h3 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#0f4c81', marginBottom: '8px' }}>Request sent!</h3>
                     <p style={{ fontSize: '13px', color: '#7a7f87', lineHeight: '1.6', marginBottom: '1.25rem' }}>Our clinic will review and link the new child to your account shortly.</p>
-                    <button onClick={() => setAddChildModal(false)} style={{ padding: '9px 22px', borderRadius: '8px', border: 'none', background: '#0f4c81', color: 'white', fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>Close</button>
+                    <button onClick={() => setAddChildModal(false)} style={{ padding: '9px 22px', borderRadius: '8px', border: 'none', background: '#0f4c81', color: 'white', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '700', fontSize: '13px', cursor: 'pointer' }}>Close</button>
                   </div>
                 ) : (
                   <>
-                    <h3 style={{ fontFamily: "'Nunito', sans-serif", color: '#0f4c81', marginBottom: '4px' }}>Add a child</h3>
+                    <h3 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#0f4c81', marginBottom: '4px' }}>Add a child</h3>
                     <p style={{ fontSize: '12px', color: '#999', marginBottom: '1.25rem' }}>Newly enrolled another child? Let us know their name and we'll link them to your account.</p>
                     {newChildNames.map((name, i) => (
                       <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
@@ -312,7 +312,7 @@ export default function ParentDashboard() {
                     <button onClick={addNewChildField} style={{ fontSize: '12px', padding: '6px 12px', borderRadius: '6px', border: '1px solid #0f4c81', background: 'white', color: '#0f4c81', cursor: 'pointer', marginBottom: '1.25rem' }}>+ Add another</button>
                     <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
                       <button onClick={() => setAddChildModal(false)} style={{ padding: '9px 18px', borderRadius: '8px', border: '1px solid #ddd', background: 'white', cursor: 'pointer', fontSize: '13px' }}>Cancel</button>
-                      <button onClick={submitAddChild} disabled={addChildSaving} style={{ padding: '9px 22px', borderRadius: '8px', border: 'none', background: '#fcc200', color: '#0f4c81', fontFamily: "'Nunito', sans-serif", fontWeight: '800', fontSize: '13px', cursor: 'pointer', opacity: addChildSaving ? 0.7 : 1 }}>
+                      <button onClick={submitAddChild} disabled={addChildSaving} style={{ padding: '9px 22px', borderRadius: '8px', border: 'none', background: '#fcc200', color: '#0f4c81', fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '800', fontSize: '13px', cursor: 'pointer', opacity: addChildSaving ? 0.7 : 1 }}>
                         {addChildSaving ? 'Sending...' : 'Send request'}
                       </button>
                     </div>
@@ -336,20 +336,20 @@ export default function ParentDashboard() {
                     {child.credit_balance > 0 && (
                       <div style={{ flex: 1, minWidth: '200px', background: 'linear-gradient(135deg, #0f4c81, #14608f)', borderRadius: '16px', padding: '1.1rem 1.4rem', color: 'white', boxShadow: '0 6px 20px rgba(15,76,129,0.25)' }}>
                         <div style={{ fontSize: '12px', opacity: 0.85, marginBottom: '3px' }}>Available credit</div>
-                        <div style={{ fontFamily: "'Nunito', sans-serif", fontWeight: '800', fontSize: '20px' }}>₱{child.credit_balance.toLocaleString()}</div>
+                        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '800', fontSize: '20px' }}>₱{child.credit_balance.toLocaleString()}</div>
                       </div>
                     )}
                     {child.outstanding_balance > 0 && (
                       <div style={{ flex: 1, minWidth: '200px', background: '#FCEBEB', border: '1px solid #F09595', borderRadius: '16px', padding: '1.1rem 1.4rem', color: '#791F1F' }}>
                         <div style={{ fontSize: '12px', opacity: 0.85, marginBottom: '3px' }}>Outstanding balance</div>
-                        <div style={{ fontFamily: "'Nunito', sans-serif", fontWeight: '800', fontSize: '20px' }}>₱{child.outstanding_balance.toLocaleString()}</div>
+                        <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '800', fontSize: '20px' }}>₱{child.outstanding_balance.toLocaleString()}</div>
                       </div>
                     )}
                   </div>
                 )}
 
                 <div style={{ marginBottom: '2rem' }}>
-                  <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '800', color: '#0f4c81', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>📅 Upcoming sessions</div>
+                  <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', fontWeight: '800', color: '#0f4c81', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>📅 Upcoming sessions</div>
                   {child.upcoming.length === 0 ? (
                     <div style={{ background: 'white', border: '1px dashed #ddd', borderRadius: '14px', padding: '1.5rem', textAlign: 'center', color: '#999', fontSize: '13px' }}>No upcoming sessions scheduled.</div>
                   ) : child.upcoming.map(s => (
@@ -360,7 +360,7 @@ export default function ParentDashboard() {
                 </div>
 
                 <div>
-                  <div style={{ fontFamily: "'Nunito', sans-serif", fontSize: '13px', fontWeight: '800', color: '#0f4c81', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>🕓 Past sessions</div>
+                  <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: '13px', fontWeight: '800', color: '#0f4c81', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '12px' }}>🕓 Past sessions</div>
                   {child.past.length === 0 ? (
                     <div style={{ background: 'white', border: '1px dashed #ddd', borderRadius: '14px', padding: '1.5rem', textAlign: 'center', color: '#999', fontSize: '13px' }}>No sessions in the last 30 days.</div>
                   ) : (
@@ -386,7 +386,7 @@ export default function ParentDashboard() {
       {deleteModal && (
         <div onClick={() => !deleting && setDeleteModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,25,40,0.55)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '18px', padding: '2rem', width: '400px', maxWidth: '100%' }}>
-            <h3 style={{ fontFamily: "'Nunito', sans-serif", color: '#791F1F', marginBottom: '8px' }}>Delete your account?</h3>
+            <h3 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#791F1F', marginBottom: '8px' }}>Delete your account?</h3>
             <p style={{ fontSize: '13px', color: '#7a7f87', lineHeight: '1.6', marginBottom: '1rem' }}>
               This removes your login access. It does not affect your child's records or sessions at the clinic — only your ability to view them here. This cannot be undone.
             </p>
@@ -425,7 +425,7 @@ function SessionCard({ session, upcoming, onRequest, requesting }) {
     <div style={{ background: 'white', borderRadius: '16px', padding: '1.1rem 1.3rem', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', boxShadow: '0 2px 10px rgba(15,76,129,0.05)', border: '1px solid #eee', flexWrap: 'wrap' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         <div style={{ width: '52px', textAlign: 'center', flexShrink: 0, background: upcoming ? '#E6F1FB' : '#f2f2f2', borderRadius: '10px', padding: '6px 0' }}>
-          <div style={{ fontFamily: "'Nunito', sans-serif", fontWeight: '800', fontSize: '17px', color: upcoming ? '#0f4c81' : '#888', lineHeight: '1' }}>{day}</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '800', fontSize: '17px', color: upcoming ? '#0f4c81' : '#888', lineHeight: '1' }}>{day}</div>
           <div style={{ fontSize: '10px', color: upcoming ? '#0f4c81' : '#999', textTransform: 'uppercase', fontWeight: '700', opacity: 0.75 }}>{month}</div>
         </div>
         <div>
@@ -448,11 +448,11 @@ function SessionCard({ session, upcoming, onRequest, requesting }) {
           ) : (
             <div style={{ display: 'flex', gap: '6px' }}>
               <button onClick={() => onRequest('confirm')} disabled={requesting} style={{
-                fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '11px', padding: '6px 12px', borderRadius: '8px',
+                fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '700', fontSize: '11px', padding: '6px 12px', borderRadius: '8px',
                 background: '#EAF3DE', color: '#27500A', border: '1px solid #97C459', cursor: 'pointer', opacity: requesting ? 0.6 : 1
               }}>✓ Confirm</button>
               <button onClick={() => onRequest('cancel')} disabled={requesting} style={{
-                fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '11px', padding: '6px 12px', borderRadius: '8px',
+                fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: '700', fontSize: '11px', padding: '6px 12px', borderRadius: '8px',
                 background: '#fff5f5', color: '#c0392b', border: '1px solid #f0c2c2', cursor: 'pointer', opacity: requesting ? 0.6 : 1
               }}>Cancel</button>
             </div>
