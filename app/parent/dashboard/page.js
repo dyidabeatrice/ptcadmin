@@ -27,6 +27,7 @@ export default function ParentDashboard() {
   const [addChildSaving, setAddChildSaving] = useState(false)
   const [addChildSuccess, setAddChildSuccess] = useState(false)
   const [deleteModal, setDeleteModal] = useState(false)
+  const [requestSaving, setRequestSaving] = useState(null) // session id currently being submitted
   const [uploadModal, setUploadModal] = useState(false)
   const [uploadFile, setUploadFile] = useState(null)
   const [checkedItems, setCheckedItems] = useState({}) // { "childName:itemId": true }
@@ -85,6 +86,27 @@ export default function ParentDashboard() {
     })
     setAddChildSaving(false)
     setAddChildSuccess(true)
+  }
+
+  async function submitSessionRequest(child, session, action) {
+    setRequestSaving(session.id)
+    const res = await fetch('/api/parent/session-request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_name: child.name,
+        session_id: session.id,
+        week_key: session.week_key,
+        action
+      })
+    })
+    const json = await res.json()
+    setRequestSaving(null)
+    if (json.success) {
+      fetchDashboard() // refresh so the pending state shows immediately
+    } else {
+      alert(json.error || 'Something went wrong. Please try again.')
+    }
   }
 
   function toggleItem(key) {
@@ -331,7 +353,9 @@ export default function ParentDashboard() {
                   {child.upcoming.length === 0 ? (
                     <div style={{ background: 'white', border: '1px dashed #ddd', borderRadius: '14px', padding: '1.5rem', textAlign: 'center', color: '#999', fontSize: '13px' }}>No upcoming sessions scheduled.</div>
                   ) : child.upcoming.map(s => (
-                    <SessionCard key={s.id} session={s} upcoming />
+                    <SessionCard key={s.id} session={s} upcoming
+                      onRequest={(action) => submitSessionRequest(child, s, action)}
+                      requesting={requestSaving === s.id} />
                   ))}
                 </div>
 
@@ -383,7 +407,7 @@ export default function ParentDashboard() {
   )
 }
 
-function SessionCard({ session, upcoming }) {
+function SessionCard({ session, upcoming, onRequest, requesting }) {
   const d = new Date(session.date)
   const day = isNaN(d) ? '--' : d.getDate()
   const month = isNaN(d) ? '' : d.toLocaleDateString('en-US', { month: 'short' })
@@ -415,6 +439,24 @@ function SessionCard({ session, upcoming }) {
           <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', background: session.payment === 'Paid' ? '#EAF3DE' : '#FCEBEB', color: session.payment === 'Paid' ? '#27500A' : '#7B0000' }}>
             {session.payment}
           </span>
+        )}
+        {upcoming && session.status === 'Pencil' && (
+          session.pending_request ? (
+            <span style={{ fontSize: '11px', fontWeight: '700', padding: '4px 12px', borderRadius: '20px', background: '#FAEEDA', color: '#633806' }}>
+              ⏳ {session.pending_request.action === 'confirm' ? 'Confirmation' : 'Cancellation'} requested
+            </span>
+          ) : (
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button onClick={() => onRequest('confirm')} disabled={requesting} style={{
+                fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '11px', padding: '6px 12px', borderRadius: '8px',
+                background: '#EAF3DE', color: '#27500A', border: '1px solid #97C459', cursor: 'pointer', opacity: requesting ? 0.6 : 1
+              }}>✓ Confirm</button>
+              <button onClick={() => onRequest('cancel')} disabled={requesting} style={{
+                fontFamily: "'Nunito', sans-serif", fontWeight: '700', fontSize: '11px', padding: '6px 12px', borderRadius: '8px',
+                background: '#fff5f5', color: '#c0392b', border: '1px solid #f0c2c2', cursor: 'pointer', opacity: requesting ? 0.6 : 1
+              }}>Cancel</button>
+            </div>
+          )
         )}
       </div>
     </div>

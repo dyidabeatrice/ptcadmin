@@ -28,6 +28,19 @@ export async function GET() {
       return Response.json({ success: true, status, children: [] })
     }
 
+    // Pending session confirm/cancel requests, so the dashboard can show
+    // the right state (buttons vs. "requested" badge) per session.
+    let requestsBySessionId = {}
+    try {
+      const requestsData = await getSheetData('parent_session_requests')
+      const [, ...requestRows] = requestsData
+      requestRows.filter(r => r && r[0]).forEach(row => {
+        requestsBySessionId[row[3]] = { action: row[5], requested_at: row[6] }
+      })
+    } catch {
+      // tab issue — treat as no pending requests rather than fail the whole dashboard
+    }
+
     // Determine which week sheets to even bother fetching: anything whose
     // Saturday falls on/after 30 days ago — this naturally covers "past 30
     // days" through "all future scheduled weeks" in one filter.
@@ -54,6 +67,7 @@ export async function GET() {
       rows.filter(r => r && r[0] && linkedClientNames.includes(r[1])).forEach(row => {
         allSessionsByClient[row[1]].push({
           id: row[0],
+          week_key: weekKey,
           date: row[3],
           day: row[4],
           time_start: row[5],
@@ -61,7 +75,8 @@ export async function GET() {
           session_type: row[7] || 'Regular',
           status: row[8] || 'Pencil',
           payment: row[9] || 'Unpaid',
-          amount: parseFloat(row[11] || 0)
+          amount: parseFloat(row[11] || 0),
+          pending_request: requestsBySessionId[row[0]] || null
         })
       })
     })
