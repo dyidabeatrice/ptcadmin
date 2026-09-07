@@ -405,7 +405,8 @@ export default function ClientsPage() {
           .forEach(s => allSessions.push({
             ...s,
             is_paid: s.payment === 'Paid',
-            mop: paymentMap[s.id]?.mop || ''
+            mop: paymentMap[s.id]?.mop || '',
+            reference: paymentMap[s.id]?.reference || ''
           }))
       }
     }))
@@ -548,6 +549,7 @@ export default function ClientsPage() {
                     <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Therapist</th>
                     <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Status</th>
                     <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Payment</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Ref No.</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -569,6 +571,7 @@ export default function ClientsPage() {
                           color: s.is_paid ? '#27500A' : '#791F1F'
                         }}>{s.is_paid ? 'Paid' : 'Unpaid'}</span>
                       </td>
+                      <td style={{ padding: '8px 10px', color: '#666' }}>{s.reference || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
