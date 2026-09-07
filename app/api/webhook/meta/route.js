@@ -131,6 +131,7 @@ export async function GET(request) {
 export async function POST(request) {
   try {
     const body = await request.json()
+    console.log('WEBHOOK PAYLOAD:', JSON.stringify(body))
     if (body.object !== 'page') return Response.json({ status: 'ok' })
 
     for (const entry of body.entry || []) {
