@@ -29,7 +29,8 @@ export async function GET(request) {
         message: row[4],
         status: row[5] || 'draft',
         created_at: row[6] || '',
-        sent_at: row[7] || ''
+        sent_at: row[7] || '',
+        reaction: row[9] || ''
       }
     })
 
@@ -68,23 +69,20 @@ export async function POST(request) {
       const [, ...rows] = data
       const rowIndex = rows.findIndex(r => r && r[0] === body.id)
       if (rowIndex === -1) return Response.json({ success: false, error: 'Message not found' })
-
       const psid = rows[rowIndex][2]
-
+      let fbMessageId = ''
       if (psid && !body.skip_messenger) {
         const result = await sendTaggedMessage(psid, body.message)
         if (result.error) return Response.json({ success: false, error: result.error.message })
+        fbMessageId = result.message_id || ''
       }
-
       const sentAt = formatPHDateTime()
-
       await sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
-        range: `messages!E${rowIndex + 2}:H${rowIndex + 2}`,
+        range: `messages!E${rowIndex + 2}:I${rowIndex + 2}`,
         valueInputOption: 'RAW',
-        requestBody: { values: [[body.message, 'sent', rows[rowIndex][6], sentAt]] }
+        requestBody: { values: [[body.message, 'sent', rows[rowIndex][6], sentAt, fbMessageId]] }
       })
-
       return Response.json({ success: true })
     }
 

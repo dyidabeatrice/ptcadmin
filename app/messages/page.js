@@ -251,8 +251,13 @@ async function fetchClients() {
                       {MESSAGE_TYPES[msg.type] || msg.type}
                     </span>
                   </div>
-                  <span style={{ fontSize: '11px', color: '#999' }}>
+                  <span style={{ fontSize: '11px', color: '#999', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {tab === 'drafts' ? msg.created_at : `Sent: ${msg.sent_at}`}
+                    {msg.reaction && (
+                      <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: '#FCEBEB', color: '#7B0000', border: '1px solid #F09595', fontWeight: '500', whiteSpace: 'nowrap' }}>
+                        {msg.reaction} Reacted
+                      </span>
+                    )}
                   </span>
                 </div>
                 <div style={{ padding: '12px 16px' }}>

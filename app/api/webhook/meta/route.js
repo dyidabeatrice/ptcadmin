@@ -5,6 +5,20 @@ import { sendTextMessage } from '../../../lib/messenger'
 const VERIFY_TOKEN = process.env.META_VERIFY_TOKEN
 const PAGE_ACCESS_TOKEN = process.env.META_PAGE_ACCESS_TOKEN
 
+async function saveMessageReaction(mid, emoji, action) {
+  const data = await getSheetData('messages')
+  const [, ...rows] = data
+  const rowIndex = rows.findIndex(r => r && r[8] === mid) // column I: fb_message_id
+  if (rowIndex === -1) return // reaction on a message we don't have on file (or not sent by us)
+  const sheets = getGoogleSheets()
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `messages!J${rowIndex + 2}`, // column J: reaction
+    valueInputOption: 'RAW',
+    requestBody: { values: [[action === 'react' ? emoji : '']] }
+  })
+}
+
 async function findSessionByPsid(psid) {
   const clientData = await getSheetData('clients')
   const [, ...clientRows] = clientData
@@ -124,8 +138,17 @@ export async function POST(request) {
         const psid = event.sender?.id
         if (!psid) continue
 
-        let senderName = null
+        // Handle message reactions — just logs which reminder got reacted to, no status changes
+        if (event.reaction) {
+          try {
+            await saveMessageReaction(event.reaction.mid, event.reaction.emoji, event.reaction.action)
+          } catch (reactionError) {
+            console.error('Reaction processing error:', reactionError)
+          }
+          continue
+        }
 
+        let senderName = null
         // Handle image attachments — payment screenshots
         const attachments = event.message?.attachments || []
         const imageAttachments = attachments.filter(a => a.type === 'image')
