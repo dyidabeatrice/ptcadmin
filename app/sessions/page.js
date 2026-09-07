@@ -1304,7 +1304,13 @@ export default function SchedulePage() {
             {getTypesForTherapist(contextMenu.session.therapist).map(t => (
               <button key={t.value} onClick={async () => {
                 const isIntern = therapistData.find(x => x.name === contextMenu.session.therapist)?.is_intern
-                const amount = isIntern ? (t.value === 'OT-IE' ? 800 : 600) : (SESSION_TYPE_RATES[t.value] ?? 0)
+                const specialty = therapistData.find(x => x.name === contextMenu.session.therapist)?.specialty || 'OT'
+                const REGULAR_TYPE_BY_SPECIALTY = { OT: 'OT SESSION', ST: 'ST SESSION', PT: 'PT SESSION', SPED: 'SPED SESSION' }
+                const amount = isIntern
+                  ? (t.value === 'OT-IE' ? 800 : 600)
+                  : (t.value === 'Cancellation Fee'
+                      ? (SESSION_TYPE_RATES[REGULAR_TYPE_BY_SPECIALTY[specialty]] ?? SESSION_TYPE_RATES[t.value] ?? 0)
+                      : (SESSION_TYPE_RATES[t.value] ?? 0))
                 await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update_type', week_key: selectedWeek.key, rowIndex: contextMenu.session.index, session_type: t.value, amount }) })
                 setContextMenu(null)
                 fetchSessions(selectedWeek.key)
