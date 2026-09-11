@@ -140,8 +140,10 @@ export default function TasksPage() {
     return `Week of ${startStr}–${endStr}`
   }
 
-  async function saveNewClient(entry) {
+  async function saveNewClient(rawEntry) {
     setNcSaving(true)
+    const validDates = (rawEntry.sessions || []).map(s => s.date).filter(Boolean).sort()
+    const entry = { ...rawEntry, week_start: validDates.length > 0 ? getMondayISO(validDates[0]) : '' }
     if (entry.id) {
       await fetch('/api/new-clients', {
         method: 'PATCH',
@@ -202,7 +204,7 @@ export default function TasksPage() {
 
       {activeTab === 'New Clients' && (
         <div>
-          <button onClick={() => setNcModal({ client_name: '', guardian_name: '', notes: '', week_start: getMondayISO(new Date()), sessions: [] })}
+          <button onClick={() => setNcModal({ client_name: '', guardian_name: '', notes: '', sessions: [] })}
             style={{ padding: '9px 18px', borderRadius: '8px', background: '#1D9E75', color: 'white', border: 'none', fontSize: '13px', fontWeight: '500', cursor: 'pointer', marginBottom: '1.5rem' }}>
             + Add entry
           </button>
@@ -252,7 +254,7 @@ export default function TasksPage() {
                     {(entry.sessions || []).map((s, i) => (
                       <div key={i} style={{ fontSize: '12px', color: '#333', padding: '4px 0', borderTop: '1px dashed #eee', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: '600', color: '#0C447C', background: '#E6F1FB', padding: '1px 8px', borderRadius: '8px', fontSize: '10px' }}>{s.type}</span>
-                        {s.time} · {s.therapist} · starting {s.date}
+                        {s.time} · {s.therapist} · starting {s.date ? new Date(s.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
                         {s.flag && <span style={{ color: '#E24B4A', fontWeight: '600', fontSize: '11px' }}>{s.flag}</span>}
                       </div>
                     ))}
@@ -473,50 +475,45 @@ export default function TasksPage() {
             <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Client name</label>
               <input value={ncModal.client_name} onChange={e => setNcModal({ ...ncModal, client_name: e.target.value })}
-                placeholder="e.g. Lance Reiniel De Ocampo"
+                placeholder="e.g. Last Name, First Name"
                 style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box' }} />
             </div>
 
             <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Guardian name</label>
               <input value={ncModal.guardian_name} onChange={e => setNcModal({ ...ncModal, guardian_name: e.target.value })}
-                placeholder="e.g. Yvette DT De Ocampo"
-                style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box' }} />
-            </div>
-
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Notes (optional)</label>
-              <input value={ncModal.notes} onChange={e => setNcModal({ ...ncModal, notes: e.target.value })}
-                placeholder="e.g. 1400 downpayment paid"
+                placeholder="e.g. exact FB name of guardian"
                 style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box' }} />
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Week</label>
-              <input type="date" value={ncModal.week_start} onChange={e => setNcModal({ ...ncModal, week_start: getMondayISO(e.target.value) })}
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Notes (optional)</label>
+              <input value={ncModal.notes} onChange={e => setNcModal({ ...ncModal, notes: e.target.value })}
+                placeholder="e.g. 1400 downpayment paid / not yet paid / returning patient"
                 style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box' }} />
-              <p style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}>Pick any day — it'll snap to that week's Monday.</p>
             </div>
 
             <div style={{ marginBottom: '16px' }}>
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Sessions</label>
               {(ncModal.sessions || []).map((s, i) => (
-                <div key={i} style={{ border: '1px solid #eee', borderRadius: '8px', padding: '8px', marginBottom: '8px' }}>
-                  <div style={{ display: 'flex', gap: '6px', marginBottom: '6px' }}>
+                <div key={i} style={{ border: '1px solid #eee', borderRadius: '8px', padding: '10px', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '6px' }}>
+                    <button onClick={() => setNcModal({ ...ncModal, sessions: ncModal.sessions.filter((_, idx) => idx !== i) })}
+                      style={{ padding: '2px 10px', borderRadius: '6px', border: '1px solid #fcc', background: '#fff5f5', color: '#c00', cursor: 'pointer', fontSize: '11px' }}>✕ Remove</button>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '6px' }}>
                     <input value={s.type} onChange={e => {
                       const next = [...ncModal.sessions]; next[i] = { ...next[i], type: e.target.value }; setNcModal({ ...ncModal, sessions: next })
-                    }} placeholder="Type (ST/OT/CBT...)" style={{ flex: '0 0 90px', padding: '7px 9px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }} />
+                    }} placeholder="Type (ST/OT/CBT...)" style={{ width: '100%', padding: '7px 9px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px', boxSizing: 'border-box' }} />
                     <input value={s.time} onChange={e => {
                       const next = [...ncModal.sessions]; next[i] = { ...next[i], time: e.target.value }; setNcModal({ ...ncModal, sessions: next })
-                    }} placeholder="Time" style={{ flex: 1, padding: '7px 9px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }} />
+                    }} placeholder="Time" style={{ width: '100%', padding: '7px 9px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px', boxSizing: 'border-box' }} />
                     <input value={s.therapist} onChange={e => {
                       const next = [...ncModal.sessions]; next[i] = { ...next[i], therapist: e.target.value }; setNcModal({ ...ncModal, sessions: next })
-                    }} placeholder="Therapist" style={{ flex: 1, padding: '7px 9px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }} />
-                    <input value={s.date} onChange={e => {
+                    }} placeholder="Therapist" style={{ width: '100%', padding: '7px 9px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px', boxSizing: 'border-box' }} />
+                    <input type="date" value={s.date} onChange={e => {
                       const next = [...ncModal.sessions]; next[i] = { ...next[i], date: e.target.value }; setNcModal({ ...ncModal, sessions: next })
-                    }} placeholder="Start date" style={{ flex: 1, padding: '7px 9px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }} />
-                    <button onClick={() => setNcModal({ ...ncModal, sessions: ncModal.sessions.filter((_, idx) => idx !== i) })}
-                      style={{ padding: '0 10px', borderRadius: '6px', border: '1px solid #fcc', background: '#fff5f5', color: '#c00', cursor: 'pointer' }}>✕</button>
+                    }} style={{ width: '100%', padding: '7px 9px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px', boxSizing: 'border-box' }} />
                   </div>
                   <input value={s.flag || ''} onChange={e => {
                     const next = [...ncModal.sessions]; next[i] = { ...next[i], flag: e.target.value }; setNcModal({ ...ncModal, sessions: next })
