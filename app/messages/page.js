@@ -214,17 +214,63 @@ async function fetchClients() {
       )}
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '1.5rem' }}>
-        {['drafts', 'archive'].map(t => (
+        {['drafts', 'archive', 'responses'].map(t => (
           <button key={t} onClick={() => setTab(t)} style={{
             padding: '8px 20px', borderRadius: '20px', border: 'none', cursor: 'pointer',
             fontSize: '13px', fontWeight: '500',
             background: tab === t ? '#0f4c81' : '#f0f0f0',
             color: tab === t ? 'white' : '#666'
-          }}>{t === 'drafts' ? `Drafts ${drafts.length > 0 ? `(${drafts.length})` : ''}` : 'Archive'}</button>
+          }}>{t === 'drafts' ? `Drafts ${drafts.length > 0 ? `(${drafts.length})` : ''}` : t === 'archive' ? 'Archive' : `Responses ${archive.filter(m => m.reaction).length > 0 ? `(${archive.filter(m => m.reaction).length})` : ''}`}</button>
         ))}
       </div>
 
-      {loading ? (
+      {tab === 'responses' ? (
+        (() => {
+          const reacted = archive.filter(m => m.reaction)
+          return loading ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading...</div>
+          ) : reacted.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3rem', color: '#999', background: '#f8f9fa', borderRadius: '12px' }}>
+              No reactions yet.
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: '#f8f9fa' }}>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Client</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Guardian</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Type</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Sent</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Reaction</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reacted
+                    .sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at))
+                    .map(msg => {
+                      const client = clients.find(c => c.name === msg.client_name)
+                      const tc = getTypeColor(msg.type)
+                      return (
+                        <tr key={msg.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                          <td style={{ padding: '8px 10px', color: '#0f4c81', fontWeight: '500' }}>{msg.client_name}</td>
+                          <td style={{ padding: '8px 10px', color: '#666' }}>{client?.fb_account || '—'}</td>
+                          <td style={{ padding: '8px 10px' }}>
+                            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: tc.bg, color: tc.color, border: `1px solid ${tc.border}` }}>
+                              {MESSAGE_TYPES[msg.type] || msg.type}
+                            </span>
+                          </td>
+                          <td style={{ padding: '8px 10px', color: '#999', fontSize: '12px' }}>{msg.sent_at}</td>
+                          <td style={{ padding: '8px 10px', fontSize: '15px' }}>{msg.reaction}</td>
+                        </tr>
+                      )
+                    })}
+                </tbody>
+              </table>
+            </div>
+          )
+        })()
+      ) : loading ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading...</div>
       ) : messages.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999', background: '#f8f9fa', borderRadius: '12px' }}>

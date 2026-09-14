@@ -1714,8 +1714,8 @@ export default function PaymentsPage() {
     { key: 'ledger', label: 'By Therapist' },
     { key: 'outstanding', label: `By Client (${outstandingClients.length})` },
     { key: 'by-day', label: `By Day (${outstandingClients.length})` },
-    { key: 'credits', label: 'Credits' },
-    { key: 'pending', label: `Pending Payments${pendingPayments.filter(p => p.status === 'pending').length > 0 ? ` (${pendingPayments.filter(p => p.status === 'pending').length})` : ''}` },
+    { key: 'credits', label: 'Advance / Credits (Cash)' },
+    { key: 'pending', label: `Advance (Bank) / Pending Payments${pendingPayments.filter(p => p.status === 'pending').length > 0 ? ` (${pendingPayments.filter(p => p.status === 'pending').length})` : ''}` },
     { key: 'summary', label: 'Monthly Summary' },
   ]
 
