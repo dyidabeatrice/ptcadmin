@@ -66,10 +66,11 @@ async function fetchClients() {
 
   async function fetchMessages() {
     setLoading(true)
-    const res = await fetch(`/api/messages?tab=${tab}`)
+    const backendTab = tab === 'responses' ? 'archive' : tab
+    const res = await fetch(`/api/messages?tab=${backendTab}`)
     const json = await res.json()
     if (json.success) {
-      if (tab === 'drafts') setDrafts(json.data)
+      if (backendTab === 'drafts') setDrafts(json.data)
       else setArchive(json.data)
     }
     setLoading(false)
