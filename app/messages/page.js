@@ -243,12 +243,13 @@ async function fetchClients() {
                     <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Guardian</th>
                     <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Type</th>
                     <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Sent</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Reacted</th>
                     <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Reaction</th>
                   </tr>
                 </thead>
                 <tbody>
                   {reacted
-                    .sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at))
+                    .sort((a, b) => new Date(b.reaction_at || b.sent_at) - new Date(a.reaction_at || a.sent_at))
                     .map(msg => {
                       const client = clients.find(c => c.name === msg.client_name)
                       const tc = getTypeColor(msg.type)
@@ -262,6 +263,7 @@ async function fetchClients() {
                             </span>
                           </td>
                           <td style={{ padding: '8px 10px', color: '#999', fontSize: '12px' }}>{msg.sent_at}</td>
+                          <td style={{ padding: '8px 10px', color: '#999', fontSize: '12px' }}>{msg.reaction_at || '—'}</td>
                           <td style={{ padding: '8px 10px', fontSize: '15px' }}>{msg.reaction}</td>
                         </tr>
                       )

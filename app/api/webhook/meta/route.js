@@ -13,9 +13,9 @@ async function saveMessageReaction(mid, emoji, action) {
   const sheets = getGoogleSheets()
   await sheets.spreadsheets.values.update({
     spreadsheetId: SPREADSHEET_ID,
-    range: `messages!J${rowIndex + 2}`, // column J: reaction
+    range: `messages!J${rowIndex + 2}:K${rowIndex + 2}`, // J: reaction, K: reaction_at
     valueInputOption: 'RAW',
-    requestBody: { values: [[action === 'react' ? emoji : '']] }
+    requestBody: { values: [[action === 'react' ? emoji : '', action === 'react' ? formatPHDateTime() : '']] }
   })
 }
 

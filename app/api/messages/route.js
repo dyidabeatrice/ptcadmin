@@ -30,7 +30,8 @@ export async function GET(request) {
         status: row[5] || 'draft',
         created_at: row[6] || '',
         sent_at: row[7] || '',
-        reaction: row[9] || ''
+        reaction: row[9] || '',
+        reaction_at: row[10] || ''
       }
     })
 
