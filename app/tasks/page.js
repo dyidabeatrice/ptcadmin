@@ -41,6 +41,21 @@ export default function TasksPage() {
     setNcLoading(false)
   }
 
+  async function toggleSessionFlag(entryId, sessionIndex, field, currentValue) {
+    // Optimistic local update so the click feels instant
+    setNewClients(prev => prev.map(e => {
+      if (e.id !== entryId) return e
+      const sessions = [...e.sessions]
+      sessions[sessionIndex] = { ...sessions[sessionIndex], [field]: !currentValue }
+      return { ...e, sessions }
+    }))
+    await fetch('/api/new-clients', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: entryId, sessionIndex, field, value: !currentValue })
+    })
+  }
+
   async function fetchInquiries() {
     setInquiriesError(false)
     const json = await fetchJSON('/api/inquiries')
@@ -213,55 +228,101 @@ export default function TasksPage() {
             <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading...</div>
           ) : (() => {
             const today = new Date(); today.setHours(0, 0, 0, 0)
-            const visible = newClients.filter(e => {
-              if (!e.week_start) return true
-              const weekEnd = new Date(e.week_start + 'T00:00:00')
-              weekEnd.setDate(weekEnd.getDate() + 5)
+
+            const flat = []
+            newClients.forEach(entry => {
+              (entry.sessions || []).forEach((s, sessionIndex) => {
+                if (!s.date) return
+                flat.push({ entry, session: s, sessionIndex })
+              })
+            })
+
+            const visible = flat.filter(({ session }) => {
+              const weekStart = new Date(getMondayISO(session.date) + 'T00:00:00')
+              const weekEnd = new Date(weekStart)
+              weekEnd.setDate(weekStart.getDate() + 5)
               return weekEnd >= today
             })
+
             if (visible.length === 0) {
               return <div style={{ textAlign: 'center', padding: '3rem', color: '#999', background: '#f8f9fa', borderRadius: '12px' }}>No upcoming new clients logged.</div>
             }
+
             const byWeek = {}
-            visible.forEach(e => {
-              const key = e.week_start || 'unscheduled'
-              if (!byWeek[key]) byWeek[key] = []
-              byWeek[key].push(e)
+            visible.forEach(item => {
+              const weekKey = getMondayISO(item.session.date)
+              if (!byWeek[weekKey]) byWeek[weekKey] = {}
+              const dateKey = item.session.date
+              if (!byWeek[weekKey][dateKey]) byWeek[weekKey][dateKey] = []
+              byWeek[weekKey][dateKey].push(item)
             })
+
             const sortedWeeks = Object.keys(byWeek).sort()
-            return sortedWeeks.map(weekKey => (
-              <div key={weekKey} style={{ marginBottom: '1.75rem' }}>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f4c81', marginBottom: '10px' }}>
-                  {weekKey === 'unscheduled' ? 'No week set' : formatWeekLabel(weekKey)}
-                </div>
-                {byWeek[weekKey].map(entry => (
-                  <div key={entry.id} style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', padding: '14px 16px', marginBottom: '10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                      <div>
-                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f4c81' }}>{entry.client_name}</div>
-                        <div style={{ fontSize: '11px', color: '#999', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          Guardian: {entry.guardian_name}
-                          {entry.notes && (
-                            <span style={{ fontSize: '10px', color: '#555', background: '#f8f9fb', border: '1px solid #eee', borderRadius: '8px', padding: '1px 8px', fontWeight: '500' }}>{entry.notes}</span>
-                          )}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button onClick={() => setNcModal(entry)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '12px', color: '#bbb' }}>✎</button>
-                        <button onClick={() => deleteNewClient(entry.id)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '12px', color: '#bbb' }}>✕</button>
-                      </div>
-                    </div>
-                    {(entry.sessions || []).map((s, i) => (
-                      <div key={i} style={{ fontSize: '12px', color: '#333', padding: '4px 0', borderTop: '1px dashed #eee', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                        <span style={{ fontWeight: '600', color: '#0C447C', background: '#E6F1FB', padding: '1px 8px', borderRadius: '8px', fontSize: '10px' }}>{s.type}</span>
-                        {s.time} · {s.therapist} · starting {s.date ? new Date(s.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—'}
-                        {s.flag && <span style={{ color: '#E24B4A', fontWeight: '600', fontSize: '11px' }}>{s.flag}</span>}
-                      </div>
-                    ))}
+            const currentWeekKey = getMondayISO(new Date())
+
+            return sortedWeeks.map(weekKey => {
+              const sortedDates = Object.keys(byWeek[weekKey]).sort()
+              return (
+                <div key={weekKey} style={{ marginBottom: '2rem' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f4c81', marginBottom: '12px', paddingBottom: '6px', borderBottom: '2px solid #E6F1FB', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {formatWeekLabel(weekKey)}
+                    {weekKey === currentWeekKey && (
+                      <span style={{ fontSize: '10px', padding: '2px 9px', borderRadius: '10px', background: '#fcc200', color: '#7C5800', fontWeight: '700' }}>CURRENT</span>
+                    )}
                   </div>
-                ))}
-              </div>
-            ))
+
+                  {sortedDates.map(dateKey => (
+                    <div key={dateKey} style={{ marginBottom: '14px', marginLeft: '4px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#666', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#B5D4F4', display: 'inline-block' }} />
+                        {new Date(dateKey + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                      </div>
+
+                      {byWeek[weekKey][dateKey].map(({ entry, session, sessionIndex }) => (
+                        <div key={`${entry.id}-${sessionIndex}`} style={{ background: 'white', borderRadius: '10px', border: '1px solid #e0e0e0', padding: '12px 14px', marginBottom: '8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                            <div>
+                              <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f4c81' }}>{entry.client_name}</div>
+                              <div style={{ fontSize: '11px', color: '#999', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                Guardian: {entry.guardian_name}
+                                {entry.notes && (
+                                  <span style={{ fontSize: '10px', color: '#555', background: '#f8f9fb', border: '1px solid #eee', borderRadius: '8px', padding: '1px 8px', fontWeight: '500' }}>{entry.notes}</span>
+                                )}
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button onClick={() => setNcModal(entry)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '12px', color: '#bbb' }}>✎</button>
+                              <button onClick={() => deleteNewClient(entry.id)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '12px', color: '#bbb' }}>✕</button>
+                            </div>
+                          </div>
+
+                          <div style={{ fontSize: '12px', color: '#333', padding: '6px 8px', background: '#fafbfc', borderRadius: '6px', marginTop: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: '600', color: '#0C447C', background: '#E6F1FB', padding: '1px 8px', borderRadius: '8px', fontSize: '10px' }}>{session.type}</span>
+                              {session.time} · {session.therapist}
+                              {session.flag && <span style={{ color: '#E24B4A', fontWeight: '600', fontSize: '11px' }}>{session.flag}</span>}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                              <button onClick={() => toggleSessionFlag(entry.id, sessionIndex, 'done', session.done)} title="Mark settled" style={{
+                                width: '26px', height: '26px', borderRadius: '50%', border: '1px solid #97C459', cursor: 'pointer', fontSize: '13px',
+                                background: session.done ? '#97C459' : 'white', color: session.done ? 'white' : '#97C459',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                              }}>✓</button>
+                              <button onClick={() => toggleSessionFlag(entry.id, sessionIndex, 'forfeited', session.forfeited)} style={{
+                                fontSize: '10px', padding: '5px 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', letterSpacing: '0.03em', whiteSpace: 'nowrap',
+                                border: session.forfeited ? '1px solid #E24B4A' : '1px solid #ddd',
+                                background: session.forfeited ? '#FCEBEB' : 'white',
+                                color: session.forfeited ? '#7B0000' : '#999'
+                              }}>{session.forfeited ? 'FORFEITED' : 'FORFEIT'}</button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )
+            })
           })()}
         </div>
       )}

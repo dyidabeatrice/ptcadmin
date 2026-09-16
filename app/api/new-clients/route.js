@@ -71,6 +71,30 @@ export async function PATCH(request) {
   }
 }
 
+export async function PUT(request) {
+  try {
+    const body = await request.json()
+    const { id, sessionIndex, field, value } = body // field: 'done' or 'forfeited'
+    const data = await getSheetData('new_starts')
+    const [, ...rows] = data
+    const rowIndex = rows.findIndex(r => r && r[0] === id)
+    if (rowIndex === -1) return Response.json({ success: false, error: 'Not found' })
+    const sessions = rows[rowIndex][5] ? JSON.parse(rows[rowIndex][5]) : []
+    if (!sessions[sessionIndex]) return Response.json({ success: false, error: 'Session not found' })
+    sessions[sessionIndex][field] = value
+    const sheets = getGoogleSheets()
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `new_starts!F${rowIndex + 2}`,
+      valueInputOption: 'RAW',
+      requestBody: { values: [[JSON.stringify(sessions)]] }
+    })
+    return Response.json({ success: true })
+  } catch (error) {
+    return Response.json({ success: false, error: error.message })
+  }
+}
+
 export async function DELETE(request) {
   try {
     const { id } = await request.json()
