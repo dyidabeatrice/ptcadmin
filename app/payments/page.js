@@ -404,29 +404,29 @@ function LedgerRow({ session, onPaid, onLoadMonth, clients, onOverride = () => {
       </td>
       <td style={{ padding: '8px 10px', background: bg }}>
         {!isPaid ? (
-          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap', alignItems: 'center' }}>
             <button onClick={() => setPaymentTimeliness(paymentTimeliness === 'late' ? null : (paymentTimeliness === null ? '' : 'late'))} style={{
-              fontSize: '10px', padding: '3px 10px', borderRadius: '5px',
+              fontSize: '10px', padding: '3px 10px', borderRadius: '5px', flexShrink: 0,
               border: paymentTimeliness === null ? '1px solid #ddd' : paymentTimeliness === 'late' ? '1px solid #E69138' : '1px solid #97C459',
               background: paymentTimeliness === null ? '#f5f5f5' : paymentTimeliness === 'late' ? '#FCE5CD' : '#EAF3DE',
               color: paymentTimeliness === null ? '#999' : paymentTimeliness === 'late' ? '#7F3F00' : '#27500A', cursor: 'pointer', fontWeight: '500'
             }}>{paymentTimeliness === null ? 'Set...' : paymentTimeliness === 'late' ? 'Late' : 'On time'}</button>
             {paymentTimeliness === 'late' && (
               <input type="date" value={actualPaymentDate} onChange={e => setActualPaymentDate(e.target.value)}
-                style={{ fontSize: '10px', padding: '3px 5px', borderRadius: '5px', border: !actualPaymentDate ? '1px solid #EF9F27' : '1px solid #ddd', width: '110px' }} />
+                style={{ fontSize: '9px', padding: '3px 2px', borderRadius: '5px', border: !actualPaymentDate ? '1px solid #EF9F27' : '1px solid #ddd', width: '78px', flexShrink: 0 }} />
             )}
           </div>
         ) : (
-          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '4px', flexWrap: 'nowrap', alignItems: 'center' }}>
             <button onClick={() => paymentTimeliness === 'late' ? saveTimeliness('', '') : saveTimeliness('late', actualPaymentDate)} style={{
-              fontSize: '10px', padding: '3px 10px', borderRadius: '5px',
+              fontSize: '10px', padding: '3px 10px', borderRadius: '5px', flexShrink: 0,
               border: paymentTimeliness === 'late' ? '1px solid #E69138' : '1px solid #97C459',
               background: paymentTimeliness === 'late' ? '#FCE5CD' : '#EAF3DE',
               color: paymentTimeliness === 'late' ? '#7F3F00' : '#27500A', cursor: 'pointer', fontWeight: '500'
             }}>{paymentTimeliness === 'late' ? 'Late' : 'On time'}</button>
             {paymentTimeliness === 'late' && (
               <input type="date" value={actualPaymentDate} onChange={e => saveTimeliness('late', e.target.value)}
-                style={{ fontSize: '10px', padding: '3px 5px', borderRadius: '5px', border: !actualPaymentDate ? '1px solid #EF9F27' : '1px solid #ddd', width: '110px' }} />
+                style={{ fontSize: '9px', padding: '3px 2px', borderRadius: '5px', border: !actualPaymentDate ? '1px solid #EF9F27' : '1px solid #ddd', width: '78px', flexShrink: 0 }} />
             )}
           </div>
         )}

@@ -446,6 +446,18 @@ export default function SchedulePage() {
   async function updateStatus(session, status) {
     if (status === 'Absent' && session.payment === 'Paid') { setAbsentConfirm(session); return }
     await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'status', week_key: selectedWeek.key, rowIndex: session.index, status, session_id: session.id }) })
+
+    // Marking a session Cancelled (No Show) should also flip its session
+    // type to No Show, with the amount matching that therapist's specialty rate.
+    if (status === 'Cancelled' && session.session_type !== 'Cancellation Fee') {
+      const therapist = therapistData.find(x => x.name === session.therapist)
+      const isIntern = therapist?.is_intern
+      const specialty = therapist?.specialty || 'OT'
+      const REGULAR_TYPE_BY_SPECIALTY = { OT: 'OT SESSION', ST: 'ST SESSION', PT: 'PT SESSION', SPED: 'SPED SESSION' }
+      const noShowAmount = isIntern ? 600 : (SESSION_TYPE_RATES[REGULAR_TYPE_BY_SPECIALTY[specialty]] ?? SESSION_TYPE_RATES['Cancellation Fee'] ?? 0)
+      await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update_type', week_key: selectedWeek.key, rowIndex: session.index, session_type: 'Cancellation Fee', amount: noShowAmount }) })
+    }
+
     fetchSessions(selectedWeek.key)
     const cRes = await fetch('/api/clients')
     const cJson = await cRes.json()
@@ -461,11 +473,24 @@ export default function SchedulePage() {
   }
 
   async function openPayModal(session) {
-    const key = getTherapistKey(session.therapist, therapistData)
-    const types = SESSION_TYPES[key] || SESSION_TYPES.OT
-    const matchedType = types.find(t => t.value === session.session_type)
-    const defaultType = matchedType ? session.session_type : types[0].value
-    const amount = matchedType ? matchedType.amount : types[0].amount
+    const isIntern = therapistData.find(x => x.name === session.therapist)?.is_intern
+    let defaultType, amount
+    if (isIntern) {
+      const internTypes = [
+        { value: 'OT SESSION', amount: 600 },
+        { value: 'OT-IE', amount: 800 },
+        { value: 'Cancellation Fee', amount: 600 },
+      ]
+      const matched = internTypes.find(t => t.value === session.session_type)
+      defaultType = matched ? session.session_type : internTypes[0].value
+      amount = matched ? matched.amount : internTypes[0].amount
+    } else {
+      const key = getTherapistKey(session.therapist, therapistData)
+      const types = SESSION_TYPES[key] || SESSION_TYPES.OT
+      const matchedType = types.find(t => t.value === session.session_type)
+      defaultType = matchedType ? session.session_type : types[0].value
+      amount = matchedType ? matchedType.amount : types[0].amount
+    }
     setPayForm({ session_type: defaultType, mop: 'Cash', amount, use_credit: false, split: false, split_credit: 0, split_cash: amount, payment_timeliness: null, actual_payment_date: '' })
     setPayModal(session)
     const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
