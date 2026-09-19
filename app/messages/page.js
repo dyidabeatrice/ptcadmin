@@ -8,6 +8,10 @@ const MESSAGE_TYPES = {
   'document': 'Document Payment Reminder',
   'policies': 'Clinic Policies',
   'late_cancellation': 'No Show Message',
+  'session_reminder': 'Session Reminder',
+  'weather_suspension': 'Weather Suspension',
+  'holiday_suspension': 'Holiday Suspension',
+  'therapist_absent': 'Therapist Absence',
 }
 
 const MESSAGE_TEMPLATES = {
@@ -31,6 +35,11 @@ export default function MessagesPage() {
   const [composeForm, setComposeForm] = useState({ client_name: '', type: '', message: '' })
   const [clients, setClients] = useState([])
   const [composeSaving, setComposeSaving] = useState(false)
+  const [clearModal, setClearModal] = useState(false)
+  const [clearTypes, setClearTypes] = useState([])
+  const [clearStartDate, setClearStartDate] = useState('')
+  const [clearEndDate, setClearEndDate] = useState('')
+  const [clearing, setClearing] = useState(false)
 
   useEffect(() => { 
   fetchMessages()
@@ -123,15 +132,27 @@ async function fetchClients() {
   }
 
   async function clearOld() {
-    if (!confirm('Delete ALL sent messages? This cannot be undone.')) return
+    if (!confirm(`Delete sent messages matching your selection? This cannot be undone.`)) return
+    setClearing(true)
     const res = await fetch('/api/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'clear_old' })
+      body: JSON.stringify({
+        action: 'clear_old',
+        types: clearTypes,
+        start_date: clearStartDate || null,
+        end_date: clearEndDate || null
+      })
     })
     const json = await res.json()
+    setClearing(false)
+    setClearModal(false)
     if (json.success) alert(`Deleted ${json.deleted} sent message${json.deleted !== 1 ? 's' : ''}.`)
     fetchMessages()
+  }
+
+  function toggleClearType(type) {
+    setClearTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])
   }
 
   function getTypeColor(type) {
@@ -158,13 +179,55 @@ async function fetchClients() {
             padding: '9px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '500'
           }}>+ Compose</button>
           {tab === 'archive' && (
-            <button onClick={clearOld} style={{
+            <button onClick={() => { setClearModal(true); setClearTypes([]); setClearStartDate(''); setClearEndDate('') }} style={{
               background: 'white', border: '1px solid #ddd', color: '#999',
               padding: '8px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px'
-            }}>Clear all sent messages</button>
+            }}>Delete messages...</button>
           )}
         </div>
       </div>
+
+      {clearModal && (
+        <div onClick={() => !clearing && setClearModal(false)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '12px', padding: '1.75rem', width: '400px', maxWidth: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
+            <h3 style={{ margin: '0 0 0.5rem', color: '#0f4c81', fontSize: '15px' }}>Delete sent messages</h3>
+            <p style={{ margin: '0 0 1rem', fontSize: '12px', color: '#999' }}>Choose which types and/or date range to delete. Leave a filter blank to not restrict by it.</p>
+
+            <div style={{ marginBottom: '14px' }}>
+              <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '6px' }}>Message type(s) <span style={{ color: '#999', fontWeight: '400' }}>(leave unchecked = all types)</span></label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto', border: '1px solid #eee', borderRadius: '8px', padding: '8px' }}>
+                {Object.entries(MESSAGE_TYPES).map(([value, label]) => (
+                  <label key={value} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={clearTypes.includes(value)} onChange={() => toggleClearType(value)} />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '1.25rem' }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>From</label>
+                <input type="date" value={clearStartDate} onChange={e => setClearStartDate(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>To</label>
+                <input type="date" value={clearEndDate} onChange={e => setClearEndDate(e.target.value)}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box' }} />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button onClick={() => setClearModal(false)} disabled={clearing} style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', background: 'white' }}>Cancel</button>
+              <button onClick={clearOld} disabled={clearing} style={{
+                padding: '8px 20px', borderRadius: '6px', border: 'none', background: '#E24B4A', color: 'white',
+                cursor: 'pointer', fontWeight: '500', opacity: clearing ? 0.6 : 1
+              }}>{clearing ? 'Deleting...' : 'Delete'}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {composeModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

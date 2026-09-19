@@ -122,10 +122,41 @@ export async function POST(request) {
       const [, ...rows] = data
       const sheetId = await getSheetId('messages')
 
-      // Deletes every sent message, regardless of date.
+      const types = body.types || [] // empty array = all types
+      const startDate = body.start_date // 'YYYY-MM-DD' or null
+      const endDate = body.end_date // 'YYYY-MM-DD' or null
+
+      // sent_at looks like "Aug 25, 2026, 03:42 PM" — native Date parsing of
+      // this exact comma-heavy format is unreliable, so parse the date
+      // portion manually (time-of-day doesn't matter for a day-level filter).
+      const MONTHS = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 }
+      function parseSentDate(str) {
+        if (!str) return null
+        const parts = str.split(',').map(s => s.trim())
+        if (parts.length < 2) return null
+        const [monthDay, year] = [parts[0], parts[1]]
+        const [monthAbbr, day] = monthDay.split(' ')
+        const month = MONTHS[monthAbbr]
+        if (month === undefined) return null
+        return new Date(parseInt(year), month, parseInt(day))
+      }
+
+      const rangeStart = startDate ? new Date(startDate + 'T00:00:00') : null
+      const rangeEnd = endDate ? new Date(endDate + 'T00:00:00') : null
+
       const toDelete = rows
         .map((r, i) => ({ r, i }))
-        .filter(({ r }) => r && r[5] === 'sent')
+        .filter(({ r }) => {
+          if (!r || r[5] !== 'sent') return false
+          if (types.length > 0 && !types.includes(r[3])) return false
+          if (rangeStart || rangeEnd) {
+            const sentDate = parseSentDate(r[7])
+            if (!sentDate) return false
+            if (rangeStart && sentDate < rangeStart) return false
+            if (rangeEnd && sentDate > rangeEnd) return false
+          }
+          return true
+        })
         .map(({ i }) => i)
         .reverse()
 
