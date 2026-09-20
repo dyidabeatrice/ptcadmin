@@ -155,6 +155,15 @@ async function fetchClients() {
     setClearTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type])
   }
 
+  function shortDateTime(str) {
+    if (!str) return ''
+    const parts = str.split(',').map(s => s.trim()) // ["Sep 20", "2026", "01:38 PM"]
+    if (parts.length < 3) return str
+    const [monthDay, , time] = parts
+    const trimmedTime = time.replace(/^0/, '') // strip leading zero from hour
+    return `${monthDay}, ${trimmedTime}`
+  }
+
   function getTypeColor(type) {
     if (type === 'ie_reminder') return { bg: '#E6F1FB', color: '#0C447C', border: '#B5D4F4' }
     if (type === 'outstanding') return { bg: '#FAEEDA', color: '#633806', border: '#EF9F27' }
@@ -320,13 +329,13 @@ async function fetchClients() {
                         <tr key={msg.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
                           <td style={{ padding: '8px 10px', color: '#0f4c81', fontWeight: '500' }}>{msg.client_name}</td>
                           <td style={{ padding: '8px 10px', color: '#666' }}>{client?.fb_account || '—'}</td>
-                          <td style={{ padding: '8px 10px' }}>
-                            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: tc.bg, color: tc.color, border: `1px solid ${tc.border}` }}>
+                          <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>
+                            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: tc.bg, color: tc.color, border: `1px solid ${tc.border}`, whiteSpace: 'nowrap' }}>
                               {MESSAGE_TYPES[msg.type] || msg.type}
                             </span>
                           </td>
-                          <td style={{ padding: '8px 10px', color: '#999', fontSize: '12px' }}>{msg.sent_at}</td>
-                          <td style={{ padding: '8px 10px', color: '#999', fontSize: '12px' }}>{msg.reaction_at || '—'}</td>
+                          <td style={{ padding: '8px 10px', color: '#999', fontSize: '12px', whiteSpace: 'nowrap' }}>{shortDateTime(msg.sent_at)}</td>
+                          <td style={{ padding: '8px 10px', color: '#999', fontSize: '12px', whiteSpace: 'nowrap' }}>{msg.reaction_at ? shortDateTime(msg.reaction_at) : '—'}</td>
                           <td style={{ padding: '8px 10px', fontSize: '15px' }}>{msg.reaction}</td>
                         </tr>
                       )
