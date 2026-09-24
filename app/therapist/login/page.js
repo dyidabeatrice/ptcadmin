@@ -10,11 +10,23 @@ export default function TherapistLogin() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  useEffect(() => {
-    fetch('/api/therapist/auth').then(r => r.json()).then(j => {
-      if (j.success) setNames(j.names)
-    })
-  }, [])
+  const [namesLoading, setNamesLoading] = useState(true)
+  const [namesError, setNamesError] = useState(false)
+
+  function loadNames() {
+    setNamesLoading(true)
+    setNamesError(false)
+    fetch('/api/therapist/auth')
+      .then(r => r.json())
+      .then(j => {
+        if (j.success) setNames(j.names)
+        else setNamesError(true)
+      })
+      .catch(() => setNamesError(true))
+      .finally(() => setNamesLoading(false))
+  }
+
+  useEffect(() => { loadNames() }, [])
 
   async function handleLogin() {
   if (!selectedName) return setError('Please enter your name')
@@ -78,6 +90,11 @@ export default function TherapistLogin() {
           {error && (
             <div style={{ background: '#FCEBEB', border: '1px solid #F09595', borderRadius: '6px', padding: '10px 12px', marginBottom: '1rem', fontSize: '13px', color: '#791F1F' }}>
               {error}
+              {namesError && (
+                <button onClick={loadNames} style={{ display: 'block', marginTop: '6px', background: 'none', border: 'none', color: '#0f4c81', textDecoration: 'underline', cursor: 'pointer', fontSize: '13px', padding: 0 }}>
+                  Retry
+                </button>
+              )}
             </div>
           )}
 
