@@ -1055,15 +1055,11 @@ function OutstandingByDayTab({ clients, onSettle }) {
   )
 }
 
-function OutstandingTab({ clients, onSettle }) {
+function OutstandingTab({ clients }) {
   const [unpaidSessions, setUnpaidSessions] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
-  const [payModal, setPayModal] = useState(null)
-  const [payForm, setPayForm] = useState({ mop: 'Cash', amount: 0, use_credit: false, split: false, split_credit: 0, split_cash: 0 })
-  const [clientCredit, setClientCredit] = useState(0)
-  const [creditNotes, setCreditNotes] = useState({ mop: '', reference: '', comments: '', date: '' })
-  const [saving, setSaving] = useState(false)
+  const [expanded, setExpanded] = useState({})
 
   useEffect(() => { fetchOutstanding(true) }, [])
 
@@ -1076,80 +1072,8 @@ function OutstandingTab({ clients, onSettle }) {
     setLoading(false)
   }
 
-async function openSettle(session) {
-  setPayModal(session)
-  const initialAmount = Number(session.amount) || 0
-  setPayForm({ mop: 'Cash', amount: initialAmount, use_credit: false, split: false, split_credit: 0, split_cash: initialAmount, session_type: session.session_type || '', payment_timeliness: null, actual_payment_date: '' })
-    const res = await fetch(`/api/credits?client=${encodeURIComponent(session.client_name)}`)
-    const json = await res.json()
-    if (json.success) setClientCredit(Number(json.credit_balance) || 0)
-    const payRes = await fetch(`/api/payments?client=${encodeURIComponent(session.client_name)}&type=advance`)
-    const payJson = await payRes.json()
-    if (payJson.success) {
-      const advances = payJson.data
-      const latest = advances.length > 0 ? advances[advances.length - 1] : null
-      setCreditNotes({
-        mop: latest?.mop || '',
-        reference: latest?.reference || '',
-        comments: latest?.comments || '',
-        date: latest?.date || ''
-      })
-    }
-  } 
-
-  async function settlePayment() {
-    setSaving(true)
-    const isPartial = !payForm.use_credit && !payForm.split && payModal.amount > 0 && Number(payForm.amount) < Number(payModal.amount)
-    if (isPartial) {
-      const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
-      await fetch('/api/credits', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'add_credit', client_name: payModal.client_name, amount: Number(payForm.amount) || Number(payModal.amount), mop: payForm.mop, date: today, note: `Partial payment for ${payModal.date}` })
-      })
-    } else {
-      if (payModal.is_document) {
-        const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
-        const mop = payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop
-        await fetch('/api/documents', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pay', index: payModal.index, client_name: payModal.client_name, amount: payModal.amount, mop }) })
-        await fetch('/api/payments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'log', client_name: payModal.client_name, therapist: payModal.therapist, session_id: `DOC-${payModal.id}`, amount: payModal.amount, mop, session_type: payForm.session_type || payModal.session_type, date: today, payment_type: 'document', reference: payForm.reference || '' }) })
-        if (payForm.use_credit || payForm.split) {
-          const creditAmount = payForm.split ? payForm.split_credit : payModal.amount
-          await fetch('/api/credits', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'apply_credit', client_name: payModal.client_name, amount: creditAmount, credit_balance: clientCredit }) })
-        }
-      } else {
-        let creditRef = ''
-        let creditMop = 'Credit'
-        if (payForm.use_credit || payForm.split) {
-          const payData = await fetch(`/api/payments?client=${encodeURIComponent(payModal.client_name)}&type=advance`).then(r => r.json())
-          if (payData.success) {
-            const advances = payData.data
-            const latestAdvance = advances.length > 0 ? advances[advances.length - 1] : null
-            creditRef = latestAdvance?.reference || ''
-            creditMop = latestAdvance?.mop || 'Credit'
-          }
-        }
-          await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pay', week_key: payModal.week_key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payModal.session_type || 'Regular', mop: payForm.use_credit ? creditMop : payForm.split ? 'Split' : payForm.mop, amount: Number(payForm.amount) || Number(payModal.amount), use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, credit_balance: clientCredit, reference: payForm.reference || creditRef, payment_timeliness: payForm.payment_timeliness, actual_payment_date: payForm.actual_payment_date }) })
-      }
-    }
-    setPayModal(null)
-    fetchOutstanding()
-    setSaving(false)
-  }
-
-  const isPartial = !payForm.use_credit && !payForm.split && payForm.amount < (payModal?.amount || 0)
-
   return (
     <div>
-      <SettleModal
-        payModal={payModal}
-        payForm={payForm}
-        setPayForm={setPayForm}
-        clientCredit={clientCredit}
-        creditNotes={creditNotes}
-        saving={saving}
-        onClose={() => setPayModal(null)}
-        onConfirm={settlePayment}
-      />
       {loading ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading outstanding sessions...</div>
       ) : loadError ? (
@@ -1159,73 +1083,83 @@ async function openSettle(session) {
       ) : unpaidSessions.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#1D9E75', background: '#EAF3DE', borderRadius: '12px' }}>All caught up — no outstanding balances!</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {(() => {
-          const byClient = {}
-          unpaidSessions.forEach(s => {
-            const key = s.client_name || 'Unknown'
-            if (!byClient[key]) byClient[key] = []
-            byClient[key].push(s)
-          })
+        <>
+          <div style={{ background: '#E6F1FB', border: '1px solid #B5D4F4', borderRadius: '8px', padding: '10px 14px', fontSize: '12px', color: '#0C447C', marginBottom: '16px' }}>
+            ℹ️ This is a summary view only — to record a payment, go to the Schedule page or the By Day tab.
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {(() => {
+              const byClient = {}
+              unpaidSessions.forEach(s => {
+                const key = s.client_name || 'Unknown'
+                if (!byClient[key]) byClient[key] = []
+                byClient[key].push(s)
+              })
 
-          return Object.entries(byClient)
-            .sort(([a], [b]) => a.localeCompare(b))
-            .map(([clientName, clientSessions]) => {
-              const client = clients.find(c => c.name === clientName)
-              const totalOwed = clientSessions.reduce((sum, s) => sum + Number(s.amount || 0), 0)
-              return (
-                <div key={clientName}>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#0f4c81', marginBottom: '8px', padding: '4px 0', borderBottom: '2px solid #E6F1FB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>
-                      {clientName}
-                      <button onClick={async () => {
-                        const sessionDetails = clientSessions
-                          .sort((a, b) => parseDate(a.date) - parseDate(b.date))
-                          .map(s => `• ${s.date} — ${sessionTypeLabel(s.session_type) || 'Session'} (T. ${s.therapist})`)
-                          .join('\n')
-                        await fetch('/api/messages', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            action: 'create_draft',
-                            client_name: clientName,
-                            psid: client?.psid || '',
-                            type: 'outstanding',
-                            message: `Hi po! This is a friendly reminder that ${clientName} has an outstanding balance of *₱${totalOwed.toLocaleString()}* for the following:\n\n${sessionDetails}\n\nPlease settle at your earliest convenience. Thank you!`
+              return Object.entries(byClient)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([clientName, clientSessions]) => {
+                  const client = clients.find(c => c.name === clientName)
+                  const totalOwed = clientSessions.reduce((sum, s) => sum + Number(s.amount || 0), 0)
+                  const isExpanded = expanded[clientName]
+                  const sortedSessions = clientSessions.sort((a, b) => parseDate(a.date) - parseDate(b.date))
+
+                  return (
+                    <div key={clientName} style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', overflow: 'hidden' }}>
+                      <div onClick={() => setExpanded(prev => ({ ...prev, [clientName]: !prev[clientName] }))}
+                        style={{ padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', background: '#f8f9fa', userSelect: 'none' }}>
+                        <span style={{ fontWeight: '600', color: '#0f4c81', fontSize: '12px' }}>{clientName}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                          <div style={{ fontSize: '12px', color: '#666' }}>
+                            Session{clientSessions.length !== 1 ? 's' : ''}: <strong style={{ color: '#0f4c81' }}>{clientSessions.length}</strong>
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#666' }}>
+                            Outstanding: <strong style={{ color: '#791F1F' }}>₱{totalOwed.toLocaleString()}</strong>
+                          </div>
+                          <button onClick={async (e) => {
+                            e.stopPropagation()
+                            const sessionDetails = sortedSessions
+                              .map(s => `• ${s.date} — ${sessionTypeLabel(s.session_type) || 'Session'} (T. ${s.therapist})`)
+                              .join('\n')
+                            await fetch('/api/messages', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                action: 'create_draft',
+                                client_name: clientName,
+                                psid: client?.psid || '',
+                                type: 'outstanding',
+                                message: `Hi po! This is a friendly reminder that ${clientName} has an outstanding balance of *₱${totalOwed.toLocaleString()}* for the following:\n\n${sessionDetails}\n\nPlease settle at your earliest convenience. Thank you!`
+                              })
                             })
-                          })
                             alert('Reminder added to message drafts!')
                           }} style={{
-                            padding: '2px 8px', borderRadius: '4px', border: '1px solid #EF9F27',
-                            background: '#FAEEDA', color: '#633806', cursor: 'pointer', fontSize: '11px'
-                          }}>Remind</button>  
-                    </span>
-                    <span style={{ fontSize: '13px', color: '#E24B4A', fontWeight: '700' }}>₱{totalOwed.toLocaleString()} total</span>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-                    {clientSessions.sort((a, b) => parseDate(a.date) - parseDate(b.date)).map((s, i) => {
-                    const client = clients.find(c => c.name === s.client_name)
-                    return (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: '8px', background: 'white', border: '1px solid #F09595' }}>
-                        <div>
-                          <div style={{ fontSize: '13px', fontWeight: '500', color: '#791F1F' }}>
-                            {s.client_name}
-                            {client?.credit_balance > 0 && <span style={{ marginLeft: '8px', fontSize: '11px', padding: '2px 6px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A' }}>💳 ₱{Number(client.credit_balance).toLocaleString()} credit</span>}                        
-                          </div>
-                          <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}><strong>{s.date}</strong> · {s.time_start}–{s.time_end} · {s.therapist} · {statusLabel(s.status)} · {sessionTypeLabel(s.session_type || 'Regular')}</div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0 }}>
-                          <span style={{ fontSize: '13px', fontWeight: '500', color: '#E24B4A' }}>₱{Number(s.amount || 0).toLocaleString()}</span>
-                          <button onClick={() => openSettle(s)} style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer', fontSize: '12px', fontWeight: '500' }}>Settle</button>
+                            padding: '5px 12px', borderRadius: '5px', border: '1px solid #EF9F27',
+                            background: '#FAEEDA', color: '#633806', cursor: 'pointer', fontSize: '11px', fontWeight: '500'
+                          }}>Remind</button>
+                          <span style={{ color: '#999', fontSize: '12px' }}>{isExpanded ? '▼' : '▶'}</span>
                         </div>
                       </div>
-                  )})}
-            </div>
-            </div>
-            )
-          })
-        })()}
-        </div>
+
+                      {isExpanded && (
+                        <div style={{ borderTop: '1px solid #f0f0f0' }}>
+                          {sortedSessions.map((s, i) => (
+                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 16px', borderBottom: i < sortedSessions.length - 1 ? '1px solid #f5f5f5' : 'none', fontSize: '12px' }}>
+                              <div style={{ color: '#555' }}>
+                                <span style={{ fontSize: '10px', padding: '1px 8px', borderRadius: '8px', background: '#E6F1FB', color: '#0C447C', fontWeight: '600', marginRight: '6px' }}>{sessionTypeLabel(s.session_type || 'Regular')}</span>
+                                {s.date} · {s.time_start}–{s.time_end} · {s.therapist}
+                              </div>
+                              <span style={{ fontWeight: '600', color: '#791F1F' }}>₱{Number(s.amount || 0).toLocaleString()}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })
+            })()}
+          </div>
+        </>
       )}
     </div>
   )
@@ -2126,7 +2060,7 @@ export default function PaymentsPage() {
           )}
 
           {/* By Client tab */}
-          {activeTab === 'outstanding' && <OutstandingTab clients={clients} onSettle={() => {}} />}
+          {activeTab === 'outstanding' && <OutstandingTab clients={clients} />}
 
           {/* By Day tab */}
           {activeTab === 'by-day' && <OutstandingByDayTab clients={clients} onSettle={() => {}} />}
