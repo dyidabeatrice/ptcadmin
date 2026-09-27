@@ -1181,7 +1181,7 @@ async function openSettle(session) {
                       <button onClick={async () => {
                         const sessionDetails = clientSessions
                           .sort((a, b) => parseDate(a.date) - parseDate(b.date))
-                          .map(s => `• ${s.date} — ${s.session_type || 'Session'} (T. ${s.therapist})`)
+                          .map(s => `• ${s.date} — ${sessionTypeLabel(s.session_type) || 'Session'} (T. ${s.therapist})`)
                           .join('\n')
                         await fetch('/api/messages', {
                           method: 'POST',
