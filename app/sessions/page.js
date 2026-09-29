@@ -190,11 +190,15 @@ export default function SchedulePage() {
     const t = therapistData.find(x => x.name === therapistName)
     const specialty = t?.specialty || 'OT'
     const isIntern = t?.is_intern
-    if (isIntern) return [
-      { value: 'OT SESSION', label: 'Intern Session (₱600)' },
-      { value: 'OT-IE', label: 'Intern Evaluation (₱800)' },
-      { value: 'Cancellation Fee', label: 'No Show' },
-    ]
+    if (isIntern) {
+      const sessionType = specialty === 'ST' ? 'ST INTERN SESSION' : 'OT INTERN SESSION'
+      const ieType = specialty === 'ST' ? 'ST INTERN IE' : 'OT INTERN IE'
+      return [
+        { value: sessionType, label: 'Intern Session (₱600)' },
+        { value: ieType, label: 'Intern Evaluation (₱800)' },
+        { value: 'Cancellation Fee', label: 'No Show' },
+      ]
+    }
     const maps = {
       OT: ['OT SESSION','OT-IE','OT-FE','SPECIALIZED OT TX','Cancellation Fee'],
       ST: ['ST SESSION','ST-IE','ST-FE','SPECIALIZED ST TX','Cancellation Fee'],
@@ -473,12 +477,14 @@ export default function SchedulePage() {
   }
 
   async function openPayModal(session) {
-    const isIntern = therapistData.find(x => x.name === session.therapist)?.is_intern
+    const therapistInfo = therapistData.find(x => x.name === session.therapist)
+    const isIntern = therapistInfo?.is_intern
     let defaultType, amount
     if (isIntern) {
+      const internSpecialty = therapistInfo?.specialty || 'OT'
       const internTypes = [
-        { value: 'OT SESSION', amount: 600 },
-        { value: 'OT-IE', amount: 800 },
+        { value: internSpecialty === 'ST' ? 'ST INTERN SESSION' : 'OT INTERN SESSION', amount: 600 },
+        { value: internSpecialty === 'ST' ? 'ST INTERN IE' : 'OT INTERN IE', amount: 800 },
         { value: 'Cancellation Fee', amount: 600 },
       ]
       const matched = internTypes.find(t => t.value === session.session_type)
@@ -1334,7 +1340,7 @@ export default function SchedulePage() {
                 const specialty = therapistData.find(x => x.name === contextMenu.session.therapist)?.specialty || 'OT'
                 const REGULAR_TYPE_BY_SPECIALTY = { OT: 'OT SESSION', ST: 'ST SESSION', PT: 'PT SESSION', SPED: 'SPED SESSION' }
                 const amount = isIntern
-                  ? (t.value === 'OT-IE' ? 800 : 600)
+                  ? (SESSION_TYPE_RATES[t.value] ?? (t.value.includes('IE') ? 800 : 600))
                   : (t.value === 'Cancellation Fee'
                       ? (SESSION_TYPE_RATES[REGULAR_TYPE_BY_SPECIALTY[specialty]] ?? SESSION_TYPE_RATES[t.value] ?? 0)
                       : (SESSION_TYPE_RATES[t.value] ?? 0))

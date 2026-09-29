@@ -68,6 +68,8 @@ export const SESSION_TYPE_RATES = {
   'PT SESSION': 900, 'PT-IE': 2800, 'PT FE': 1500,
   'SPED SESSION': 900, 'SPED IE': 1800, 'SPED FE': 1500, 'PLAYSCHOOL': 750,
   'Cancellation Fee': 1200, 'SUPERVISOR FEE': 0, 'Home Program': 1000,
+  'OT INTERN SESSION': 600, 'OT INTERN IE': 800,
+  'ST INTERN SESSION': 600, 'ST INTERN IE': 800,
 }
 
 // Full flat dropdown list (value/label pairs) used by Payments page's

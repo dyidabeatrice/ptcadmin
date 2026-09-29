@@ -6,12 +6,6 @@ import { getTherapistFromCookie } from '../../lib/auth'
 function calcRates(sessionType, level, recordedAmount, isIntern, comments) {
   const type = sessionType?.toUpperCase().trim()
 
-  if (isIntern) {
-    const isIE = IE_SESSION_TYPES.includes(type)
-    const total = isIE ? 800 : (recordedAmount || 600)
-    return { total, therapistCut: 0, center: total }
-  }
-
   if (type === 'Custom Amount') {
     return { total: recordedAmount || 0, therapistCut: null, center: null }
   }
