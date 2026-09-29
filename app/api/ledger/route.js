@@ -376,6 +376,15 @@ export async function GET(request) {
       const reference = paymentRecord ? paymentRecord[9] : ''
       const rates = calcRates(row[6], level, amount, '')
 
+      // Prefer a manually-set custom cut/center/comments on the payment
+      // record itself — same priority regular sessions already give their
+      // own custom_cut/custom_center, so an edited "INTERN PR"-style entry
+      // isn't silently overwritten by the standard rate calculation every
+      // time the ledger reloads.
+      const customCut = paymentRecord && paymentRecord[12] !== undefined && paymentRecord[12] !== '' ? parseFloat(paymentRecord[12]) : null
+      const customCenter = paymentRecord && paymentRecord[13] !== undefined && paymentRecord[13] !== '' ? parseFloat(paymentRecord[13]) : null
+      const docComments = (paymentRecord && paymentRecord[11]) || row[9] || ''
+
       allSessions.push({
         id: `DOC-${row[0]}`,
         week_key: null,
@@ -391,12 +400,12 @@ export async function GET(request) {
         is_paid: true,
         mop,
         reference,
-        comments: row[9] || '',
+        comments: docComments,
         payment_id: paymentRecord ? paymentRecord[0] : '',
         total: rates.total || amount,
-        therapist_cut: rates.therapistCut || 0,
+        therapist_cut: customCut !== null ? customCut : (rates.therapistCut || 0),
         normal_cut: rates.therapistCut || 0,
-        center: rates.center || 0,
+        center: customCenter !== null ? customCenter : (rates.center || 0),
         therapist_level: level,
         is_intern: false,
         is_document: true
