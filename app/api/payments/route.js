@@ -84,6 +84,8 @@ export async function GET(request) {
       reference: row[9] || '',
       verified_by: row[10] || '',
       comments: row[11] || '',
+      payment_timeliness: row[14] || '',
+      actual_payment_date: row[15] || '',
     }))
 
     // Optional server-side filters — avoids sending the whole sheet across
