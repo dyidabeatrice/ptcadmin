@@ -20,7 +20,7 @@ const MESSAGE_TEMPLATES = {
   'makeup': `Hello po! Pwede po ba si [CLIENT NAME] for make up on [DATE & TIME] with T. [THERAPIST]. Please confirm as soon as possible.`,
   'document': `Hi! This is a gentle reminder to settle your balance for your [DOCUMENT TYPE] request for [CLIENT NAME] on or before [DEADLINE]. Thank you.`,
   'policies': `Thank you for enrolling your child with us. As we start your therapy sessions, please take note of the clinic policies and guidelines.\n\nWe would like to highlight the ff sections for your reference:\n- center protocols (Section II)\n- clinic operations (Section III)\n- attendance/ tardiness/ no shows (Section VI)\n- payment dues (Section VII)\n\nIf you have any questions, feel free to ask us. Thank you so much! 😊`,
-  'late_cancellation': `Good day! Due to the late cancellation of session, we would have to charge a no show fee (same as session rate). This is for the time allotted by your consultant/therapist.\n\nPlease refer to the policies and guidelines given to you. List of valid excuses to waive no show fee are indicated and proof of excuse is required. Reasons not listed are not valid.\n\nThank you!`,
+  'late_cancellation': `Good day! We'd like to inform you that a no show fee (same as session rate) will be charged, as the cancellation was made on the same day and in accordance with our attendance policy.\n\nThis fee is to account for the time already allotted by your consultant/therapist for your child's session.\n\nPlease note that this may be waived should a *valid medical certificate or other accepted proof* (as indicated in our policy) be presented. 😁\n\nThank you for your understanding! 🙏`,
 }
 
 export default function MessagesPage() {
