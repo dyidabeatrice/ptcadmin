@@ -40,6 +40,7 @@ export default function MessagesPage() {
   const [clearStartDate, setClearStartDate] = useState('')
   const [clearEndDate, setClearEndDate] = useState('')
   const [clearing, setClearing] = useState(false)
+  const [responseTypeFilter, setResponseTypeFilter] = useState('all')
 
   useEffect(() => { 
   fetchMessages()
@@ -170,6 +171,11 @@ async function fetchClients() {
     if (type === 'makeup') return { bg: '#EAF3DE', color: '#27500A', border: '#97C459' }
     if (type === 'document') return { bg: '#F3E6FB', color: '#4C0C7C', border: '#C4B5F4' }
     if (type === 'policies') return { bg: '#FFF5E6', color: '#7C4C0C', border: '#F4C4B5' }
+    if (type === 'session_reminder') return { bg: '#E0F5F0', color: '#0B5E4A', border: '#7ACDB8' }
+    if (type === 'therapist_absent') return { bg: '#FCEBEB', color: '#791F1F', border: '#F09595' }
+    if (type === 'weather_suspension') return { bg: '#E8EEF4', color: '#3A4F66', border: '#A9BCCF' }
+    if (type === 'holiday_suspension') return { bg: '#FFF8E1', color: '#7A5C00', border: '#F0D78C' }
+    if (type === 'late_cancellation') return { bg: '#FFE4DC', color: '#8A2B14', border: '#F2A594' }
     return { bg: '#f8f9fa', color: '#666', border: '#e0e0e0' }
   }
 
@@ -297,9 +303,31 @@ async function fetchClients() {
         ))}
       </div>
 
+      {tab === 'responses' && (() => {
+        const allReacted = archive.filter(m => m.reaction)
+        if (allReacted.length === 0) return null
+        const typeCounts = {}
+        allReacted.forEach(m => { typeCounts[m.type] = (typeCounts[m.type] || 0) + 1 })
+        const chips = [{ key: 'all', label: `All (${allReacted.length})` }, ...Object.entries(typeCounts).map(([type, count]) => ({
+          key: type, label: `${MESSAGE_TYPES[type] || type} (${count})`
+        }))]
+        return (
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '1rem' }}>
+            {chips.map(c => (
+              <button key={c.key} onClick={() => setResponseTypeFilter(c.key)} style={{
+                padding: '6px 14px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: '500',
+                background: responseTypeFilter === c.key ? '#0f4c81' : '#f0f0f0',
+                color: responseTypeFilter === c.key ? 'white' : '#666'
+              }}>{c.label}</button>
+            ))}
+          </div>
+        )
+      })()}
+
       {tab === 'responses' ? (
         (() => {
-          const reacted = archive.filter(m => m.reaction)
+          const allReacted = archive.filter(m => m.reaction)
+          const reacted = responseTypeFilter === 'all' ? allReacted : allReacted.filter(m => m.type === responseTypeFilter)
           return loading ? (
             <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading...</div>
           ) : reacted.length === 0 ? (
