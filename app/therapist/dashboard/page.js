@@ -433,6 +433,10 @@ export default function TherapistDashboard() {
 
           {activeTab === 'fees' && (
             <div>
+              <div style={{ background: '#FFF8E6', border: '1px solid #F0D78C', borderRadius: '10px', padding: '12px 14px', marginBottom: '1rem', fontSize: '12px', color: '#5C4A12', lineHeight: '1.6' }}>
+                <div><strong>CONFIRM MY CUT:</strong> Click the button before each cut-off (15th and last day of the month).</div>
+                <div style={{ marginTop: '6px' }}>⚠️ <strong>DISCREPANCY:</strong> Inform admin staff <em>before the cut-off</em> through your assigned admin group chat. PF release follows the amount shown below, and no adjustments can be made after the cut-off.</div>
+              </div>
               <h2 style={{ margin: '0 0 1rem', color: '#0f4c81', fontSize: '16px' }}>My Fees</h2>
               {Object.keys(fees).length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: '#999', fontSize: '13px' }}>
