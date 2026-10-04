@@ -1,8 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { fetchJSON } from '../lib/fetchJSON'
+import AbsenceNotices from './AbsenceNotices'
 
-const TABS = ['New Clients', 'To-do', 'Inquiries']
+const TABS = ['New Clients', 'To-do', 'Inquiries', 'Absences']
 
 const TASK_TYPES = [
   { value: 'ie', label: 'IE Reminder', color: '#E6F1FB', border: '#B5D4F4', text: '#0C447C' },
@@ -216,6 +217,8 @@ export default function TasksPage() {
           }}>+ Add inquiry</button>
         )}
       </div>
+
+      {activeTab === 'Absences' && <AbsenceNotices clients={clients} />}
 
       {activeTab === 'New Clients' && (
         <div>
