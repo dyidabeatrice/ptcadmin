@@ -447,7 +447,7 @@ function LedgerRow({ session, onPaid, onLoadMonth, clients, onOverride = () => {
   )
 }
 
-function LedgerTab({ therapistData, therapistName, onPaid, allMonths = [], loadedMonths = new Set(), loadingMonths = new Set(), onLoadMonth, clients, pfReleases = [], onRelease }) {
+function LedgerTab({ therapistData, therapistName, onPaid, allMonths = [], loadedMonths = new Set(), loadingMonths = new Set(), onLoadMonth, clients, pfReleases = [], onToggleConfirm, onRelease }) {
   const currentMonthKey = (() => {
     const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -656,27 +656,41 @@ function LedgerTab({ therapistData, therapistName, onPaid, allMonths = [], loade
                       const renderPeriodRow = (period) => {
                         const periodSessions = getPeriodSessions(allSessions, period)
                         if (periodSessions.length === 0) return null
-                        const periodCut = periodSessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
+                        const periodTotal = periodSessions.reduce((sum, s) => sum + (overrides[s.id]?.total ?? s.total ?? 0), 0)
+                        const periodCut = periodSessions.reduce((sum, s) => sum + (overrides[s.id]?.cut ?? s.therapist_cut ?? 0), 0)
+                        const periodCenter = periodSessions.reduce((sum, s) => sum + (overrides[s.id]?.center ?? s.center ?? 0), 0)
                         const periodLabel = getPeriodLabel(monthData.label, period)
-                        const release = pfReleases.find(r => r.month_key === monthKey && r.period === String(period))
+                        const release = pfReleases.find(r => r.month_key === monthKey && r.period === String(period) && r.released)
+                        const confirmation = pfReleases.find(r => r.month_key === monthKey && r.period === String(period) && r.confirmed_at)
                         return (
                           <tr key={`period-${period}`} style={{ background: '#fffbe6', borderTop: '2px solid #fcc200', borderBottom: '2px solid #fcc200' }}>
                             <td colSpan={5} style={{ padding: '6px 10px', fontSize: '11px', color: '#0f4c81' }}>{periodLabel}</td>
-                            <td colSpan={1} style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>₱{periodCut.toLocaleString()}</td>
-                            <td colSpan={5} style={{ padding: '6px 10px' }}>
-                              {release ? (
-                                <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A', fontWeight: '500' }}>
-                                  ✓ Released {release.date_sent} via {release.sent_via}
-                                </span>
-                              ) : (
-                                <button onClick={() => {
-                                  setReleaseModal({ monthKey, period, label: periodLabel })
-                                  setReleaseForm({ sent_via: 'Cash', date_sent: '', notes: '' })
-                                }} style={{
-                                  padding: '4px 10px', borderRadius: '6px', border: '1px solid #0f4c81',
-                                  background: '#E6F1FB', color: '#0f4c81', cursor: 'pointer', fontSize: '11px', fontWeight: '500'
-                                }}>Mark as released</button>
-                              )}
+                            <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>₱{periodTotal.toLocaleString()}</td>
+                            <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#1D9E75' }}>₱{periodCut.toLocaleString()}</td>
+                            <td style={{ padding: '6px 10px', fontSize: '12px', fontWeight: '600', color: '#633806' }}>₱{periodCenter.toLocaleString()}</td>
+                            <td colSpan={3} style={{ padding: '6px 10px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                {release ? (
+                                  <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A', fontWeight: '500' }}>
+                                    ✓ Released {release.date_sent} via {release.sent_via}
+                                  </span>
+                                ) : (
+                                  <button onClick={() => {
+                                    setReleaseModal({ monthKey, period, label: periodLabel })
+                                    setReleaseForm({ sent_via: 'Cash', date_sent: '', notes: '' })
+                                  }} style={{
+                                    padding: '4px 10px', borderRadius: '6px', border: '1px solid #0f4c81',
+                                    background: '#E6F1FB', color: '#0f4c81', cursor: 'pointer', fontSize: '11px', fontWeight: '500'
+                                  }}>Mark as released</button>
+                                )}
+                                <button onClick={() => onToggleConfirm && onToggleConfirm(monthKey, period, !!confirmation)}
+                                  title={confirmation ? 'Click to undo' : 'Mark as confirmed by therapist'} style={{
+                                    padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: '500', cursor: 'pointer',
+                                    border: confirmation ? '1px solid #97C459' : '1px solid #0f4c81',
+                                    background: confirmation ? '#EAF3DE' : '#E6F1FB',
+                                    color: confirmation ? '#27500A' : '#0f4c81'
+                                  }}>{confirmation ? `✓ Confirmed by therapist · ${confirmation.confirmed_at}` : 'Confirmed by therapist'}</button>
+                              </div>
                             </td>
                           </tr>
                         )
@@ -1550,6 +1564,17 @@ export default function PaymentsPage() {
     }
   }
 
+  async function toggleConfirmation(therapist, monthKey, period, currentlyConfirmed) {
+    await fetch('/api/pf-releases', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'confirm', therapist, month_key: monthKey, period, confirmed: !currentlyConfirmed })
+    })
+    const pfRes = await fetch('/api/pf-releases')
+    const pfJson = await pfRes.json()
+    if (pfJson.success) setPfReleases(pfJson.data)
+  }
+
   async function fetchPendingPayments() {
     const json = await fetchJSON('/api/payments?action=pending')
     if (json.success) setPendingPayments(json.data)
@@ -2019,6 +2044,7 @@ export default function PaymentsPage() {
                 onLoadMonth={loadMonth}
                 clients={clients}
                 pfReleases={pfReleases.filter(r => r.therapist === activeTherapist)}
+                onToggleConfirm={(monthKey, period, current) => toggleConfirmation(activeTherapist, monthKey, period, current)}
                 onRelease={async (monthKey, period, sentVia, dateSent, notes) => {
                   await fetch('/api/pf-releases', {
                     method: 'POST',

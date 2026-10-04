@@ -1,4 +1,5 @@
 import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
+import { setPfConfirmation } from '../../lib/pfConfirm'
 
 export async function GET(request) {
   try {
@@ -14,8 +15,10 @@ export async function GET(request) {
       month_key: row[2],
       period: row[3],
       sent_via: row[4],
-      date_sent: row[5],
-      notes: row[6] || ''
+      date_sent: row[5] || '',
+      notes: row[6] || '',
+      confirmed_at: row[7] || '',
+      released: !!row[5]
     }))
 
     const filtered = therapist ? releases.filter(r => r.therapist === therapist) : releases
@@ -36,7 +39,7 @@ export async function POST(request) {
     const existing = rows.findIndex(r => 
       r && r[1] === body.therapist && 
       r[2] === body.month_key && 
-      r[3] === body.period
+      String(r[3]) === String(body.period)
     )
 
     if (existing !== -1) {
@@ -66,6 +69,18 @@ export async function POST(request) {
       })
     }
 
+    return Response.json({ success: true })
+  } catch (error) {
+    return Response.json({ success: false, error: error.message })
+  }
+}
+
+export async function PATCH(request) {
+  try {
+    const { action, therapist, month_key, period, confirmed } = await request.json()
+    if (action !== 'confirm') return Response.json({ success: false, error: 'Unknown action' })
+    if (!therapist || !month_key || !period) return Response.json({ success: false, error: 'Missing fields' })
+    await setPfConfirmation(therapist, month_key, period, confirmed)
     return Response.json({ success: true })
   } catch (error) {
     return Response.json({ success: false, error: error.message })

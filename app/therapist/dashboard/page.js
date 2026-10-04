@@ -99,6 +99,24 @@ export default function TherapistDashboard() {
   const [loading, setLoading] = useState(true)
   const [fees, setFees] = useState({})
   const [pfReleases, setPfReleases] = useState([])
+
+  async function confirmCut(monthKey, period, cut, currentlyConfirmed) {
+    if (!currentlyConfirmed && !confirm(`Confirm that your cut of ₱${cut.toLocaleString()} for this period is correct?`)) return
+    const res = await fetch('/api/therapist/pf-confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ month_key: monthKey, period, confirmed: !currentlyConfirmed })
+    })
+    const json = await res.json()
+    if (!json.success) { alert(json.error || 'Something went wrong. Please try again.'); return }
+    const today = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
+    setPfReleases(prev => {
+      const idx = prev.findIndex(r => r.month_key === monthKey && r.period === String(period))
+      if (idx !== -1) return prev.map((r, i) => i === idx ? { ...r, confirmed_at: currentlyConfirmed ? '' : today } : r)
+      return currentlyConfirmed ? prev : [...prev, { month_key: monthKey, period: String(period), confirmed_at: today, released: false }]
+    })
+  }
+
   const [activeTab, setActiveTab] = useState('schedule')
   const [expandedFeeMonths, setExpandedFeeMonths] = useState(new Set())
   const [uploading, setUploading] = useState(null)
@@ -478,8 +496,11 @@ export default function TherapistDashboard() {
 
                                   const period1Cut = period1Sessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
                                   const period2Cut = period2Sessions.reduce((sum, s) => sum + (s.therapist_cut || 0), 0)
-                                  const release1 = pfReleases.find(r => r.month_key === monthKey && r.period === '1')
-                                  const release2 = pfReleases.find(r => r.month_key === monthKey && r.period === '2')
+                                  const release1 = pfReleases.find(r => r.month_key === monthKey && r.period === '1' && r.released)
+                                  const release2 = pfReleases.find(r => r.month_key === monthKey && r.period === '2' && r.released)
+                                  const confirm1 = pfReleases.find(r => r.month_key === monthKey && r.period === '1' && r.confirmed_at)
+                                  const confirm2 = pfReleases.find(r => r.month_key === monthKey && r.period === '2' && r.confirmed_at)
+                                  const confirmationFor = p => (p === 1 ? confirm1 : confirm2)
 
                                   const periodRow = (period, cut, release) => (
                                     <tr key={`period-${period}`} style={{ background: '#f0f4f8', borderTop: '2px solid #e0e0e0', borderBottom: '2px solid #e0e0e0' }}>
@@ -487,15 +508,29 @@ export default function TherapistDashboard() {
                                         {monthData.label} ({period === 1 ? '1–15' : '16–end'}) · ₱{cut.toLocaleString()}
                                       </td>
                                       <td colSpan={2} style={{ padding: '6px 10px', textAlign: 'right' }}>
-                                        {release ? (
-                                          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A', fontWeight: '500' }}>
-                                            ✓ Released {release.date_sent} via {release.sent_via}
-                                          </span>
-                                        ) : (
-                                          <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#FAEEDA', color: '#633806' }}>
-                                            ⏳ Not yet released
-                                          </span>
-                                        )}
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px', flexWrap: 'wrap' }}>
+                                          {release ? (
+                                            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#EAF3DE', color: '#27500A', fontWeight: '500' }}>
+                                              ✓ Released {release.date_sent} via {release.sent_via}
+                                            </span>
+                                          ) : (
+                                            <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '8px', background: '#FAEEDA', color: '#633806' }}>
+                                              ⏳ Not yet released
+                                            </span>
+                                          )}
+                                          {(() => {
+                                            const confirmation = confirmationFor(period)
+                                            return (
+                                              <button onClick={() => confirmCut(monthKey, period, cut, !!confirmation)}
+                                                title={confirmation ? 'Click to undo' : 'Optional: confirm this amount is correct'} style={{
+                                                  fontSize: '11px', padding: '2px 8px', borderRadius: '8px', cursor: 'pointer', fontWeight: '500',
+                                                  border: confirmation ? '1px solid #97C459' : '1px solid #0f4c81',
+                                                  background: confirmation ? '#EAF3DE' : 'white',
+                                                  color: confirmation ? '#27500A' : '#0f4c81'
+                                                }}>{confirmation ? `✓ Confirmed · ${confirmation.confirmed_at}` : 'Confirm my cut'}</button>
+                                            )
+                                          })()}
+                                        </div>
                                       </td>
                                     </tr>
                                   )
