@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react'
 import { fetchJSON } from '../lib/fetchJSON'
 import AbsenceNotices from './AbsenceNotices'
+import OldBalances from './OldBalances'
 
-const TABS = ['New Clients', 'To-do', 'Inquiries', 'Absences']
+const TABS = ['New Clients', 'To-do', 'Inquiries', 'Absences', 'Old Balances']
 
 const TASK_TYPES = [
   { value: 'ie', label: 'IE Reminder', color: '#E6F1FB', border: '#B5D4F4', text: '#0C447C' },
@@ -219,6 +220,7 @@ export default function TasksPage() {
       </div>
 
       {activeTab === 'Absences' && <AbsenceNotices clients={clients} />}
+      {activeTab === 'Old Balances' && <OldBalances />}
 
       {activeTab === 'New Clients' && (
         <div>
