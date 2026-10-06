@@ -1074,6 +1074,25 @@ function OutstandingTab({ clients }) {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [expanded, setExpanded] = useState({})
+  const [noteOverrides, setNoteOverrides] = useState({})
+  const [editingNote, setEditingNote] = useState(null)
+  const [noteDraft, setNoteDraft] = useState('')
+
+  async function saveNote(clientName) {
+    const text = noteDraft.trim()
+    setNoteOverrides(prev => ({ ...prev, [clientName]: text }))
+    setEditingNote(null)
+    const res = await fetch('/api/client-payment-note', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_name: clientName, note: text })
+    })
+    const json = await res.json()
+    if (!json.success) {
+      alert(json.error || 'Could not save the note.')
+      setNoteOverrides(prev => { const next = { ...prev }; delete next[clientName]; return next })
+    }
+  }
 
   useEffect(() => { fetchOutstanding(true) }, [])
 
@@ -1116,13 +1135,32 @@ function OutstandingTab({ clients }) {
                   const client = clients.find(c => c.name === clientName)
                   const totalOwed = clientSessions.reduce((sum, s) => sum + Number(s.amount || 0), 0)
                   const isExpanded = expanded[clientName]
+                  const note = noteOverrides[clientName] ?? client?.payment_note ?? ''
                   const sortedSessions = clientSessions.sort((a, b) => parseDate(a.date) - parseDate(b.date))
 
                   return (
                     <div key={clientName} style={{ background: 'white', borderRadius: '12px', border: '1px solid #e0e0e0', overflow: 'hidden' }}>
                       <div onClick={() => setExpanded(prev => ({ ...prev, [clientName]: !prev[clientName] }))}
                         style={{ padding: '6px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', background: '#f8f9fa', userSelect: 'none' }}>
-                        <span style={{ fontWeight: '600', color: '#0f4c81', fontSize: '12px' }}>{clientName}</span>
+                        <div style={{ minWidth: 0, flex: 1, marginRight: '12px' }}>
+                          <span style={{ fontWeight: '600', color: '#0f4c81', fontSize: '12px' }}>{clientName}</span>
+                          {editingNote === clientName ? (
+                            <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                              <input autoFocus value={noteDraft} onChange={e => setNoteDraft(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') saveNote(clientName); if (e.key === 'Escape') setEditingNote(null) }}
+                                placeholder="e.g. last settled Sep 12, reminded — no reply"
+                                style={{ flex: 1, minWidth: '180px', padding: '4px 8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }} />
+                              <button onClick={() => saveNote(clientName)} style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', fontSize: '11px', cursor: 'pointer' }}>Save</button>
+                              <button onClick={() => setEditingNote(null)} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid #ddd', background: 'white', fontSize: '11px', cursor: 'pointer' }}>Cancel</button>
+                            </div>
+                          ) : (
+                            <div style={{ fontSize: '11px', color: note ? '#D32F2F' : '#bbb', fontWeight: note ? '600' : '400', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontStyle: note ? 'normal' : 'italic' }}>{note || 'No note'}</span>
+                              <button onClick={e => { e.stopPropagation(); setEditingNote(clientName); setNoteDraft(note) }} title="Edit note"
+                                style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '12px', color: '#bbb', padding: 0 }}>✎</button>
+                            </div>
+                          )}
+                        </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                           <div style={{ fontSize: '12px', color: '#666' }}>
                             Session{clientSessions.length !== 1 ? 's' : ''}: <strong style={{ color: '#0f4c81' }}>{clientSessions.length}</strong>
