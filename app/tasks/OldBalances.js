@@ -117,7 +117,7 @@ export default function OldBalances() {
   // Highest remaining balance first
   const groups = allGroups
     .filter(g => !q || g.entries.some(e => `${e.name} ${e.breakdown} ${e.updates.join(' ')}`.toLowerCase().includes(q)))
-    .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
+    .sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0) || b.total - a.total || a.name.localeCompare(b.name))
 
   const amountOk = modal && modal.amount !== '' && Number.isFinite(Number(modal.amount)) && Number(modal.amount) >= 0
   const canSave = modal && modal.name.trim() && amountOk && !saving
@@ -138,10 +138,6 @@ export default function OldBalances() {
         <div>
           <div style={{ fontSize: '10px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Names</div>
           <div style={{ fontSize: '20px', fontWeight: '700', color: '#0f4c81' }}>{allGroups.length}</div>
-        </div>
-        <div>
-          <div style={{ fontSize: '10px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Entries</div>
-          <div style={{ fontSize: '20px', fontWeight: '700', color: '#0f4c81' }}>{entries.length}</div>
         </div>
       </div>
 
@@ -182,7 +178,6 @@ export default function OldBalances() {
                         style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', padding: 0, opacity: 0.35 }}>⚠️</button>
                     )}
                   </div>
-                  <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>{g.entries.length} {g.entries.length === 1 ? 'entry' : 'entries'}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <span style={{ fontSize: '11px', color: '#999' }}>Remaining</span>
