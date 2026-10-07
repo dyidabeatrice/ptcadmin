@@ -11,11 +11,15 @@ function splitUpdate(u) {
   return i === -1 ? { date: '', text: u } : { date: u.slice(0, i), text: u.slice(i + 3) }
 }
 
+// Entries are grouped by name, ignoring capitalization and extra spaces.
+const groupKey = name => (name || '').trim().replace(/\s+/g, ' ').toLowerCase()
+
 export default function OldBalances() {
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [search, setSearch] = useState('')
+  const [expanded, setExpanded] = useState({})
   const [modal, setModal] = useState(null)
   const [saving, setSaving] = useState(false)
   const [updateOpen, setUpdateOpen] = useState({})
@@ -74,7 +78,7 @@ export default function OldBalances() {
   }
 
   async function remove(e) {
-    if (!confirm(`Delete the old balance for ${e.name}?`)) return
+    if (!confirm(`Delete this old balance for ${e.name}?`)) return
     await fetch('/api/old-balances', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
@@ -84,11 +88,27 @@ export default function OldBalances() {
   }
 
   const total = entries.reduce((sum, e) => sum + (e.amount || 0), 0)
-  const q = search.toLowerCase()
-  const shown = [...entries].reverse().filter(e => `${e.name} ${e.breakdown} ${e.updates.join(' ')}`.toLowerCase().includes(q))
+  const q = search.trim().toLowerCase()
+
+  const byName = {}
+  entries.forEach(e => {
+    const key = groupKey(e.name)
+    if (!byName[key]) byName[key] = []
+    byName[key].push(e)
+  })
+  const allGroups = Object.entries(byName).map(([key, list]) => {
+    const sorted = [...list].sort((a, b) => b.amount - a.amount)
+    return { key, name: sorted[0].name, entries: sorted, total: sorted.reduce((s, e) => s + (e.amount || 0), 0) }
+  })
+  // Highest remaining balance first
+  const groups = allGroups
+    .filter(g => !q || g.entries.some(e => `${e.name} ${e.breakdown} ${e.updates.join(' ')}`.toLowerCase().includes(q)))
+    .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
 
   const amountOk = modal && modal.amount !== '' && Number.isFinite(Number(modal.amount)) && Number(modal.amount) >= 0
   const canSave = modal && modal.name.trim() && amountOk && !saving
+
+  const smallLabel = { fontSize: '10px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700', marginBottom: '5px' }
 
   return (
     <div>
@@ -100,6 +120,10 @@ export default function OldBalances() {
         <div>
           <div style={{ fontSize: '10px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total owed</div>
           <div style={{ fontSize: '20px', fontWeight: '700', color: '#791F1F' }}>{peso(total)}</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '10px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Names</div>
+          <div style={{ fontSize: '20px', fontWeight: '700', color: '#0f4c81' }}>{allGroups.length}</div>
         </div>
         <div>
           <div style={{ fontSize: '10px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Entries</div>
@@ -121,60 +145,83 @@ export default function OldBalances() {
         <div style={{ textAlign: 'center', padding: '3rem', color: '#791F1F', background: '#FCEBEB', borderRadius: '12px' }}>
           Couldn't load old balances. <button onClick={loadAll} style={{ background: 'none', border: 'none', color: '#0f4c81', textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit' }}>Tap to retry</button>
         </div>
-      ) : shown.length === 0 ? (
+      ) : groups.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: '#999', background: '#f8f9fa', borderRadius: '12px' }}>
           {entries.length === 0 ? 'No old balances logged yet.' : 'No entries match your search.'}
         </div>
       ) : (
-        shown.map(e => (
-          <div key={e.id} style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '12px', marginBottom: '12px', overflow: 'hidden' }}>
-            <div style={{ padding: '10px 14px', background: '#f8f9fa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '14px', fontWeight: '600', color: '#0f4c81' }}>{e.name}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '15px', fontWeight: '700', color: '#791F1F' }}>{peso(e.amount)}</span>
-                <button onClick={() => setModal({ id: e.id, name: e.name, amount: String(e.amount), breakdown: e.breakdown, updatesText: e.updates.join('\n') })} title="Edit"
-                  style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', color: '#bbb', padding: '0 3px' }}>✎</button>
-                <button onClick={() => remove(e)} title="Delete"
-                  style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', color: '#bbb', padding: '0 3px' }}>✕</button>
-              </div>
-            </div>
-
-            <div style={{ padding: '10px 14px' }}>
-              <div style={{ fontSize: '10px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700', marginBottom: '5px' }}>Breakdown</div>
-              <div style={{ fontSize: '12px', color: '#444', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{e.breakdown || '—'}</div>
-            </div>
-
-            <div style={{ padding: '10px 14px', borderTop: '1px solid #f3f3f3' }}>
-              <div style={{ fontSize: '10px', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: '700', marginBottom: '5px' }}>Updates</div>
-              {e.updates.length === 0 ? (
-                <div style={{ fontSize: '12px', color: '#bbb', fontStyle: 'italic' }}>No updates yet</div>
-              ) : e.updates.map((u, i) => {
-                const { date, text } = splitUpdate(u)
-                return (
-                  <div key={i} style={{ fontSize: '12px', color: '#444', padding: '3px 0', lineHeight: '1.5' }}>
-                    {date && <span style={{ color: '#0f4c81', fontWeight: '600', marginRight: '6px' }}>{date}</span>}{text}
-                  </div>
-                )
-              })}
-              <button onClick={() => setUpdateOpen(prev => ({ ...prev, [e.id]: !prev[e.id] }))}
-                style={{ fontSize: '11px', color: '#0f4c81', cursor: 'pointer', background: 'none', border: 'none', padding: 0, marginTop: '6px', textDecoration: 'underline' }}>
-                + Add update
-              </button>
-              {updateOpen[e.id] && (
-                <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
-                  <input autoFocus value={updateText[e.id] || ''} onChange={ev => setUpdateText(prev => ({ ...prev, [e.id]: ev.target.value }))}
-                    onKeyDown={ev => { if (ev.key === 'Enter') addUpdate(e.id) }}
-                    placeholder="e.g. Mom said she'll pay on the 15th"
-                    style={{ flex: 1, padding: '6px 9px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }} />
-                  <button onClick={() => addUpdate(e.id)} disabled={updateSaving === e.id}
-                    style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', fontSize: '11px', cursor: 'pointer', opacity: updateSaving === e.id ? 0.6 : 1 }}>
-                    {updateSaving === e.id ? 'Adding...' : 'Add'}
-                  </button>
+        groups.map(g => {
+          // While searching, matching names open automatically so the match is visible.
+          const isOpen = q ? true : !!expanded[g.key]
+          return (
+            <div key={g.key} style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '12px', marginBottom: '10px', overflow: 'hidden' }}>
+              <div onClick={() => setExpanded(prev => ({ ...prev, [g.key]: !prev[g.key] }))}
+                style={{ padding: '10px 14px', background: '#f8f9fa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', cursor: 'pointer', userSelect: 'none' }}>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f4c81' }}>{g.name}</div>
+                  <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>{g.entries.length} {g.entries.length === 1 ? 'entry' : 'entries'}</div>
                 </div>
-              )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '11px', color: '#999' }}>Remaining</span>
+                  <span style={{ fontSize: '15px', fontWeight: '700', color: '#791F1F' }}>{peso(g.total)}</span>
+                  <span style={{ color: '#999', fontSize: '12px' }}>{isOpen ? '▼' : '▶'}</span>
+                </div>
+              </div>
+
+              {isOpen && g.entries.map(e => (
+                <div key={e.id} style={{ borderTop: '1px solid #f0f0f0' }}>
+                  <div style={{ padding: '10px 14px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                    <div>
+                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#791F1F' }}>{peso(e.amount)}</span>
+                      {e.name !== g.name && <span style={{ fontSize: '11px', color: '#999', marginLeft: '8px' }}>typed as "{e.name}"</span>}
+                    </div>
+                    <div>
+                      <button onClick={() => setModal({ id: e.id, name: e.name, amount: String(e.amount), breakdown: e.breakdown, updatesText: e.updates.join('\n') })} title="Edit"
+                        style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', color: '#bbb', padding: '0 3px' }}>✎</button>
+                      <button onClick={() => remove(e)} title="Delete"
+                        style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', color: '#bbb', padding: '0 3px' }}>✕</button>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '8px 14px 10px' }}>
+                    <div style={smallLabel}>Breakdown</div>
+                    <div style={{ fontSize: '12px', color: '#444', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{e.breakdown || '—'}</div>
+                  </div>
+
+                  <div style={{ padding: '10px 14px', borderTop: '1px solid #f6f6f6' }}>
+                    <div style={smallLabel}>Updates</div>
+                    {e.updates.length === 0 ? (
+                      <div style={{ fontSize: '12px', color: '#bbb', fontStyle: 'italic' }}>No updates yet</div>
+                    ) : e.updates.map((u, i) => {
+                      const { date, text } = splitUpdate(u)
+                      return (
+                        <div key={i} style={{ fontSize: '12px', color: '#444', padding: '3px 0', lineHeight: '1.5' }}>
+                          {date && <span style={{ color: '#0f4c81', fontWeight: '600', marginRight: '6px' }}>{date}</span>}{text}
+                        </div>
+                      )
+                    })}
+                    <button onClick={() => setUpdateOpen(prev => ({ ...prev, [e.id]: !prev[e.id] }))}
+                      style={{ fontSize: '11px', color: '#0f4c81', cursor: 'pointer', background: 'none', border: 'none', padding: 0, marginTop: '6px', textDecoration: 'underline' }}>
+                      + Add update
+                    </button>
+                    {updateOpen[e.id] && (
+                      <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                        <input autoFocus value={updateText[e.id] || ''} onChange={ev => setUpdateText(prev => ({ ...prev, [e.id]: ev.target.value }))}
+                          onKeyDown={ev => { if (ev.key === 'Enter') addUpdate(e.id) }}
+                          placeholder="e.g. Mom said she'll pay on the 15th"
+                          style={{ flex: 1, padding: '6px 9px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '12px' }} />
+                        <button onClick={() => addUpdate(e.id)} disabled={updateSaving === e.id}
+                          style={{ padding: '6px 12px', borderRadius: '6px', border: 'none', background: '#0f4c81', color: 'white', fontSize: '11px', cursor: 'pointer', opacity: updateSaving === e.id ? 0.6 : 1 }}>
+                          {updateSaving === e.id ? 'Adding...' : 'Add'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        ))
+          )
+        })
       )}
 
       {modal && (
@@ -186,7 +233,7 @@ export default function OldBalances() {
               <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Name</label>
               <input value={modal.name} onChange={ev => setModal({ ...modal, name: ev.target.value })} placeholder="Type any name, e.g. Reyes, John"
                 style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', boxSizing: 'border-box' }} />
-              <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}>Free text. Not linked to the client list.</div>
+              <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}>Free text. Entries with the same name are grouped together.</div>
             </div>
 
             <div style={{ marginBottom: '12px' }}>
@@ -207,7 +254,7 @@ export default function OldBalances() {
                 <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Updates</label>
                 <textarea rows={4} value={modal.updatesText} onChange={ev => setModal({ ...modal, updatesText: ev.target.value })}
                   style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '13px', fontFamily: 'inherit', lineHeight: '1.5', resize: 'vertical', boxSizing: 'border-box' }} />
-                <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}>One update per line. Normally you add these with "+ Add update" on the card.</div>
+                <div style={{ fontSize: '11px', color: '#999', marginTop: '3px' }}>One update per line. Normally you add these with "+ Add update" on the entry.</div>
               </div>
             )}
 
