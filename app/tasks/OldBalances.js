@@ -87,6 +87,20 @@ export default function OldBalances() {
     reload()
   }
 
+  async function toggleUrgent(g) {
+    const makeUrgent = !g.urgent
+    const ids = g.entries.map(e => e.id)
+    // Flip it on screen right away, then save.
+    setEntries(prev => prev.map(e => ids.includes(e.id) ? { ...e, urgent: makeUrgent } : e))
+    const res = await fetch('/api/old-balances', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'set_urgent', ids, urgent: makeUrgent })
+    })
+    const json = await res.json()
+    if (!json.success) { alert(json.error || 'Could not update.'); reload() }
+  }
+
   const total = entries.reduce((sum, e) => sum + (e.amount || 0), 0)
   const q = search.trim().toLowerCase()
 
@@ -98,7 +112,7 @@ export default function OldBalances() {
   })
   const allGroups = Object.entries(byName).map(([key, list]) => {
     const sorted = [...list].sort((a, b) => b.amount - a.amount)
-    return { key, name: sorted[0].name, entries: sorted, total: sorted.reduce((s, e) => s + (e.amount || 0), 0) }
+    return { key, name: sorted[0].name, entries: sorted, urgent: sorted.some(e => e.urgent), total: sorted.reduce((s, e) => s + (e.amount || 0), 0) }
   })
   // Highest remaining balance first
   const groups = allGroups
@@ -113,7 +127,7 @@ export default function OldBalances() {
   return (
     <div>
       <div style={{ background: '#F7F4FB', border: '1px solid #D9CFF0', borderRadius: '8px', padding: '9px 14px', fontSize: '12px', color: '#4C0C7C', marginBottom: '1rem' }}>
-        Balances from before PTCAdmin. Names are typed by hand and aren't linked to the client list. Edit the amount after a payment, and delete the entry once it's settled.
+        Balances from before JANUARY to MAY. Manual edits are required to update the amount after a payment, and the entry should be deleted once it's settled.
       </div>
 
       <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '12px', padding: '14px 18px', display: 'flex', gap: '28px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
@@ -154,11 +168,20 @@ export default function OldBalances() {
           // While searching, matching names open automatically so the match is visible.
           const isOpen = q ? true : !!expanded[g.key]
           return (
-            <div key={g.key} style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '12px', marginBottom: '10px', overflow: 'hidden' }}>
+            <div key={g.key} style={{ background: 'white', border: g.urgent ? '1px solid #E57373' : '1px solid #e0e0e0', borderRadius: '12px', marginBottom: '10px', overflow: 'hidden' }}>
               <div onClick={() => setExpanded(prev => ({ ...prev, [g.key]: !prev[g.key] }))}
-                style={{ padding: '10px 14px', background: '#f8f9fa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', cursor: 'pointer', userSelect: 'none' }}>
+                style={{ padding: '10px 14px', background: g.urgent ? '#FDECEC' : '#f8f9fa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', cursor: 'pointer', userSelect: 'none' }}>
                 <div>
-                  <div style={{ fontSize: '14px', fontWeight: '600', color: '#0f4c81' }}>{g.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '14px', fontWeight: g.urgent ? '700' : '600', color: g.urgent ? '#B71C1C' : '#0f4c81' }}>{g.name}</span>
+                    {g.urgent ? (
+                      <button onClick={ev => { ev.stopPropagation(); toggleUrgent(g) }} title="Click to remove the urgent mark"
+                        style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', border: '1px solid #E57373', background: '#B71C1C', color: 'white', fontWeight: '700', cursor: 'pointer', letterSpacing: '0.03em' }}>⚠️ URGENT</button>
+                    ) : (
+                      <button onClick={ev => { ev.stopPropagation(); toggleUrgent(g) }} title="Mark as urgent"
+                        style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', padding: 0, opacity: 0.35 }}>⚠️</button>
+                    )}
+                  </div>
                   <div style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>{g.entries.length} {g.entries.length === 1 ? 'entry' : 'entries'}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

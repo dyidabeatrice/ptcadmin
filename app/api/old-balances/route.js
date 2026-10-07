@@ -11,7 +11,8 @@ export async function GET() {
       amount: parseFloat(row[2] || 0),
       breakdown: row[3] || '',
       updates: (row[4] || '').split('\n').map(s => s.trim()).filter(Boolean),
-      created_at: row[5] || ''
+      created_at: row[5] || '',
+      urgent: row[6] === 'TRUE'
     }))
     return Response.json({ success: true, data: entries })
   } catch (error) {
@@ -48,6 +49,24 @@ export async function PATCH(request) {
     const body = await request.json()
     const data = await getSheetData('old_balances')
     const [, ...rows] = data
+
+    // Highlight or un-highlight every entry for a name in a single write.
+    if (body.action === 'set_urgent') {
+      const ids = new Set(body.ids || [])
+      const updates = []
+      rows.forEach((r, i) => {
+        if (r && ids.has(r[0])) updates.push({ range: `old_balances!G${i + 2}`, values: [[body.urgent ? 'TRUE' : '']] })
+      })
+      if (updates.length > 0) {
+        const sheets = getGoogleSheets()
+        await sheets.spreadsheets.values.batchUpdate({
+          spreadsheetId: SPREADSHEET_ID,
+          requestBody: { valueInputOption: 'RAW', data: updates }
+        })
+      }
+      return Response.json({ success: true })
+    }
+
     const idx = rows.findIndex(r => r && r[0] === body.id)
     if (idx === -1) return Response.json({ success: false, error: 'Not found' })
     const sheetRow = idx + 2
