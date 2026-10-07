@@ -12,7 +12,8 @@ export async function GET() {
       breakdown: row[3] || '',
       updates: (row[4] || '').split('\n').map(s => s.trim()).filter(Boolean),
       created_at: row[5] || '',
-      urgent: row[6] === 'TRUE'
+      urgent: row[6] === 'TRUE',
+      needs_confirm: row[7] === 'TRUE'
     }))
     return Response.json({ success: true, data: entries })
   } catch (error) {
@@ -56,6 +57,23 @@ export async function PATCH(request) {
       const updates = []
       rows.forEach((r, i) => {
         if (r && ids.has(r[0])) updates.push({ range: `old_balances!G${i + 2}`, values: [[body.urgent ? 'TRUE' : '']] })
+      })
+      if (updates.length > 0) {
+        const sheets = getGoogleSheets()
+        await sheets.spreadsheets.values.batchUpdate({
+          spreadsheetId: SPREADSHEET_ID,
+          requestBody: { valueInputOption: 'RAW', data: updates }
+        })
+      }
+      return Response.json({ success: true })
+    }
+
+    // Same idea as set_urgent, but for the "to confirm" mark (column H).
+    if (body.action === 'set_confirm') {
+      const ids = new Set(body.ids || [])
+      const updates = []
+      rows.forEach((r, i) => {
+        if (r && ids.has(r[0])) updates.push({ range: `old_balances!H${i + 2}`, values: [[body.confirm ? 'TRUE' : '']] })
       })
       if (updates.length > 0) {
         const sheets = getGoogleSheets()

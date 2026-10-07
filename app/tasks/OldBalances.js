@@ -101,6 +101,19 @@ export default function OldBalances() {
     if (!json.success) { alert(json.error || 'Could not update.'); reload() }
   }
 
+  async function toggleConfirm(g) {
+    const makeConfirm = !g.confirm
+    const ids = g.entries.map(e => e.id)
+    setEntries(prev => prev.map(e => ids.includes(e.id) ? { ...e, needs_confirm: makeConfirm } : e))
+    const res = await fetch('/api/old-balances', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'set_confirm', ids, confirm: makeConfirm })
+    })
+    const json = await res.json()
+    if (!json.success) { alert(json.error || 'Could not update.'); reload() }
+  }
+
   const total = entries.reduce((sum, e) => sum + (e.amount || 0), 0)
   const q = search.trim().toLowerCase()
 
@@ -112,7 +125,7 @@ export default function OldBalances() {
   })
   const allGroups = Object.entries(byName).map(([key, list]) => {
     const sorted = [...list].sort((a, b) => b.amount - a.amount)
-    return { key, name: sorted[0].name, entries: sorted, urgent: sorted.some(e => e.urgent), total: sorted.reduce((s, e) => s + (e.amount || 0), 0) }
+    return { key, name: sorted[0].name, entries: sorted, urgent: sorted.some(e => e.urgent), confirm: sorted.some(e => e.needs_confirm), confirm: sorted.some(e => e.needs_confirm), total: sorted.reduce((s, e) => s + (e.amount || 0), 0) }
   })
   // Highest remaining balance first
   const groups = allGroups
@@ -164,12 +177,19 @@ export default function OldBalances() {
           // While searching, matching names open automatically so the match is visible.
           const isOpen = q ? true : !!expanded[g.key]
           return (
-            <div key={g.key} style={{ background: 'white', border: g.urgent ? '1px solid #E57373' : '1px solid #e0e0e0', borderRadius: '12px', marginBottom: '10px', overflow: 'hidden' }}>
+            <div key={g.key} style={{ background: 'white', border: g.urgent ? '1px solid #E57373' : g.confirm ? '1px solid #E6C34D' : '1px solid #e0e0e0', borderRadius: '12px', marginBottom: '10px', overflow: 'hidden' }}>
               <div onClick={() => setExpanded(prev => ({ ...prev, [g.key]: !prev[g.key] }))}
-                style={{ padding: '10px 14px', background: g.urgent ? '#FDECEC' : '#f8f9fa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', cursor: 'pointer', userSelect: 'none' }}>
+                style={{ padding: '10px 14px', background: g.urgent ? '#FDECEC' : g.confirm ? '#FFF6D6' : '#f8f9fa', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', cursor: 'pointer', userSelect: 'none' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '14px', fontWeight: g.urgent ? '700' : '600', color: g.urgent ? '#B71C1C' : '#0f4c81' }}>{g.name}</span>
+                    <span style={{ fontSize: '14px', fontWeight: g.urgent ? '700' : '600', color: g.urgent ? '#B71C1C' : g.confirm ? '#7A5C00' : '#0f4c81' }}>{g.name}</span>
+                    {g.confirm ? (
+                      <button onClick={ev => { ev.stopPropagation(); toggleConfirm(g) }} title="Click to remove the confirmation mark"
+                        style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', border: '1px solid #E6C34D', background: '#F5C518', color: '#4A3600', fontWeight: '700', cursor: 'pointer', letterSpacing: '0.03em' }}>❓ TO CONFIRM</button>
+                    ) : (
+                      <button onClick={ev => { ev.stopPropagation(); toggleConfirm(g) }} title="Mark as needs confirmation"
+                        style={{ border: 'none', background: 'none', cursor: 'pointer', fontSize: '13px', padding: 0, opacity: 0.35 }}>❓</button>
+                    )}
                     {g.urgent ? (
                       <button onClick={ev => { ev.stopPropagation(); toggleUrgent(g) }} title="Click to remove the urgent mark"
                         style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', border: '1px solid #E57373', background: '#B71C1C', color: 'white', fontWeight: '700', cursor: 'pointer', letterSpacing: '0.03em' }}>⚠️ URGENT</button>
