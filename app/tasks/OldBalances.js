@@ -144,7 +144,7 @@ export default function OldBalances() {
         style={{ background: 'white', border: `1px ${isLoss ? 'dashed' : 'solid'} ${col.cardBorder}`, borderRadius: '10px', marginBottom: '8px', overflow: 'hidden', opacity: dragKey === g.key ? 0.4 : 1 }}>
         <div onClick={() => setExpanded(prev => ({ ...prev, [g.key]: !prev[g.key] }))}
           style={{ padding: '9px 11px', background: col.headBg, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none' }}>
-          <span style={{ fontSize: '13px', fontWeight: '600', color: isLoss ? '#777' : col.key ? col.titleColor : '#0f4c81', minWidth: 0 }}>
+          <span style={{ fontSize: '13px', fontWeight: '600', color: isLoss ? '#777' : col.key ? col.titleColor : '#0f4c81', minWidth: 0, wordBreak: 'break-word' }}>
             <span style={{ fontSize: '10px', color: '#999', marginRight: '4px' }}>{isOpen ? '▼' : '▶'}</span>{g.name}
           </span>
           <span style={{ fontSize: '14px', fontWeight: '700', color: isLoss ? '#777' : '#791F1F', whiteSpace: 'nowrap' }}>{peso(g.total)}</span>
@@ -216,8 +216,9 @@ export default function OldBalances() {
     )
   }
 
+  // The To-do page is capped at 800px. This tab breaks out of it and centres itself, up to 1400px wide.
   return (
-    <div>
+    <div style={{ width: 'min(1400px, 94vw)', marginLeft: 'calc(50% - min(1400px, 94vw) / 2)' }}>
       <div style={{ background: '#F7F4FB', border: '1px solid #D9CFF0', borderRadius: '8px', padding: '9px 14px', fontSize: '12px', color: '#4C0C7C', marginBottom: '1rem' }}>
         Balances from before JANUARY to MAY. Manual edits are required to update the amount after a payment, and the entry should be deleted once it's settled.
       </div>
@@ -249,8 +250,8 @@ export default function OldBalances() {
           Couldn't load old balances. <button onClick={loadAll} style={{ background: 'none', border: 'none', color: '#0f4c81', textDecoration: 'underline', cursor: 'pointer', fontSize: 'inherit' }}>Tap to retry</button>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto', paddingBottom: '6px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(240px, 1fr))', gap: '12px', alignItems: 'start', minWidth: '780px' }}>
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '10px', alignItems: 'start' }}>
             {COLUMNS.map(col => {
               const all = allGroups.filter(g => g.status === col.key)
               const list = visible.filter(g => g.status === col.key).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
