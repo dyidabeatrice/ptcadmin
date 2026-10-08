@@ -277,7 +277,7 @@ export default function OldBalances() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '10px', alignItems: 'start' }}>
             {COLUMNS.map(col => {
               const all = allGroups.filter(g => colKeyOf(g) === col.key)
-              const list = visible.filter(g => colKeyOf(g) === col.key).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
+              const list = visible.filter(g => colKeyOf(g) === col.key).sort((a, b) => (a.status === 'final' ? 1 : 0) - (b.status === 'final' ? 1 : 0) || b.total - a.total || a.name.localeCompare(b.name))
               return (
                 <div key={col.key}
                   onDragOver={ev => { ev.preventDefault(); setOverCol(col.key) }}
