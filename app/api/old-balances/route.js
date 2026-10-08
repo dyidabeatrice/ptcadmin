@@ -1,6 +1,18 @@
 import { getSheetData, getGoogleSheets, SPREADSHEET_ID, deleteSheetRow, findRowIndexById } from '../../lib/sheets'
 import { formatPHDateTime } from '../../lib/dates'
 
+const STATUSES = ['urgent', 'confirm', 'loss']
+
+// Status lives in column I. Older rows that only have the G (urgent) / H (to confirm)
+// flags still work: they are read as a status until the name is moved once.
+function readStatus(row) {
+  const s = (row[8] || '').trim()
+  if (STATUSES.includes(s)) return s
+  if (row[6] === 'TRUE') return 'urgent'
+  if (row[7] === 'TRUE') return 'confirm'
+  return ''
+}
+
 export async function GET() {
   try {
     const data = await getSheetData('old_balances')
@@ -12,8 +24,7 @@ export async function GET() {
       breakdown: row[3] || '',
       updates: (row[4] || '').split('\n').map(s => s.trim()).filter(Boolean),
       created_at: row[5] || '',
-      urgent: row[6] === 'TRUE',
-      needs_confirm: row[7] === 'TRUE'
+      status: readStatus(row)
     }))
     return Response.json({ success: true, data: entries })
   } catch (error) {
@@ -51,29 +62,14 @@ export async function PATCH(request) {
     const data = await getSheetData('old_balances')
     const [, ...rows] = data
 
-    // Highlight or un-highlight every entry for a name in a single write.
-    if (body.action === 'set_urgent') {
+    // Move every entry for a name to a column ('' = Active). One batch write,
+    // and the old G/H flags are cleared so they can't override the new status.
+    if (body.action === 'set_status') {
+      const status = STATUSES.includes(body.status) ? body.status : ''
       const ids = new Set(body.ids || [])
       const updates = []
       rows.forEach((r, i) => {
-        if (r && ids.has(r[0])) updates.push({ range: `old_balances!G${i + 2}`, values: [[body.urgent ? 'TRUE' : '']] })
-      })
-      if (updates.length > 0) {
-        const sheets = getGoogleSheets()
-        await sheets.spreadsheets.values.batchUpdate({
-          spreadsheetId: SPREADSHEET_ID,
-          requestBody: { valueInputOption: 'RAW', data: updates }
-        })
-      }
-      return Response.json({ success: true })
-    }
-
-    // Same idea as set_urgent, but for the "to confirm" mark (column H).
-    if (body.action === 'set_confirm') {
-      const ids = new Set(body.ids || [])
-      const updates = []
-      rows.forEach((r, i) => {
-        if (r && ids.has(r[0])) updates.push({ range: `old_balances!H${i + 2}`, values: [[body.confirm ? 'TRUE' : '']] })
+        if (r && ids.has(r[0])) updates.push({ range: `old_balances!G${i + 2}:I${i + 2}`, values: [['', '', status]] })
       })
       if (updates.length > 0) {
         const sheets = getGoogleSheets()
@@ -93,8 +89,6 @@ export async function PATCH(request) {
     if (body.action === 'add_update') {
       const text = (body.text || '').trim()
       if (!text) return Response.json({ success: false, error: 'Update is empty' })
-      // Date is stamped here, in Manila time, and the new line is added on top of
-      // whatever is in the sheet right now, so two people adding updates can't overwrite each other.
       const dateLabel = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric' })
       const existing = rows[idx][4] || ''
       const line = `${dateLabel} — ${text}`
