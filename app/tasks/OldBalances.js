@@ -20,7 +20,9 @@ const COLUMNS = [
   { key: 'confirm', title: '❓ TO CONFIRM',      bg: '#FFFBEA', border: '#EBD98A', titleColor: '#7A5C00', cardBorder: '#E6C34D', headBg: '#FFF6D6' },
   { key: 'loss',    title: '📉 MARKED AS LOSS',  bg: '#F1F1F1', border: '#CFCFCF', titleColor: '#555',    cardBorder: '#CFCFCF', headBg: '#EDEDED' }
 ]
-const PRIORITY = ['urgent', 'confirm', 'loss']
+const PRIORITY = ['urgent', 'confirm', 'final', 'loss']
+// 'final' = confirmed as a loss. It lives in the Marked as loss column, shown in dark gray.
+const colKeyOf = g => (g.status === 'final' ? 'loss' : g.status)
 
 export default function OldBalances() {
   const [entries, setEntries] = useState([])
@@ -138,16 +140,25 @@ export default function OldBalances() {
   function renderGroup(g, col) {
     const isOpen = q ? true : !!expanded[g.key]
     const isLoss = col.key === 'loss'
+    const final = g.status === 'final'
     return (
       <div key={g.key} draggable
         onDragStart={() => setDragKey(g.key)} onDragEnd={() => { setDragKey(null); setOverCol(null) }}
-        style={{ background: 'white', border: `1px ${isLoss ? 'dashed' : 'solid'} ${col.cardBorder}`, borderRadius: '10px', marginBottom: '8px', overflow: 'hidden', opacity: dragKey === g.key ? 0.4 : 1 }}>
+        style={{ background: 'white', border: final ? '1px solid #3F3F3F' : `1px ${isLoss ? 'dashed' : 'solid'} ${col.cardBorder}`, borderRadius: '10px', marginBottom: '8px', overflow: 'hidden', opacity: dragKey === g.key ? 0.4 : 1 }}>
         <div onClick={() => setExpanded(prev => ({ ...prev, [g.key]: !prev[g.key] }))}
-          style={{ padding: '9px 11px', background: col.headBg, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none' }}>
-          <span style={{ fontSize: '13px', fontWeight: '600', color: isLoss ? '#777' : col.key ? col.titleColor : '#0f4c81', minWidth: 0, wordBreak: 'break-word' }}>
+          style={{ padding: '9px 11px', background: final ? '#4A4A4A' : col.headBg, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none' }}>
+          <span style={{ fontSize: '13px', fontWeight: '600', color: final ? 'white' : isLoss ? '#777' : col.key ? col.titleColor : '#0f4c81', minWidth: 0, wordBreak: 'break-word' }}>
             <span style={{ fontSize: '10px', color: '#999', marginRight: '4px' }}>{isOpen ? '▼' : '▶'}</span>{g.name}
           </span>
-          <span style={{ fontSize: '14px', fontWeight: '700', color: isLoss ? '#777' : '#791F1F', whiteSpace: 'nowrap' }}>{peso(g.total)}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {final && <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: '#222', color: 'white', fontWeight: '700', letterSpacing: '0.04em' }}>LOSS</span>}
+            {isLoss && !final && (
+              <button title="Finalize as a loss"
+                onClick={ev => { ev.stopPropagation(); if (confirm(`Finalize ${g.name} (${peso(g.total)}) as a loss?`)) moveGroup(g.key, 'final') }}
+                style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', border: '1px solid #555', background: 'white', color: '#444', fontWeight: '700', cursor: 'pointer', letterSpacing: '0.04em' }}>LOSS</button>
+            )}
+            <span style={{ fontSize: '14px', fontWeight: '700', color: final ? '#ddd' : isLoss ? '#777' : '#791F1F', whiteSpace: 'nowrap' }}>{peso(g.total)}</span>
+          </span>
         </div>
 
         {isOpen && (
@@ -205,7 +216,11 @@ export default function OldBalances() {
             ))}
             <div style={{ display: 'flex', gap: '6px', padding: '8px 11px', borderTop: '1px solid #f3f3f3', alignItems: 'center', flexWrap: 'wrap', background: '#fafafa' }}>
               <span style={{ fontSize: '10px', color: '#999' }}>Label</span>
-              {COLUMNS.filter(c => c.key !== g.status).map(c => (
+              {final && (
+                <button onClick={() => moveGroup(g.key, 'loss')}
+                  style={{ border: '1px solid #ddd', background: 'white', borderRadius: '12px', padding: '2px 9px', fontSize: '11px', cursor: 'pointer' }}>Undo LOSS</button>
+              )}
+              {COLUMNS.filter(c => c.key !== colKeyOf(g)).map(c => (
                 <button key={c.key} onClick={() => moveGroup(g.key, c.key)}
                   style={{ border: '1px solid #ddd', background: 'white', borderRadius: '12px', padding: '2px 9px', fontSize: '11px', cursor: 'pointer' }}>{c.title}</button>
               ))}
@@ -221,6 +236,14 @@ export default function OldBalances() {
     <div style={{ width: 'min(1400px, 94vw)', marginLeft: 'calc(50% - min(1400px, 94vw) / 2)' }}>
       <div style={{ background: '#F7F4FB', border: '1px solid #D9CFF0', borderRadius: '8px', padding: '9px 14px', fontSize: '12px', color: '#4C0C7C', marginBottom: '1rem' }}>
         Balances from before JANUARY to MAY. Manual edits are required to update the amount after a payment, and the entry should be deleted once it's settled.
+      </div>
+
+      <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center', fontSize: '11px', color: '#555', marginBottom: '1rem' }}>
+        <span style={{ fontWeight: '700', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '10px' }}>Legend</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#FDECEC', border: '1px solid #E57373' }} />⚠️ Urgent</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#FFF6D6', border: '1px solid #E6C34D' }} />❓ To confirm</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#EDEDED', border: '1px dashed #999' }} />📉 Marked as loss</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#4A4A4A', border: '1px solid #3F3F3F' }} />LOSS (finalized)</span>
       </div>
 
       <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '12px', padding: '14px 18px', display: 'flex', gap: '28px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
@@ -253,13 +276,13 @@ export default function OldBalances() {
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '10px', alignItems: 'start' }}>
             {COLUMNS.map(col => {
-              const all = allGroups.filter(g => g.status === col.key)
-              const list = visible.filter(g => g.status === col.key).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
+              const all = allGroups.filter(g => colKeyOf(g) === col.key)
+              const list = visible.filter(g => colKeyOf(g) === col.key).sort((a, b) => b.total - a.total || a.name.localeCompare(b.name))
               return (
                 <div key={col.key}
                   onDragOver={ev => { ev.preventDefault(); setOverCol(col.key) }}
                   onDragLeave={() => setOverCol(null)}
-                  onDrop={ev => { ev.preventDefault(); if (dragKey) moveGroup(dragKey, col.key); setDragKey(null); setOverCol(null) }}
+                  onDrop={ev => { ev.preventDefault(); const dg = allGroups.find(x => x.key === dragKey); if (dg && colKeyOf(dg) !== col.key) moveGroup(dragKey, col.key); setDragKey(null); setOverCol(null) }}
                   style={{ background: col.bg, border: `1px solid ${col.border}`, borderRadius: '12px', padding: '10px', minHeight: '200px', outline: overCol === col.key && dragKey ? '2px dashed #0f4c81' : 'none', outlineOffset: '-4px' }}>
                   <div style={{ padding: '2px 4px 10px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -1,7 +1,7 @@
 import { getSheetData, getGoogleSheets, SPREADSHEET_ID, deleteSheetRow, findRowIndexById } from '../../lib/sheets'
 import { formatPHDateTime } from '../../lib/dates'
 
-const STATUSES = ['urgent', 'confirm', 'loss']
+const STATUSES = ['urgent', 'confirm', 'loss', 'final']
 
 // Status lives in column I. Older rows that only have the G (urgent) / H (to confirm)
 // flags still work: they are read as a status until the name is moved once.
