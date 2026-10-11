@@ -68,8 +68,7 @@ export default function TherapistLogin() {
               onChange={e => { setPin(e.target.value); setError('') }}
               onKeyDown={e => e.key === 'Enter' && handleLogin()}
               placeholder="••••"
-              maxLength={6}
-              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '18px', letterSpacing: '0.3em', textAlign: 'center', boxSizing: 'border-box' }}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '16px', letterSpacing: '0.08em', textAlign: 'left', boxSizing: 'border-box' }}
             />
           </div>
 
