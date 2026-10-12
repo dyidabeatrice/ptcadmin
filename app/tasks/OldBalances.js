@@ -297,8 +297,15 @@ export default function OldBalances() {
                       <span style={{ fontSize: '13px', fontWeight: '700', color: col.titleColor }}>{col.title}</span>
                       <span style={{ fontSize: '11px', fontWeight: '600', background: 'white', borderRadius: '10px', padding: '1px 9px' }}>{all.length}</span>
                     </div>
-                    <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>{peso(all.reduce((s, g) => s + g.total, 0))}</div>
-                  </div>
+                    {col.key === 'loss' ? (
+                      <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>
+                        <div>Marked as loss: <b>{peso(all.filter(g => g.status !== 'final').reduce((s, g) => s + g.total, 0))}</b></div>
+                        <div>Finalized loss: <b>{peso(all.filter(g => g.status === 'final').reduce((s, g) => s + g.total, 0))}</b></div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: '12px', color: '#666', marginTop: '2px' }}>{peso(all.reduce((s, g) => s + g.total, 0))}</div>
+                    )}
+                      </div>
                   {list.length === 0
                     ? <div style={{ fontSize: '12px', color: '#bbb', textAlign: 'center', padding: '22px 6px', fontStyle: 'italic' }}>{entries.length === 0 ? 'No old balances logged yet.' : 'Nothing here'}</div>
                     : list.map(g => renderGroup(g, col))}
