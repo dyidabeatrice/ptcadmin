@@ -238,12 +238,20 @@ export default function OldBalances() {
         Balances from before JANUARY to MAY. Manual edits are required to update the amount after a payment, and the entry should be deleted once it's settled.
       </div>
 
-      <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center', fontSize: '11px', color: '#555', marginBottom: '1rem' }}>
-        <span style={{ fontWeight: '700', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '10px' }}>Legend</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#FDECEC', border: '1px solid #E57373' }} />⚠️ Urgent</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#FFF6D6', border: '1px solid #E6C34D' }} />❓ To confirm</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#EDEDED', border: '1px dashed #999' }} />📉 Marked as loss</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}><span style={{ width: '12px', height: '12px', borderRadius: '3px', background: '#4A4A4A', border: '1px solid #3F3F3F' }} />LOSS (finalized)</span>
+      <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '10px', padding: '10px 14px', marginBottom: '1rem' }}>
+        <div style={{ fontSize: '10px', fontWeight: '700', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>Legend</div>
+        {[
+          { bg: '#FDECEC', border: '1px solid #E57373', label: '⚠️ Urgent', meaning: 'still following up (active or inactive)' },
+          { bg: '#FFF6D6', border: '1px solid #E6C34D', label: '❓ To confirm', meaning: "active, and you can't verify payments yet" },
+          { bg: '#EDEDED', border: '1px dashed #999', label: '📉 Marked as loss', meaning: "active, checked, no payment recorded (cash & bank)" },
+          { bg: '#4A4A4A', border: '1px solid #3F3F3F', label: 'Finalized loss', meaning: 'inactive, no payment' }
+        ].map(row => (
+          <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '3px 0', fontSize: '12px' }}>
+            <span style={{ width: '14px', height: '14px', borderRadius: '3px', background: row.bg, border: row.border, flexShrink: 0 }} />
+            <span style={{ fontWeight: '600', color: '#333', minWidth: '130px' }}>{row.label}</span>
+            <span style={{ color: '#666' }}>{row.meaning}</span>
+          </div>
+        ))}
       </div>
 
       <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '12px', padding: '14px 18px', display: 'flex', gap: '28px', alignItems: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
