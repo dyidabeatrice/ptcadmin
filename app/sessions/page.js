@@ -898,7 +898,7 @@ export default function SchedulePage() {
                           borderRadius: '4px 4px 0 0',
                           display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                         }}>
-                          <span>{s.time_start}–{s.time_end}</span>
+                          <span>{String(s.time_start || '').replace(/\s?[AP]M/gi, '')}–{String(s.time_end || '').replace(/\s?[AP]M/gi, '')}</span>
                           {(() => {
                             const t = (s.session_type || '').toUpperCase()
                             if (t.includes('IE') || t.includes('EVALUATION')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>IE</span>
@@ -1169,7 +1169,7 @@ export default function SchedulePage() {
                         </div>
                         {height > 30 && (
                           <div style={{ fontSize: '9px', color: sc.color, opacity: 0.7, marginTop: '1px' }}>
-                            {s.time_start}–{s.time_end}
+                            {String(s.time_start || '').replace(/\s?[AP]M/gi, '')}–{String(s.time_end || '').replace(/\s?[AP]M/gi, '')}
                           </div>
                         )}
                       </div>
