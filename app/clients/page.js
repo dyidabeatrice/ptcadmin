@@ -328,6 +328,7 @@ export default function ClientsPage() {
   const [historyClient, setHistoryClient] = useState(null)
   const [historyData, setHistoryData] = useState([])
   const [historyLoading, setHistoryLoading] = useState(false)
+  const [trendMonths, setTrendMonths] = useState(6)
   const [mergeMode, setMergeMode] = useState(false)
   const [mergeSelected, setMergeSelected] = useState([])
   const [mergeModal, setMergeModal] = useState(null)
@@ -542,40 +543,107 @@ export default function ClientsPage() {
             ) : historyData.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>No session history found.</div>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                <thead>
-                  <tr style={{ background: '#f8f9fa' }}>
-                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Date</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Therapist</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Status</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Payment</th>
-                    <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Ref No.</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {historyData.map((s, i) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                      <td style={{ padding: '8px 10px', color: '#333' }}>{s.date}</td>
-                      <td style={{ padding: '8px 10px', color: '#333' }}>{s.therapist}</td>
-                      <td style={{ padding: '8px 10px' }}>
-                        <span style={{
-                          fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: '500',
-                          background: s.status === 'Present' ? '#EAF3DE' : s.status === 'Absent' ? '#FCEBEB' : '#f8f9fa',
-                          color: s.status === 'Present' ? '#27500A' : s.status === 'Absent' ? '#791F1F' : '#666'
-                        }}>{statusLabel(s.status)}</span>
-                      </td>
-                      <td style={{ padding: '8px 10px' }}>
-                        <span style={{
-                          fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: '500',
-                          background: s.is_paid ? '#EAF3DE' : '#FCEBEB',
-                          color: s.is_paid ? '#27500A' : '#791F1F'
-                        }}>{s.is_paid ? 'Paid' : 'Unpaid'}</span>
-                      </td>
-                      <td style={{ padding: '8px 10px', color: '#666' }}>{s.reference || '—'}</td>
+              <>
+                {(() => {
+                  const counted = historyData.filter(s => ['Present', 'Absent', 'Cancelled'].includes(s.status))
+                  const attended = counted.filter(s => s.status === 'Present').length
+                  const absences = counted.length - attended
+                  const rate = counted.length ? Math.round(attended / counted.length * 100) : 0
+                  const skipped = historyData.length - counted.length
+                  const byMonth = {}
+                  counted.forEach(s => {
+                    const d = new Date(s.date)
+                    if (isNaN(d)) return
+                    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+                    if (!byMonth[key]) byMonth[key] = { a: 0, x: 0 }
+                    if (s.status === 'Present') byMonth[key].a++
+                    else byMonth[key].x++
+                  })
+                  const monthKeys = Object.keys(byMonth).sort().slice(-trendMonths)
+                  const monthLabel = k => new Date(`${k}-01T00:00:00`).toLocaleDateString('en-US', { month: 'short' })
+                  const card = { background: '#f8f9fa', border: '1px solid #eee', borderRadius: '10px', padding: '10px 6px', textAlign: 'center' }
+                  return (
+                    <div style={{ marginBottom: '16px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '6px' }}>
+                        <div style={card}><div style={{ fontSize: '22px', fontWeight: '700', color: '#27500A' }}>{attended}</div><div style={{ fontSize: '11px', color: '#777' }}>Sessions attended</div></div>
+                        <div style={card}><div style={{ fontSize: '22px', fontWeight: '700', color: '#791F1F' }}>{absences}</div><div style={{ fontSize: '11px', color: '#777' }}>Absences</div><div style={{ fontSize: '10px', color: '#aaa' }}>incl. no shows</div></div>
+                        <div style={card}><div style={{ fontSize: '22px', fontWeight: '700', color: '#0f4c81' }}>{rate}%</div><div style={{ fontSize: '11px', color: '#777' }}>Attendance rate</div><div style={{ fontSize: '10px', color: '#aaa' }}>overall</div></div>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#999', marginBottom: '12px', lineHeight: '1.5' }}>
+                        Absences include every session marked Absent or No Show, including days a therapist was out.
+                        {skipped > 0 && ` Not counted: ${skipped} upcoming / pencilled session${skipped !== 1 ? 's' : ''}.`}
+                      </div>
+                      {monthKeys.length > 0 && (
+                        <div style={{ border: '1px solid #eee', borderRadius: '10px', padding: '12px 12px 8px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: '600', color: '#0f4c81' }}>Attendance trend</span>
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                              {[[6, '6 mo'], [12, '12 mo'], [999, 'All']].map(([n, t]) => (
+                                <button key={n} onClick={() => setTrendMonths(n)}
+                                  style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '12px', cursor: 'pointer', border: trendMonths === n ? '1px solid #0f4c81' : '1px solid #ddd', background: trendMonths === n ? '#0f4c81' : 'white', color: trendMonths === n ? 'white' : '#666' }}>{t}</button>
+                              ))}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end', height: '130px' }}>
+                            {monthKeys.map(k => {
+                              const { a, x } = byMonth[k]
+                              const pct = Math.round(a / (a + x) * 100)
+                              return (
+                                <div key={k} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', minWidth: 0 }}>
+                                  <div style={{ fontSize: '10px', fontWeight: '700', color: '#0f4c81', marginBottom: '3px' }}>{pct}%</div>
+                                  <div title={`${a} attended, ${x} absent`} style={{ width: '100%', maxWidth: '34px', height: '100px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', borderRadius: '5px', overflow: 'hidden', background: '#f3f3f3' }}>
+                                    <div style={{ height: `${100 - pct}%`, background: '#F4CCCC' }} />
+                                    <div style={{ height: `${pct}%`, background: '#6AA84F' }} />
+                                  </div>
+                                  <div style={{ fontSize: '10px', color: '#777', marginTop: '4px' }}>{monthLabel(k)}</div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                          <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', fontSize: '11px', color: '#666', marginTop: '8px' }}>
+                            <span><span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '2px', background: '#6AA84F', marginRight: '5px' }} />Attended</span>
+                            <span><span style={{ display: 'inline-block', width: '10px', height: '10px', borderRadius: '2px', background: '#F4CCCC', marginRight: '5px' }} />Absent / no show</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+                  <thead>
+                    <tr style={{ background: '#f8f9fa' }}>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Date</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Therapist</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Status</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Payment</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', color: '#666', fontWeight: '500', borderBottom: '1px solid #e0e0e0' }}>Ref No.</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {historyData.map((s, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                        <td style={{ padding: '8px 10px', color: '#333' }}>{s.date}</td>
+                        <td style={{ padding: '8px 10px', color: '#333' }}>{s.therapist}</td>
+                        <td style={{ padding: '8px 10px' }}>
+                          <span style={{
+                            fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: '500',
+                            background: s.status === 'Present' ? '#EAF3DE' : s.status === 'Absent' ? '#FCEBEB' : '#f8f9fa',
+                            color: s.status === 'Present' ? '#27500A' : s.status === 'Absent' ? '#791F1F' : '#666'
+                          }}>{statusLabel(s.status)}</span>
+                        </td>
+                        <td style={{ padding: '8px 10px' }}>
+                          <span style={{
+                            fontSize: '11px', padding: '2px 8px', borderRadius: '10px', fontWeight: '500',
+                            background: s.is_paid ? '#EAF3DE' : '#FCEBEB',
+                            color: s.is_paid ? '#27500A' : '#791F1F'
+                          }}>{s.is_paid ? 'Paid' : 'Unpaid'}</span>
+                        </td>
+                        <td style={{ padding: '8px 10px', color: '#666' }}>{s.reference || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
             )}
             <div style={{ marginTop: '1rem', fontSize: '12px', color: '#999', textAlign: 'right' }}>
               {historyData.length} session{historyData.length !== 1 ? 's' : ''} found
