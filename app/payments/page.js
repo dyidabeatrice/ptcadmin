@@ -300,7 +300,7 @@ function LedgerRow({ session, onPaid, onLoadMonth, clients, onOverride = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
           {session.client_name}
           {session.override_anchor_id && (
-            <button onClick={() => { setEditingCutoff(!editingCutoff); setCutoffDateInput('') }} title="                Pick a later date (e.g. the next cut-off) to hold this fee until then. Clear the date to put it back."
+            <button onClick={() => { setEditingCutoff(!editingCutoff); setCutoffDateInput('') }} title="Pick a later date (e.g. the next cut-off) to hold this fee until then. Clear the date to put it back."
               style={{ border: 'none', background: 'none', color: session.cutoff_overridden ? '#9C27B0' : '#ccc', cursor: 'pointer', fontSize: '11px', padding: 0 }}>✎</button>
           )}
           {session.cutoff_overridden && (
