@@ -263,6 +263,38 @@ export async function GET(request) {
       const therapistInfo = therapistMap[therapistName]
       const level = resolveLevel(therapistName, row[7], levelHistoryByTherapist, therapistInfo?.level || 'JUNIOR 1')
       const cut = RATES['IE REPORT']?.levels[level] || 800
+
+      // Late IE report (submitted after 6 months): forfeited, no therapist cut
+      const isLateForfeit = row[12] !== undefined && row[12] !== '' && parseFloat(row[12]) === 0
+      if (isLateForfeit) {
+        const amt = parseFloat(row[13]) || 800
+        allSessions.push({
+          id: row[0],
+          week_key: null,
+          index: null,
+          client_name: row[1],
+          therapist: 'FORFEITED FEES',
+          date: row[7],
+          day: '',
+          time_start: '',
+          time_end: '',
+          session_type: 'IE Report (Late – Forfeited)',
+          status: 'Present',
+          is_paid: true,
+          mop: row[5] || '',
+          reference: row[9] || '',
+          comments: row[11] || `IE report submitted by ${therapistName} after 6 months`,
+          payment_id: row[0],
+          total: amt,
+          therapist_cut: 0,
+          normal_cut: 0,
+          center: amt,
+          therapist_level: '',
+          is_intern: false,
+          is_forfeit: true
+        })
+        return
+      }
       allSessions.push({
         id: row[0],
         week_key: null,

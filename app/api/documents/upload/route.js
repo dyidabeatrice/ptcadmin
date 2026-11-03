@@ -75,7 +75,7 @@ export async function POST(request) {
 
         // Check if submission is within deadline
         const deadlineStr = reportRow[5]
-        const isWithinDeadline = deadlineStr ? new Date() <= new Date(deadlineStr) : true
+        const isWithinDeadline = deadlineStr ? new Date() <= new Date(deadlineStr + 'T23:59:59+08:00') : true
 
         await fetch(`${process.env.NEXT_PUBLIC_URL}/api/payments`, {
           method: 'POST',
