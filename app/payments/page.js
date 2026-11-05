@@ -312,6 +312,10 @@ function LedgerRow({ session, onPaid, onLoadMonth, clients, onOverride = () => {
                 style={{ fontSize: '10px', padding: '2px 4px', borderRadius: '4px', border: '1px solid #ddd', width: '110px' }} />
               <button onClick={() => saveCutoffOverride(cutoffDateInput ? new Date(cutoffDateInput + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '')}
                 style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', border: 'none', background: '#0f4c81', color: 'white', cursor: 'pointer' }}>Save</button>
+              <button onClick={() => saveCutoffOverride('PENDING')} title="Hold this fee out of the totals until you release it"
+                style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', border: '1px solid #EF9F27', background: '#FFF6E5', color: '#633806', cursor: 'pointer' }}>⏳ Pending</button>
+              <button onClick={() => { if (window.confirm('Drop this fee? It will be removed from the totals and will not appear in Pending.')) saveCutoffOverride('DROPPED') }} title="Write this fee off"
+                style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', border: '1px solid #E24B4A', background: '#FCEBEB', color: '#791F1F', cursor: 'pointer' }}>✕ Drop</button>
               {session.cutoff_overridden && (
                 <button onClick={() => saveCutoffOverride('')} title="Reset to original date"
                   style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', border: '1px solid #ddd', background: 'white', cursor: 'pointer' }}>Reset</button>
@@ -1717,7 +1721,7 @@ export default function PaymentsPage() {
   ]
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ padding: '2rem', fontFamily: 'sans-serif', maxWidth: activeTab === 'ledger' ? 'min(1900px, 96vw)' : '1400px', margin: '0 auto' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '12px' }}>
@@ -2059,6 +2063,7 @@ export default function PaymentsPage() {
                 </div>
               ) : (
               <>
+
               {/* Therapist tabs */}
               <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
                 {ledgerTherapists.map(t => (
@@ -2069,6 +2074,7 @@ export default function PaymentsPage() {
                   }}>{t}</button>
                 ))}
               </div>
+              <PendingFees key={activeTherapist} therapist={activeTherapist} ledger={ledger} loadMonth={loadMonth} monthKeyNow={currentMonthKey()} />
               {ledgerLoading ? (
                 <div style={{ textAlign: 'center', padding: '3rem', color: '#999' }}>Loading ledger...</div>
               ) : (
@@ -2194,6 +2200,147 @@ export default function PaymentsPage() {
           )}
         </>
       )}
+    </div>
+  )
+}
+
+function PendingFees({ therapist, loadMonth }) {
+  const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [ies, setIes] = useState([])
+  const [held, setHeld] = useState([])
+  const [err, setErr] = useState(false)
+  const [editId, setEditId] = useState(null)
+  const [dateVal, setDateVal] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  if (!therapist || therapist === 'FORFEITED FEES') return null
+
+  const groupName = n => (n || '').includes('OT INTERN') ? 'OT INTERNS' : (n || '').includes('ST INTERN') ? 'ST INTERNS' : n
+  const peso = n => '₱' + Number(n || 0).toLocaleString()
+  const fmt = iso => iso ? new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'
+
+  async function load() {
+    setLoading(true); setErr(false)
+    try {
+      const [a, b] = await Promise.all([
+        fetch('/api/ledger?action=pending_ie').then(r => r.json()),
+        fetch('/api/ledger?action=pending_held').then(r => r.json())
+      ])
+      if (a.success && b.success) { setIes(a.data); setHeld(b.data) } else setErr(true)
+    } catch { setErr(true) }
+    setLoading(false)
+  }
+  function toggle() {
+    const next = !open
+    setOpen(next)
+    if (next) load()
+  }
+  async function patch(item, value) {
+    setBusy(true)
+    await fetch('/api/payments', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_cutoff_override', id: item.id, cutoff_date_override: value, cutoff_week_key: item.week_key })
+    })
+    setBusy(false)
+  }
+  async function release(item) {
+    if (!dateVal) return alert('Pick a date first')
+    const label = new Date(dateVal + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    await patch(item, label)
+    setEditId(null); setDateVal('')
+    loadMonth(dateVal.slice(0, 7), true)
+    load()
+  }
+  async function drop(item) {
+    if (!window.confirm(`Drop ${item.client_name}'s fee? It will be removed from Pending and from the totals.`)) return
+    await patch(item, 'DROPPED')
+    load()
+  }
+
+  const myHeld = held.filter(x => groupName(x.therapist) === therapist)
+  const myIes = ies.filter(x => groupName(x.therapist) === therapist)
+  const heldTot = myHeld.reduce((s, x) => s + x.cut, 0)
+  const ieTot = myIes.reduce((s, x) => s + x.fee, 0)
+
+  const th = { padding: '7px 14px', textAlign: 'left', color: '#666', fontWeight: 500, background: '#f8f9fa', borderBottom: '1px solid #e0e0e0', whiteSpace: 'nowrap', fontSize: '12px' }
+  const td = { padding: '8px 14px', borderBottom: '1px solid #f3f3f3', whiteSpace: 'nowrap', fontSize: '12px' }
+  const secLabel = { padding: '8px 16px 4px', fontSize: '10px', fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase', color: '#999' }
+  const smallBtn = (color, border) => ({ fontSize: '11px', padding: '4px 10px', borderRadius: '6px', border: `1px solid ${border}`, background: 'white', color, cursor: 'pointer' })
+  const chip = d => {
+    if (d === null) return <span style={{ fontSize: '10px', color: '#999' }}>No deadline</span>
+    const [bg, fg, text] = d < 0 ? ['#FCEBEB', '#791F1F', `Overdue ${-d} day${d === -1 ? '' : 's'}: forfeits if submitted now`]
+      : d <= 30 ? ['#FAEEDA', '#633806', `${d} days left`] : ['#EAF3DE', '#27500A', `${d} days left`]
+    return <span style={{ fontSize: '10px', padding: '2px 9px', borderRadius: '10px', fontWeight: 700, background: bg, color: fg }}>{text}</span>
+  }
+
+  return (
+    <div style={{ border: '1px solid #EF9F27', borderRadius: '12px', background: 'white', marginBottom: '1.25rem', overflow: 'hidden' }}>
+      <div onClick={toggle} style={{ padding: '12px 16px', background: '#FFF6E5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', gap: '10px', flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontSize: '15px', fontWeight: 700, color: '#633806' }}>{open ? '▼' : '▶'} ⏳ Pending for {therapist}</div>
+          <div style={{ fontSize: '12px', color: '#9a7b3d' }}>
+            {!open ? 'Click to open. Loads only when opened.' : loading ? 'Loading…' : `${myHeld.length} held · ${myIes.length} IE report${myIes.length === 1 ? '' : 's'} not yet submitted`}
+          </div>
+        </div>
+        {open && !loading && !err && <span style={{ fontSize: '13px', color: '#633806' }}>Floating: <b style={{ fontSize: '16px' }}>{peso(heldTot + ieTot)}</b></span>}
+      </div>
+      {open && (loading ? (
+        <div style={{ padding: '22px', textAlign: 'center', color: '#999', fontSize: '13px' }}>Loading pending fees…</div>
+      ) : err ? (
+        <div style={{ padding: '22px', textAlign: 'center', color: '#791F1F', fontSize: '13px' }}>Couldn't load pending fees. Close and reopen to retry.</div>
+      ) : myHeld.length === 0 && myIes.length === 0 ? (
+        <div style={{ padding: '22px', textAlign: 'center', color: '#bbb', fontStyle: 'italic', fontSize: '13px' }}>Nothing pending 🎉</div>
+      ) : (
+        <div>
+          {myHeld.length > 0 && (
+            <div style={{ overflowX: 'auto' }}>
+              <div style={secLabel}>Held: not released · {peso(heldTot)}</div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr><th style={th}>Client</th><th style={th}>Type</th><th style={th}>Session date</th><th style={{ ...th, textAlign: 'right' }}>Amount</th><th style={{ ...th, textAlign: 'right' }}>Cut held</th><th style={th}></th></tr></thead>
+                <tbody>
+                  {myHeld.map(x => (
+                    <tr key={x.id}>
+                      <td style={td}>{x.client_name}</td>
+                      <td style={td}>{x.session_type}</td>
+                      <td style={td}>{x.date}</td>
+                      <td style={{ ...td, textAlign: 'right' }}>{peso(x.total)}</td>
+                      <td style={{ ...td, textAlign: 'right' }}>{peso(x.cut)}</td>
+                      <td style={{ ...td, textAlign: 'right' }}>
+                        {editId === x.id ? (
+                          <span style={{ display: 'inline-flex', gap: '4px', alignItems: 'center' }}>
+                            <input type="date" value={dateVal} onChange={e => setDateVal(e.target.value)} style={{ fontSize: '11px', padding: '3px 5px', borderRadius: '4px', border: '1px solid #ddd' }} />
+                            <button disabled={busy} onClick={() => release(x)} style={{ ...smallBtn('white', '#0f4c81'), background: '#0f4c81' }}>Release</button>
+                            <button onClick={() => { setEditId(null); setDateVal('') }} style={smallBtn('#666', '#ddd')}>Cancel</button>
+                          </span>
+                        ) : (
+                          <span style={{ display: 'inline-flex', gap: '6px' }}>
+                            <button onClick={() => { setEditId(x.id); setDateVal('') }} title="Put this fee back into a pay period" style={smallBtn('#0f4c81', '#0f4c81')}>Set date</button>
+                            <button disabled={busy} onClick={() => drop(x)} title="Write this fee off" style={smallBtn('#791F1F', '#E24B4A')}>✕ Drop</button>
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {myIes.length > 0 && (
+            <div style={{ overflowX: 'auto' }}>
+              <div style={secLabel}>IE reports not yet submitted · waiting {peso(ieTot)}</div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr><th style={th}>Client</th><th style={th}>IE session</th><th style={th}>Report due</th><th style={th}>Status</th><th style={{ ...th, textAlign: 'right' }}>Fee waiting</th></tr></thead>
+                <tbody>{myIes.map((x, k) => <tr key={k}><td style={td}>{x.client_name}</td><td style={td}>{fmt(x.ie_date)}</td><td style={td}>{fmt(x.deadline)}</td><td style={td}>{chip(x.days_left)}</td><td style={{ ...td, textAlign: 'right' }}>{peso(x.fee)}</td></tr>)}</tbody>
+              </table>
+            </div>
+          )}
+          <div style={{ padding: '10px 16px', fontSize: '11px', color: '#999', lineHeight: 1.5 }}>
+            IE reports: the fee is already set aside when the IE session is paid. It goes to the therapist when the report is submitted on or before the due date, or to FORFEITED FEES if it is submitted after.
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

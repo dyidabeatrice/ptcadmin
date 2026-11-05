@@ -125,6 +125,74 @@ export async function GET(request) {
       .filter(t => t.startsWith('week_'))
       .sort()
 
+    // --- action=pending_ie: IE reports not yet submitted, with the fee waiting ---
+    if (action === 'pending_ie') {
+      const reportData = await getSheetData('reports')
+      const [, ...reportRows] = reportData
+      const phToday = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })
+      const todayStart = new Date(phToday + 'T00:00:00+08:00')
+      const todayLabel = new Date().toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: 'short', day: 'numeric', year: 'numeric' })
+      const items = reportRows
+        .filter(r => r && r[0] && r[6] === 'IE Report' && r[8] === 'Pending Submission')
+        .map(r => {
+          const therapist = r[2]
+          const info = therapistMap[therapist]
+          const level = resolveLevel(therapist, todayLabel, levelHistoryByTherapist, info?.level || 'JUNIOR 1')
+          const fee = calcRates('IE REPORT', level, 0, false, '', todayLabel).therapistCut || 0
+          const dl = r[5] ? new Date(r[5]) : null
+          const validDl = dl && !isNaN(dl)
+          const phDeadline = validDl ? dl.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }) : ''
+          let ieDate = ''
+          let daysLeft = null
+          if (validDl) {
+            daysLeft = Math.round((new Date(phDeadline + 'T00:00:00+08:00') - todayStart) / 86400000)
+            const ie = new Date(phDeadline + 'T00:00:00Z')
+            ie.setUTCMonth(ie.getUTCMonth() - 6)
+            ieDate = ie.toISOString().split('T')[0]
+          }
+          return { therapist, client_name: r[1], ie_date: ieDate, deadline: phDeadline, days_left: daysLeft, fee }
+        })
+        .sort((a, b) => (a.days_left ?? 9999) - (b.days_left ?? 9999))
+      return Response.json({ success: true, data: items })
+    }
+
+    // --- action=pending_held: entries marked PENDING with the cut-off pencil ---
+    if (action === 'pending_held') {
+      const paymentData = await getSheetData('payments')
+      const [, ...payRows] = paymentData
+      const TRACKING_TYPES = ['attendance', 'cancellation', 'credit_transfer', 'advance', 'refund', 'ie_report']
+      const marked = payRows.filter(r => r && r[0] && r[16] === 'PENDING' && r[17] && weekSheets.includes(r[17]))
+      const weekCache = {}
+      const items = []
+      for (const r of marked) {
+        if (!weekCache[r[17]]) {
+          const d = await getSheetData(r[17])
+          weekCache[r[17]] = d.slice(1)
+        }
+        const wk = weekCache[r[17]].find(x => x && x[0] === r[3])
+        if (!wk) continue
+        const paid = !TRACKING_TYPES.includes(r[8])
+        const info = therapistMap[wk[2]]
+        const sessionType = (paid && r[6]) || wk[7] || 'Regular'
+        const amount = paid ? parseFloat(r[4] || 0) : parseFloat(wk[11] || 0)
+        const comments = paid ? (r[11] || '') : ''
+        const level = resolveLevel(wk[2], wk[3], levelHistoryByTherapist, info?.level || 'JUNIOR 1')
+        const rates = calcRates(sessionType, level, amount, info?.is_intern || false, comments, wk[3])
+        const customCut = paid && r[12] !== undefined && r[12] !== '' ? parseFloat(r[12]) : null
+        items.push({
+          id: r[0],
+          week_key: r[17],
+          therapist: wk[2],
+          client_name: wk[1],
+          session_type: sessionType,
+          date: wk[3],
+          total: rates.total || 0,
+          cut: customCut !== null ? customCut : (rates.therapistCut || 0)
+        })
+      }
+      return Response.json({ success: true, data: items })
+    }
+
     // --- action=months: cheap call, no session-level data fetched at all ---
     // Used by the frontend to render every month's header up front, before
     // deciding which one(s) to actually load data for.
