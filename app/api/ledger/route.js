@@ -3,7 +3,11 @@ import { RATES, IE_SESSION_TYPES } from '../../lib/constants'
 import { parsePHDate } from '../../lib/dates'
 import { getTherapistFromCookie } from '../../lib/auth'
 
-function calcRates(sessionType, level, recordedAmount, isIntern, comments) {
+// From Jan 1, 2027: IE session and IE report professional fee is 850 for every level
+const IE_FLAT_FROM = new Date('2027-01-01T00:00:00+08:00')
+const IE_FLAT_TYPES = ['OT-IE', 'ST-IE', 'PT-IE', 'IE REPORT']
+
+function calcRates(sessionType, level, recordedAmount, isIntern, comments, rateDate) {
   const type = sessionType?.toUpperCase().trim()
 
   if (type === 'Custom Amount') {
@@ -14,7 +18,11 @@ function calcRates(sessionType, level, recordedAmount, isIntern, comments) {
   if (!rate) return { total: recordedAmount || 0, therapistCut: 0, center: recordedAmount || 0 }
 
   const total = type === 'IE REPORT' ? 0 : (recordedAmount || rate.full)
-  const cut = rate.levels[level] || 0
+  let cut = rate.levels[level] || 0
+  if (cut > 0 && IE_FLAT_TYPES.includes(type) && rateDate) {
+    const d = parsePHDate(rateDate)
+    if (d && d >= IE_FLAT_FROM) cut = 850
+  }
   const hasDeduction = comments?.includes('-5%')
   const therapistCut = hasDeduction ? Math.round(cut * 0.95) : cut
 
@@ -217,7 +225,8 @@ export async function GET(request) {
           resolvedLevel,
           recordedAmount,
           therapistInfo?.is_intern || false,
-          comments
+          comments,
+          row[3]
         )
         const total = rates.total
         const therapistCut = payment?.custom_cut !== null && payment?.custom_cut !== undefined ? payment.custom_cut : rates.therapistCut
@@ -262,7 +271,7 @@ export async function GET(request) {
       const therapistName = row[2]
       const therapistInfo = therapistMap[therapistName]
       const level = resolveLevel(therapistName, row[7], levelHistoryByTherapist, therapistInfo?.level || 'JUNIOR 1')
-      const cut = RATES['IE REPORT']?.levels[level] || 800
+      const cut = calcRates('IE REPORT', level, 0, false, '', row[7]).therapistCut || RATES['IE REPORT']?.levels[level] || 800
 
       // Late IE report (submitted after 6 months): forfeited, no therapist cut
       const isLateForfeit = row[12] !== undefined && row[12] !== '' && parseFloat(row[12]) === 0
