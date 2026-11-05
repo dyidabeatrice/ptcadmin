@@ -267,7 +267,7 @@ export async function GET(request) {
       // Late IE report (submitted after 6 months): forfeited, no therapist cut
       const isLateForfeit = row[12] !== undefined && row[12] !== '' && parseFloat(row[12]) === 0
       if (isLateForfeit) {
-        const amt = parseFloat(row[13]) || 800
+        const amt = cut   // same report fee the therapist would have received (800 / 850; 850 for all from Jan 2027)
         allSessions.push({
           id: row[0],
           week_key: null,
