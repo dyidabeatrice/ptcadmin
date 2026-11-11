@@ -18,7 +18,7 @@ export function proxy(request: NextRequest) {
   const isAuth = request.cookies.get('ptc_auth')?.value === 'authenticated'
   const protectedPrefixes = [
     '/dashboard', '/sessions', '/clients', '/master',
-    '/therapists', '/payments', '/messages', '/documents'
+    '/therapists', '/payments', '/messages', '/documents', '/requests'
   ]
   const needsAuth = protectedPrefixes.some(p => pathname.startsWith(p))
   if (needsAuth && !isAuth) {
