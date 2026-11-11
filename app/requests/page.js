@@ -38,6 +38,13 @@ function ageText(iso) {
   return parts.join(', ')
 }
 
+// The client's therapist(s), read from their schedule entries ("Therapist|day|time; ...")
+function therapistsOf(client) {
+  if (!client) return ''
+  const names = (client.schedule || '').split(';').map(s => s.split('|')[0].trim()).filter(Boolean)
+  return [...new Set(names)].join(', ')
+}
+
 export default function RequestsPage() {
   const [items, setItems] = useState([])
   const [clients, setClients] = useState([])
@@ -59,7 +66,7 @@ export default function RequestsPage() {
       const [r, c] = await Promise.all([rRes.json(), cRes.json()])
       if (!r.success) throw new Error(r.error || 'Could not load requests')
       r.data.forEach(i => {
-        ;['fb_name', 'birthday', 'address', 'diagnosis'].forEach(f => { saved.current[`${i.id}:${f}`] = i[f] })
+        ;['fb_name', 'birthday', 'address', 'diagnosis', 'notes'].forEach(f => { saved.current[`${i.id}:${f}`] = i[f] })
       })
       setItems(r.data)
       if (c.success) setClients(c.data.filter(x => x.status !== 'inactive'))
@@ -183,13 +190,15 @@ export default function RequestsPage() {
                 <th style={th}>Age</th>
                 <th style={{ ...th, minWidth: '240px' }}>Address</th>
                 <th style={{ ...th, minWidth: '180px' }}>Diagnosis</th>
+                <th style={{ ...th, minWidth: '150px' }}>Therapist(s)</th>
                 <th style={th}>Status</th>
+                <th style={{ ...th, minWidth: '240px' }}>Notes</th>
                 <th style={th}></th>
               </tr>
             </thead>
             <tbody>
               {shown.length === 0 ? (
-                <tr><td colSpan={10} style={{ textAlign: 'center', color: '#bbb', fontStyle: 'italic', padding: '22px' }}>Nothing here</td></tr>
+                <tr><td colSpan={12} style={{ textAlign: 'center', color: '#bbb', fontStyle: 'italic', padding: '22px' }}>Nothing here</td></tr>
               ) : shown.map(i => {
                 const done = i.status === 'released'
                 const td = { padding: '6px 10px', borderBottom: `1px solid ${done ? '#cfe5bf' : '#f3f3f3'}`, background: done ? '#E4F2DA' : 'transparent', verticalAlign: 'middle' }
@@ -218,6 +227,7 @@ export default function RequestsPage() {
                       <input style={cellStyle} value={i.diagnosis} placeholder="Diagnosis"
                         onChange={e => edit(i.id, 'diagnosis', e.target.value)} onBlur={e => save(i.id, 'diagnosis', e.target.value.trim())} />
                     </td>
+                    <td style={{ ...td, color: done ? '#3a5a22' : '#555' }}>{therapistsOf(clients.find(c => c.name === i.client_name)) || '—'}</td>
                     <td style={td}>
                       <select value={i.status} onChange={e => setStatus(i.id, e.target.value)}
                         style={{ borderRadius: '12px', padding: '4px 8px', fontSize: '11px', fontWeight: 700, border: `1px solid ${ss.border}`, background: ss.bg, color: ss.color, cursor: 'pointer' }}>
@@ -225,6 +235,10 @@ export default function RequestsPage() {
                         <option value="preparing">Preparing</option>
                         <option value="released">Released</option>
                       </select>
+                    </td>
+                    <td style={td}>
+                      <input style={cellStyle} value={i.notes} placeholder="Notes"
+                        onChange={e => edit(i.id, 'notes', e.target.value)} onBlur={e => save(i.id, 'notes', e.target.value.trim())} />
                     </td>
                     <td style={td}>
                       <button onClick={() => remove(i)} title="Delete this request" style={{ border: 'none', background: 'none', color: '#bbb', cursor: 'pointer', fontSize: '13px' }}>✕</button>

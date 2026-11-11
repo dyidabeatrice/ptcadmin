@@ -3,11 +3,11 @@ import { getSheetData, getGoogleSheets, SPREADSHEET_ID, deleteSheetRow, findRowI
 import { formatPHDate } from '../../lib/dates'
 
 // Sheet tab: doc_requests
-// A id | B client_name | C fb_name | D type | E birthday | F address | G diagnosis | H status | I requested_date | J released_date
+// A id | B client_name | C fb_name | D type | E birthday | F address | G diagnosis | H status | I requested_date | J released_date | K notes
 
 const TYPES = ['Quotation', 'Receipt', 'Certificate']
 const STATUSES = ['requested', 'preparing', 'released']
-const COLS = { fb_name: 'C', type: 'D', birthday: 'E', address: 'F', diagnosis: 'G', status: 'H' }
+const COLS = { fb_name: 'C', type: 'D', birthday: 'E', address: 'F', diagnosis: 'G', status: 'H', notes: 'K' }
 
 async function isAuthed() {
   const store = await cookies()
@@ -30,7 +30,8 @@ export async function GET() {
       diagnosis: row[6] || '',
       status: STATUSES.includes(row[7]) ? row[7] : 'requested',
       requested_date: row[8] || '',
-      released_date: row[9] || ''
+      released_date: row[9] || '',
+      notes: row[10] || ''
     })).reverse() // newest first
     return Response.json({ success: true, data: items })
   } catch (error) {
