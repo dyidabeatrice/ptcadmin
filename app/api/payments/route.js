@@ -229,6 +229,18 @@ export async function PATCH(request) {
       return Response.json({ success: true })
     }
 
+    if (body.action === 'update_custom_amounts') {
+      const index = await findRowIndexById('payments', body.id)
+      if (index === -1) return Response.json({ success: false, error: 'Not found' })
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `payments!M${index + 2}:N${index + 2}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[body.custom_cut ?? '', body.custom_center ?? '']] }
+      })
+      return Response.json({ success: true })
+    }
+
     if (body.action === 'update_comments') {
       const index = await findRowIndexById('payments', body.id)
       if (index === -1) return Response.json({ success: false, error: 'Not found' })

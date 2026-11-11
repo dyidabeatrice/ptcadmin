@@ -262,6 +262,8 @@ export async function GET(request) {
       const sessionId = row[3]
       trackingMap[sessionId] = {
         tracking_id: row[0],
+        custom_cut: row[12] !== undefined && row[12] !== '' ? parseFloat(row[12]) : null,
+        custom_center: row[13] !== undefined && row[13] !== '' ? parseFloat(row[13]) : null,
         cutoff_date_override: row[16] || '',
         cutoff_week_key: row[17] || ''
       }
@@ -297,8 +299,10 @@ export async function GET(request) {
           row[3]
         )
         const total = rates.total
-        const therapistCut = payment?.custom_cut !== null && payment?.custom_cut !== undefined ? payment.custom_cut : rates.therapistCut
-        const center = payment?.custom_center !== null && payment?.custom_center !== undefined ? payment.custom_center : rates.center
+        const customCutVal = payment?.custom_cut ?? tracking?.custom_cut ?? null
+        const customCenterVal = payment?.custom_center ?? tracking?.custom_center ?? null
+        const therapistCut = customCutVal !== null ? customCutVal : rates.therapistCut
+        const center = customCenterVal !== null ? customCenterVal : rates.center
         const effectiveDate = payment?.cutoff_date_override || tracking?.cutoff_date_override || row[3]
 
         allSessions.push({

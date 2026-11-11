@@ -151,6 +151,21 @@ function LedgerRow({ session, onPaid, onLoadMonth, clients, onOverride = () => {
   }
 
   async function saveAmounts() {
+    // Unpaid entry: no payment record yet, so keep the custom cut/center on its tracking row
+    if (!session.payment_id && session.override_anchor_id) {
+      if (Number(cut) === Number(session.therapist_cut) && Number(center) === Number(session.center)) return
+      await fetch('/api/payments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_custom_amounts',
+          id: session.override_anchor_id,
+          custom_cut: Number(cut),
+          custom_center: Number(center)
+        })
+      })
+      return
+    }
     if (!session.payment_id) return
     if (
       Number(total) === Number(session.total) &&
