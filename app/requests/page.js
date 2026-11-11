@@ -182,35 +182,34 @@ export default function RequestsPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
             <thead>
               <tr>
-                <th style={th}>Asked</th>
-                <th style={th}>Client</th>
-                <th style={{ ...th, minWidth: '150px' }}>Parent's FB name</th>
+                <th style={th}>Request Date</th>
+                <th style={{ ...th, minWidth: '190px' }}>Client / parent's FB name</th>
                 <th style={th}>Type</th>
                 <th style={th}>Birthday</th>
                 <th style={th}>Age</th>
-                <th style={{ ...th, minWidth: '240px' }}>Address</th>
-                <th style={{ ...th, minWidth: '180px' }}>Diagnosis</th>
-                <th style={{ ...th, minWidth: '150px' }}>Therapist(s)</th>
+                <th style={{ ...th, minWidth: '190px' }}>Address</th>
+                <th style={{ ...th, minWidth: '140px' }}>Diagnosis</th>
+                <th style={{ ...th, minWidth: '110px' }}>Therapist(s)</th>
                 <th style={th}>Status</th>
-                <th style={{ ...th, minWidth: '240px' }}>Notes</th>
+                <th style={{ ...th, minWidth: '190px' }}>Notes</th>
                 <th style={th}></th>
               </tr>
             </thead>
             <tbody>
               {shown.length === 0 ? (
-                <tr><td colSpan={12} style={{ textAlign: 'center', color: '#bbb', fontStyle: 'italic', padding: '22px' }}>Nothing here</td></tr>
+                <tr><td colSpan={11} style={{ textAlign: 'center', color: '#bbb', fontStyle: 'italic', padding: '22px' }}>Nothing here</td></tr>
               ) : shown.map(i => {
                 const done = i.status === 'released'
-                const td = { padding: '6px 10px', borderBottom: `1px solid ${done ? '#cfe5bf' : '#f3f3f3'}`, background: done ? '#E4F2DA' : 'transparent', verticalAlign: 'middle' }
+                const td = { padding: '6px 8px', borderBottom: `1px solid ${done ? '#cfe5bf' : '#f3f3f3'}`, background: done ? '#E4F2DA' : 'transparent', verticalAlign: 'middle' }
                 const ts = TYPE_STYLE[i.type] || { bg: '#f0f0f0', color: '#555' }
                 const ss = STATUS_STYLE[i.status]
                 const cellStyle = { ...cell, background: done ? 'rgba(255,255,255,0.55)' : 'white', color: done ? '#3a5a22' : '#333' }
                 return (
                   <tr key={i.id}>
                     <td style={{ ...td, whiteSpace: 'nowrap' }}>{i.requested_date}</td>
-                    <td style={{ ...td, fontWeight: 600, color: done ? '#3a5a22' : '#0f4c81', whiteSpace: 'nowrap' }}>{i.client_name}</td>
                     <td style={td}>
-                      <input style={cellStyle} value={i.fb_name} placeholder="FB name"
+                      <div style={{ fontWeight: 600, color: done ? '#3a5a22' : '#0f4c81', whiteSpace: 'nowrap', marginBottom: '3px' }}>{i.client_name}</div>
+                      <input style={{ ...cellStyle, fontSize: '11px', padding: '3px 6px' }} value={i.fb_name} placeholder="Parent's FB name"
                         onChange={e => edit(i.id, 'fb_name', e.target.value)} onBlur={e => save(i.id, 'fb_name', e.target.value.trim())} />
                     </td>
                     <td style={td}><span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 9px', borderRadius: '10px', background: ts.bg, color: ts.color, whiteSpace: 'nowrap' }}>{i.type}</span></td>
