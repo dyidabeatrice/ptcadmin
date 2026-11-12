@@ -3,11 +3,11 @@ import { getSheetData, getGoogleSheets, SPREADSHEET_ID, deleteSheetRow, findRowI
 import { formatPHDate } from '../../lib/dates'
 
 // Sheet tab: doc_requests
-// A id | B client_name | C fb_name | D type | E birthday | F address | G diagnosis | H status | I requested_date | J released_date | K notes
+// A id | B client_name | C fb_name | D type | E birthday | F address | G diagnosis | H status | I requested_date | J released_date | K notes | L sex
 
-const TYPES = ['Quotation', 'Receipt', 'Certificate']
+const TYPES = ['Quotation', 'Receipt', 'Certificate', 'Invoice']
 const STATUSES = ['requested', 'preparing', 'released']
-const COLS = { fb_name: 'C', type: 'D', birthday: 'E', address: 'F', diagnosis: 'G', status: 'H', notes: 'K' }
+const COLS = { fb_name: 'C', type: 'D', birthday: 'E', address: 'F', diagnosis: 'G', status: 'H', notes: 'K', sex: 'L' }
 
 async function isAuthed() {
   const store = await cookies()
@@ -31,7 +31,8 @@ export async function GET() {
       status: STATUSES.includes(row[7]) ? row[7] : 'requested',
       requested_date: row[8] || '',
       released_date: row[9] || '',
-      notes: row[10] || ''
+      notes: row[10] || '',
+      sex: row[11] || ''
     })).reverse() // newest first
     return Response.json({ success: true, data: items })
   } catch (error) {
