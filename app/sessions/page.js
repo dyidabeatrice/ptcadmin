@@ -750,7 +750,7 @@ export default function SchedulePage() {
           {therapists.map((therapist, therapistIndex) => {
             const isAbsent = (absentTherapists[day] || new Set()).has(therapist)
             const therapistEntry = therapistData.find(t => t.name === therapist && t.day === day)
-            const specialty = therapistEntry?.specialty || 'OT'
+            const specialty = therapistEntry?.specialty || therapistData.find(t => t.name === therapist)?.specialty || 'OT'
             const therapistSessions = getSessionsForTherapist(therapist)
             const prevTherapist = therapists[therapistIndex - 1]
             const prevEntry = prevTherapist ? therapistData.find(t => t.name === prevTherapist && t.day === day) : null
@@ -1022,7 +1022,7 @@ export default function SchedulePage() {
 
           {therapists.map((therapist, therapistIndex) => {
             const therapistEntry = therapistData.find(t => t.name === therapist && t.day === day)
-            const specialty = therapistEntry?.specialty || 'OT'
+            const specialty = therapistEntry?.specialty || therapistData.find(t => t.name === therapist)?.specialty || 'OT'
             const therapistSessions = dayMaster.filter(s => s.therapist === therapist)
             const prevTherapist = therapists[therapistIndex - 1]
             const prevEntry = prevTherapist ? therapistData.find(t => t.name === prevTherapist && t.day === day) : null
