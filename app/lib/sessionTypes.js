@@ -27,6 +27,8 @@ export const SESSION_TYPES_BY_SPECIALTY = {
   ],
   ST: [
     { value: 'ST SESSION', label: 'ST Session', amount: 1300 },
+    { value: 'ST OL TX', label: 'ST Online Session', amount: 1300 },
+    { value: 'ST OL IE', label: 'ST Online IE', amount: 2500 },
     { value: 'ST-IE', label: 'Initial Evaluation', amount: 2800 },
     { value: 'ST-FE', label: 'Follow-up Evaluation', amount: 1500 },
     { value: 'SPECIALIZED ST TX', label: 'Specialized ST', amount: 1700 },
@@ -64,7 +66,7 @@ export const SESSION_TYPES_BY_SPECIALTY = {
 export const SESSION_TYPE_RATES = {
   'OT SESSION': 1200, 'OT-IE': 2800, 'OT-FE': 1500, 'SPECIALIZED OT TX': 1700,
   'PR': 750, 'PR-RUSHED': 1000, 'IE REPORT': 0,
-  'ST SESSION': 1300, 'ST-IE': 2800, 'ST-FE': 1500, 'SPECIALIZED ST TX': 1700,
+  'ST SESSION': 1300, 'ST OL TX': 1300, 'ST OL IE': 2500, 'ST-IE': 2800, 'ST-FE': 1500, 'SPECIALIZED ST TX': 1700,
   'PT SESSION': 900, 'PT-IE': 2800, 'PT FE': 1500,
   'SPED SESSION': 900, 'SPED IE': 1800, 'SPED FE': 1500, 'PLAYSCHOOL': 750,
   'Cancellation Fee': 1200, 'SUPERVISOR FEE': 0, 'Home Program': 1000,
@@ -76,7 +78,7 @@ export const SESSION_TYPE_RATES = {
 // session-type selectors (LedgerRow, SettleModal).
 export const ALL_SESSION_TYPE_OPTIONS = [
   ['OT SESSION','OT SESSION'],['OT-IE','OT-IE'],['OT-FE','OT-FE'],['SPECIALIZED OT TX','SPECIALIZED OT TX'],
-  ['ST SESSION','ST SESSION'],['ST-IE','ST-IE'],['ST-FE','ST-FE'],['SPECIALIZED ST TX','SPECIALIZED ST TX'],
+  ['ST SESSION','ST SESSION'],['ST OL TX','ST OL TX'],['ST OL IE','ST OL IE'],['ST-IE','ST-IE'],['ST-FE','ST-FE'],['SPECIALIZED ST TX','SPECIALIZED ST TX'],
   ['PT SESSION','PT SESSION'],['PT-IE','PT-IE'],['PT FE','PT FE'],
   ['SPED SESSION','SPED SESSION'],['SPED IE','SPED IE'],['SPED FE','SPED FE'],
   ['PLAYSCHOOL','PLAYSCHOOL'],['PR','PR'],['PR-RUSHED','PR-RUSHED'],['IE REPORT','IE REPORT'],

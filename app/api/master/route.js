@@ -1,4 +1,14 @@
 import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID, deleteSheetRow } from '../../lib/sheets'
+import { RATES } from '../../lib/constants'
+
+// masterschedule columns: A id | B client | C therapist | D day | E start | F end | G session_type
+// G is optional. Blank = the therapist's normal session type. Otherwise it must be one of the
+// session types in RATES (e.g. PLAYSCHOOL, SPECIALIZED ST TX, ST OL TX), so a typo can't slip in.
+const NOT_FOR_MASTER = ['IE REPORT', 'SUPERVISOR FEE', 'Cancellation Fee']
+const cleanType = v => {
+  const t = typeof v === 'string' ? v.trim() : ''
+  return t && RATES[t] && !NOT_FOR_MASTER.includes(t) ? t : ''
+}
 
 async function syncClientSchedule(clientName, sheets) {
   const masterData = await getSheetData('masterschedule')
@@ -34,7 +44,8 @@ export async function GET() {
       therapist: row[2],
       day: row[3],
       time_start: row[4],
-      time_end: row[5]
+      time_end: row[5],
+      session_type: row[6] || ''
     }))
     return Response.json({ success: true, data: master })
   } catch (error) {
@@ -86,7 +97,8 @@ export async function POST(request) {
         body.therapist,
         body.day,
         body.time_start,
-        body.time_end
+        body.time_end,
+        cleanType(body.session_type)
       ]]}
     })
 
@@ -115,6 +127,16 @@ export async function PATCH(request) {
         body.time_end
       ]]}
     })
+
+    // Session type is only touched when the request sends it (dragging a session doesn't)
+    if (body.session_type !== undefined) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `masterschedule!G${sheetRow}`,
+        valueInputOption: 'RAW',
+        requestBody: { values: [[cleanType(body.session_type)]] }
+      })
+    }
 
     await syncClientSchedule(body.client_name, sheets)
     // If therapist or day changed, also sync old client name

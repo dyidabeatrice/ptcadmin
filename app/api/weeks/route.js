@@ -1,5 +1,5 @@
 import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
-import { SPECIALTY_RATES, getDefaultSessionType } from '../../lib/constants'
+import { SPECIALTY_RATES, getDefaultSessionType, RATES } from '../../lib/constants'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
@@ -141,7 +141,7 @@ export async function POST(request) {
           .filter(r => r && r[0] && !inactiveClients.has(r[1]))
           .map(row => ({
             client_name: row[1], therapist: row[2],
-            day: row[3]?.trim(), time_start: row[4], time_end: row[5]
+            day: row[3]?.trim(), time_start: row[4], time_end: row[5], session_type: (row[6] || '').trim()
           }))
 
         const weekDates = getWeekDates(monday)
@@ -156,7 +156,7 @@ export async function POST(request) {
               Date.now().toString() + Math.random().toString(36).slice(2),
               m.client_name, m.therapist, weekDates[m.day],
               m.day, m.time_start, m.time_end,
-              defaultSessionType, 'Pencil', 'Unpaid', '', amount, ''
+              RATES[m.session_type] ? m.session_type : defaultSessionType, 'Pencil', 'Unpaid', '', (RATES[m.session_type]?.full || amount), ''
             ]
           })
 
@@ -221,7 +221,7 @@ export async function POST(request) {
           .filter(r => r && r[0] && !inactiveClients.has(r[1]))
           .map(row => ({
             client_name: row[1], therapist: row[2],
-            day: row[3]?.trim(), time_start: row[4], time_end: row[5]
+            day: row[3]?.trim(), time_start: row[4], time_end: row[5], session_type: (row[6] || '').trim()
           }))
 
         const weekDates = getWeekDates(monday)
@@ -241,7 +241,7 @@ export async function POST(request) {
               Date.now().toString() + Math.random().toString(36).slice(2),
               m.client_name, m.therapist, weekDates[m.day],
               m.day, m.time_start, m.time_end,
-              defaultSessionType, 'Pencil', 'Unpaid', '', amount, ''
+              RATES[m.session_type] ? m.session_type : defaultSessionType, 'Pencil', 'Unpaid', '', (RATES[m.session_type]?.full || amount), ''
             ]
           })
 

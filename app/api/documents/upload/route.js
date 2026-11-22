@@ -94,8 +94,8 @@ export async function POST(request) {
             date: now,
             payment_type: 'ie_report',
             reference: '',
-            custom_cut: isWithinDeadline ? null : 0,
-            custom_center: isWithinDeadline ? null : 800
+            custom_cut: isWithinDeadline ? (reportRow[14] === 'ST OL IE' ? 900 : null) : 0,
+            custom_center: isWithinDeadline ? null : (reportRow[14] === 'ST OL IE' ? 900 : 800)
           })
         })
 

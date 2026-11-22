@@ -12,7 +12,7 @@ export const SPECIALTY_RATES = {
   SPED: 900,
 }
 
-export const IE_SESSION_TYPES = ['OT-IE', 'ST-IE', 'PT-IE', 'SPED IE']
+export const IE_SESSION_TYPES = ['OT-IE', 'ST-IE', 'PT-IE', 'SPED IE', 'ST OL IE']
 
 export function getDefaultSessionType(specialty) {
   if (specialty === 'ST') return 'ST SESSION'
@@ -41,6 +41,8 @@ export const RATES = {
   'PR-RUSHED':         { full: 1000, levels: { 'JUNIOR 1': 600, 'JUNIOR 2': 600, 'JUNIOR 3': 600, 'SENIOR 1': 600, 'SENIOR 2': 600 } },
   'IE REPORT':         { full: 0,    levels: { 'JUNIOR 1': 800, 'JUNIOR 2': 800, 'JUNIOR 3': 800, 'SENIOR 1': 850, 'SENIOR 2': 850 } },
   'Cancellation Fee':  { full: 1200, levels: { 'JUNIOR 1': 700, 'JUNIOR 2': 700, 'JUNIOR 3': 700, 'SENIOR 1': 700, 'SENIOR 2': 700 } },
+  'ST OL TX':          { full: 1300, levels: { 'JUNIOR 1': 1100, 'JUNIOR 2': 1100, 'JUNIOR 3': 1100, 'SENIOR 1': 1100, 'SENIOR 2': 1100 } },
+  'ST OL IE':          { full: 2500, levels: { 'JUNIOR 1': 900, 'JUNIOR 2': 900, 'JUNIOR 3': 900, 'SENIOR 1': 900, 'SENIOR 2': 900 } },
   'OT INTERN SESSION': { full: 600, levels: { 'JUNIOR 1': 0, 'JUNIOR 2': 0, 'JUNIOR 3': 0, 'SENIOR 1': 0, 'SENIOR 2': 0 } },
   'OT INTERN IE':      { full: 800, levels: { 'JUNIOR 1': 0, 'JUNIOR 2': 0, 'JUNIOR 3': 0, 'SENIOR 1': 0, 'SENIOR 2': 0 } },
   'ST INTERN SESSION': { full: 600, levels: { 'JUNIOR 1': 0, 'JUNIOR 2': 0, 'JUNIOR 3': 0, 'SENIOR 1': 0, 'SENIOR 2': 0 } },

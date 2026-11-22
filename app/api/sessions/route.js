@@ -141,6 +141,7 @@ export async function PATCH(request) {
         const reportsData = await getSheetData('reports')
         const [, ...reportRows] = reportsData
         const exists = reportRows.find(r => r && r[0] === `IE-${currentSession.id}`)
+        const reportType = body.session_type || ''
         if (!exists) {
           const sessionDate = new Date(currentSession.date || new Date())
           const deadline = new Date(sessionDate)
@@ -165,7 +166,8 @@ export async function PATCH(request) {
               '',
               'soft',
               '',
-              ''
+              '',
+              reportType
             ]]}
           })
         }
@@ -263,6 +265,7 @@ if (body.action === 'status') {
         const reportsData = await getSheetData('reports')
         const [, ...reportRows] = reportsData
         const exists = reportRows.find(r => r && r[0] === `IE-${session.id}`)
+        const reportType = session?.session_type || ''
         if (!exists) {
           const sessionDate = new Date(session.date || new Date())
           const deadline = new Date(sessionDate)
@@ -286,7 +289,8 @@ if (body.action === 'status') {
               '',
               'soft',
               '',
-              ''
+              '',
+              reportType
             ]]}
           })
         }
@@ -415,6 +419,7 @@ if (body.action === 'status') {
         const reportsData = await getSheetData('reports')
         const [, ...reportRows] = reportsData
         const exists = reportRows.find(r => r && r[0] === `IE-${body.session_id}`)
+        const reportType = body.session_type || ''
         if (!exists) {
           const sessionDate = new Date(body.date || new Date())
           const deadline = new Date(sessionDate)
@@ -439,7 +444,8 @@ if (body.action === 'status') {
               '',
               'soft',
               '',
-              ''
+              '',
+              reportType
             ]]}
           })
         }

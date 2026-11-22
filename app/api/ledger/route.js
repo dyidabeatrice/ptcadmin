@@ -138,7 +138,7 @@ export async function GET(request) {
           const therapist = r[2]
           const info = therapistMap[therapist]
           const level = resolveLevel(therapist, todayLabel, levelHistoryByTherapist, info?.level || 'JUNIOR 1')
-          const fee = calcRates('IE REPORT', level, 0, false, '', todayLabel).therapistCut || 0
+          const fee = r[14] === 'ST OL IE' ? 900 : (calcRates('IE REPORT', level, 0, false, '', todayLabel).therapistCut || 0)
           const dl = r[5] ? new Date(r[5]) : null
           const validDl = dl && !isNaN(dl)
           const phDeadline = validDl ? dl.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }) : ''
@@ -343,7 +343,11 @@ export async function GET(request) {
       const therapistName = row[2]
       const therapistInfo = therapistMap[therapistName]
       const level = resolveLevel(therapistName, row[7], levelHistoryByTherapist, therapistInfo?.level || 'JUNIOR 1')
-      const cut = calcRates('IE REPORT', level, 0, false, '', row[7]).therapistCut || RATES['IE REPORT']?.levels[level] || 800
+      const baseCut = calcRates('IE REPORT', level, 0, false, '', row[7]).therapistCut || RATES['IE REPORT']?.levels[level] || 800
+      // Online IE reports are logged with a fixed 900 cut in column M (late ones have M = 0 and a 900 reserve in N)
+      const loggedCut = row[12] !== undefined && row[12] !== '' ? parseFloat(row[12]) : 0
+      const loggedReserve = row[13] !== undefined && row[13] !== '' ? parseFloat(row[13]) : 0
+      const cut = loggedCut > 0 ? loggedCut : Math.max(baseCut, loggedReserve)
 
       // Late IE report (submitted after 6 months): forfeited, no therapist cut
       const isLateForfeit = row[12] !== undefined && row[12] !== '' && parseFloat(row[12]) === 0

@@ -152,7 +152,7 @@ export default function SchedulePage() {
   const [master, setMaster] = useState([])
   const [masterLoading, setMasterLoading] = useState(false)
   const [addMasterModal, setAddMasterModal] = useState(null)
-  const [addMasterForm, setAddMasterForm] = useState({ client_name: '', is_new_client: false, time_end: '' })
+  const [addMasterForm, setAddMasterForm] = useState({ client_name: '', is_new_client: false, session_type: '', time_end: '' })
   const [masterDragSession, setMasterDragSession] = useState(null)
   const [savingMaster, setSavingMaster] = useState(false)
   const [blockModal, setBlockModal] = useState(null)
@@ -201,7 +201,7 @@ export default function SchedulePage() {
     }
     const maps = {
       OT: ['OT SESSION','OT-IE','OT-FE','SPECIALIZED OT TX','Cancellation Fee'],
-      ST: ['ST SESSION','ST-IE','ST-FE','SPECIALIZED ST TX','Cancellation Fee'],
+      ST: ['ST SESSION','ST-IE','ST-FE','SPECIALIZED ST TX','Cancellation Fee','ST OL TX','ST OL IE'],
       PT: ['PT SESSION','PT-IE','PT FE','Cancellation Fee'],
       SPED: ['SPED SESSION','SPED IE','SPED FE','PLAYSCHOOL','Cancellation Fee'],
     }
@@ -1055,7 +1055,7 @@ export default function SchedulePage() {
                         onClick={() => {
                           if (masterDragSession) return
                           setAddMasterModal({ therapist, day, time_start: formatTime(slotMins) })
-                          setAddMasterForm({ client_name: '', is_new_client: false, time_end: formatTime(slotMins + 60) })
+                          setAddMasterForm({ client_name: '', is_new_client: false, session_type: '', time_end: formatTime(slotMins + 60) })
                         }}
                         onContextMenu={e => {
                           e.preventDefault()
@@ -1151,7 +1151,7 @@ export default function SchedulePage() {
                           overflow: 'hidden', boxSizing: 'border-box', zIndex: 2, cursor: 'grab'
                         }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                          <div style={{ fontSize: '10px', fontWeight: '600', color: sc.color, lineHeight: '1.3', flex: 1 }}>{s.client_name}</div>
+                          <div style={{ fontSize: '10px', fontWeight: '600', color: sc.color, lineHeight: '1.3', flex: 1 }}>{s.client_name}{s.session_type ? <span style={{ fontSize: '8px', fontWeight: '700', marginLeft: '4px', opacity: 0.75 }}>· {s.session_type}</span> : null}</div>
                           <button onClick={async e => {
                             e.stopPropagation()
                             if (!confirm(`Remove ${s.client_name} from master schedule?`)) return
@@ -2020,6 +2020,14 @@ export default function SchedulePage() {
                     </div>
                   </div>
                   <div style={{ marginBottom: '1.5rem' }}>
+                    <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>Session type <span style={{ color: '#aaa' }}>(optional)</span></label>
+                    <select value={addMasterForm.session_type || ''} onChange={e => setAddMasterForm({ ...addMasterForm, session_type: e.target.value })}
+                      style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px', marginBottom: '12px' }}>
+                      <option value="">Normal session (default for this therapist)</option>
+                      {getTypesForTherapist(addMasterModal.therapist).filter(t => t.value !== 'Cancellation Fee').map(t => (
+                        <option key={t.value} value={t.value}>{t.label}</option>
+                      ))}
+                    </select>
                     <label style={{ fontSize: '12px', color: '#666', display: 'block', marginBottom: '4px' }}>End time</label>
                     <select value={addMasterForm.time_end} onChange={e => setAddMasterForm({ ...addMasterForm, time_end: e.target.value })}
                       style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}>
@@ -2044,7 +2052,8 @@ export default function SchedulePage() {
                           day: addMasterModal.day,
                           time_start: addMasterModal.time_start,
                           time_end: addMasterForm.time_end,
-                          is_new_client: addMasterForm.is_new_client
+                          is_new_client: addMasterForm.is_new_client,
+                          session_type: addMasterForm.session_type || ''
                         })
                       })
                       setAddMasterModal(null)
