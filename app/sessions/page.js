@@ -886,6 +886,7 @@ export default function SchedulePage() {
                           position: 'absolute', top: 0, left: 0, right: 0,
                           background: (() => {
                             const t = (s.session_type || '').toUpperCase()
+                            if (t === 'ST OL TX') return '#F06292'
                             if (t.includes('IE') || t.includes('EVALUATION')) return '#2196F3'
                             if (t.includes('-FE') || t === 'FE') return '#64B5F6'
                             if (t.includes('SPECIALIZED')) return '#9C27B0'
@@ -901,6 +902,8 @@ export default function SchedulePage() {
                           <span>{String(s.time_start || '').replace(/\s?[AP]M/gi, '')}–{String(s.time_end || '').replace(/\s?[AP]M/gi, '')}</span>
                           {(() => {
                             const t = (s.session_type || '').toUpperCase()
+                            if (t === 'ST OL TX') return <span style={{ fontSize: '8px', opacity: 0.9 }}>OL TX</span>
+                            if (t === 'ST OL IE') return <span style={{ fontSize: '8px', opacity: 0.9 }}>OL IE</span>
                             if (t.includes('IE') || t.includes('EVALUATION')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>IE</span>
                             if (t.includes('CANCELLATION')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>NO SHOW</span>
                             if (t.includes('FE')) return <span style={{ fontSize: '8px', opacity: 0.9 }}>FE</span>
