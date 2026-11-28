@@ -616,7 +616,8 @@ export default function SchedulePage() {
   function sendDayReminders(day) {
     const message = `Good day!\n\n*This is a friendly reminder that you have a scheduled session tomorrow.* 😊 Kindly react to this message to *confirm* your attendance.\n\nFor _cancellations/rescheduling, please inform us before 5PM today_ so we can properly coordinate with your therapist and avoid a late cancellation/no-show fee.\n\nPlease don't forget — carer(s) accompanying a child _must sign the attendance sheet at the reception desk_ upon arrival.\n\nWe look forward to see you! 💙`
     const dayAbsences = absentTherapists[day] || new Set()
-    sendBulkDrafts(day, 'session', 'session_reminder', s => s.status === 'Pencil' && !dayAbsences.has(s.therapist), message, 'session reminder')
+    const skipClients = new Set(sessions.filter(x => x.day === day && ['Absent', 'Cancelled'].includes(x.status)).map(x => x.client_name))
+    sendBulkDrafts(day, 'session', 'session_reminder', s => s.status === 'Pencil' && !dayAbsences.has(s.therapist) && !skipClients.has(s.client_name), message, 'session reminder')
   }
 
   function sendWeatherSuspension(day) {
@@ -1834,6 +1835,10 @@ export default function SchedulePage() {
                   const outstanding = Number(client?.outstanding_balance || 0)
                   let message = ''
                   if (opt.type === 'session_reminder') {
+                    if (['Absent', 'Cancelled'].includes(remindModal.status) && !confirm(`${remindModal.client_name} is already marked ${remindModal.status} for this session. Create a session reminder anyway?`)) {
+                      setRemindSending(false)
+                      return
+                    }
                     message = `Good day!\n\n*This is a friendly reminder that you have a scheduled session tomorrow.* 😊 Kindly react to this message to *confirm* your attendance.\n\nFor _cancellations/rescheduling, please inform us before 5PM today_ so we can properly coordinate with your therapist and avoid a late cancellation/no-show fee.\n\nPlease don't forget — carer(s) accompanying a child _must sign the attendance sheet at the reception desk_ upon arrival.\n\nWe look forward to see you! 💙`
                   } else if (opt.type === 'ie_reminder') {
                     message = `Good day po! Confirming your attendance lang po and sharing a few friendly reminders for your initial evaluation on ${remindModal.date} at ${remindModal.time_start}:\n\n1. Only your child will be allowed inside the therapy area; only 1 parent may join if needed and requested by the therapist.\n2. Interview may be via Viber call as needed, coordinated with the Therapist.\n3. Bring ID — building enforces NO ID NO ENTRY.\n4. Only 1 parent/caregiver to bring/fetch child; other companions not allowed entry.\n5. Staying in the reception area is discouraged to prevent crowding. If there's a reason to stay, only 1 parent is allowed there, and please do not wait in the hallway.\n6. Please arrive 10 mins before session ends for feedback.\n7. Cashless payment encouraged; we kindly ask for exact amounts for cash payment if possible.\n8. Parking is NOT for everyone. Please plan ahead.\n9. Please be courteous to building security/staff. We reserve the right to refuse service for those who don't follow protocols.\n\nThank you!`
