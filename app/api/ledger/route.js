@@ -1,7 +1,28 @@
-import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
+import { getSheetData, listSheetTitles } from '../../lib/sheets'
 import { RATES, IE_SESSION_TYPES } from '../../lib/constants'
 import { parsePHDate } from '../../lib/dates'
-import { getTherapistFromCookie } from '../../lib/auth'
+
+// payments-sheet row types that are bookkeeping records, not actual session payments
+const TRACKING_TYPES = ['attendance', 'cancellation', 'credit_transfer', 'advance', 'refund', 'ie_report']
+
+// Reads an optional number cell: blank -> null, otherwise parseFloat
+const numOrNull = v => (v !== undefined && v !== '' ? parseFloat(v) : null)
+
+// 'week_2026_11_23' -> Date for that Monday
+function weekKeyToMonday(weekKey) {
+  const parts = weekKey.replace('week_', '').split('_')
+  return new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
+}
+
+// Fields shared by every non-session ledger line (IE reports, supervisor fees,
+// forfeits, document requests): no week row, no time slot, always Present + paid.
+function extraEntry(fields) {
+  return {
+    week_key: null, index: null, day: '', time_start: '', time_end: '',
+    status: 'Present', is_paid: true,
+    ...fields
+  }
+}
 
 // From Jan 1, 2027: IE session and IE report professional fee is 850 for every level
 const IE_FLAT_FROM = new Date('2027-01-01T00:00:00+08:00')
@@ -45,7 +66,7 @@ function resolveLevel(therapistName, sessionDateStr, levelHistoryByTherapist, fa
 
   let resolved = null
   for (const entry of history) {
-    const effDate = parsePHDate(entry.effective_date)
+    const effDate = entry.effective
     if (effDate && effDate <= sessionDate) resolved = entry.level
     else break
   }
@@ -66,8 +87,7 @@ function dateInMonth(dateStr, monthFilter) {
 // used to decide which week sheets are even worth fetching for a month-scoped request.
 function weekOverlapsMonth(weekKey, monthFilter) {
   if (!monthFilter) return true
-  const parts = weekKey.replace('week_', '').split('_')
-  const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
+  const monday = weekKeyToMonday(weekKey)
   const saturday = new Date(monday)
   saturday.setDate(monday.getDate() + 5)
   const [my, mm] = monthFilter.split('-').map(Number)
@@ -82,13 +102,12 @@ export async function GET(request) {
     const action = searchParams.get('action')
     const monthFilter = searchParams.get('month') // 'YYYY-MM', or null for unbounded (full history)
 
-    const sheets = getGoogleSheets()
-
     // Therapist roster + level history — small, always fetched in full regardless of month.
-    const [therapistData, levelHistoryData, spreadsheet] = await Promise.all([
+    // (action=months never uses level history, so it skips that read.)
+    const [therapistData, levelHistoryData, sheetTitles] = await Promise.all([
       getSheetData('therapists!A:I'),
-      getSheetData('level_history'),
-      sheets.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID })
+      action === 'months' ? Promise.resolve([]) : getSheetData('level_history'),
+      listSheetTitles()
     ])
 
     const [, ...therapistRows] = therapistData
@@ -110,18 +129,17 @@ export async function GET(request) {
     levelHistoryRows.filter(r => r && r[0]).forEach(row => {
       const name = row[1]
       if (!levelHistoryByTherapist[name]) levelHistoryByTherapist[name] = []
-      levelHistoryByTherapist[name].push({ level: row[2], effective_date: row[3] })
+      levelHistoryByTherapist[name].push({ level: row[2], effective_date: row[3], effective: parsePHDate(row[3]) })
     })
     Object.values(levelHistoryByTherapist).forEach(entries => {
-      entries.sort((a, b) => (parsePHDate(a.effective_date) || new Date(0)) - (parsePHDate(b.effective_date) || new Date(0)))
+      entries.sort((a, b) => (a.effective || new Date(0)) - (b.effective || new Date(0)))
     })
 
     const allTherapistNames = Object.keys(therapistMap).sort()
     const regular = allTherapistNames.filter(t => !t.includes('INTERN'))
     const sortedTherapists = [...regular.sort(), 'OT INTERNS', 'ST INTERNS', 'FORFEITED FEES']
 
-    const weekSheets = spreadsheet.data.sheets
-      .map(s => s.properties.title)
+    const weekSheets = sheetTitles
       .filter(t => t.startsWith('week_'))
       .sort()
 
@@ -160,15 +178,14 @@ export async function GET(request) {
     if (action === 'pending_held') {
       const paymentData = await getSheetData('payments')
       const [, ...payRows] = paymentData
-      const TRACKING_TYPES = ['attendance', 'cancellation', 'credit_transfer', 'advance', 'refund', 'ie_report']
       const marked = payRows.filter(r => r && r[0] && r[16] === 'PENDING' && r[17] && weekSheets.includes(r[17]))
+      // Fetch each needed week tab once, all at the same time
+      const neededWeeks = [...new Set(marked.map(r => r[17]))]
+      const weekResults = await Promise.all(neededWeeks.map(wk => getSheetData(wk)))
       const weekCache = {}
+      neededWeeks.forEach((wk, i) => { weekCache[wk] = weekResults[i].slice(1) })
       const items = []
       for (const r of marked) {
-        if (!weekCache[r[17]]) {
-          const d = await getSheetData(r[17])
-          weekCache[r[17]] = d.slice(1)
-        }
         const wk = weekCache[r[17]].find(x => x && x[0] === r[3])
         if (!wk) continue
         const paid = !TRACKING_TYPES.includes(r[8])
@@ -178,7 +195,7 @@ export async function GET(request) {
         const comments = paid ? (r[11] || '') : ''
         const level = resolveLevel(wk[2], wk[3], levelHistoryByTherapist, info?.level || 'JUNIOR 1')
         const rates = calcRates(sessionType, level, amount, info?.is_intern || false, comments, wk[3])
-        const customCut = paid && r[12] !== undefined && r[12] !== '' ? parseFloat(r[12]) : null
+        const customCut = paid ? numOrNull(r[12]) : null
         items.push({
           id: r[0],
           week_key: r[17],
@@ -199,8 +216,7 @@ export async function GET(request) {
     if (action === 'months') {
       const monthKeys = new Set()
       weekSheets.forEach(weekKey => {
-        const parts = weekKey.replace('week_', '').split('_')
-        const monday = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`)
+        const monday = weekKeyToMonday(weekKey)
         const saturday = new Date(monday)
         saturday.setDate(monday.getDate() + 5)
         monthKeys.add(`${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}`)
@@ -210,7 +226,10 @@ export async function GET(request) {
     }
 
     // --- Full data build (used for both unbounded/export and month-scoped requests) ---
-    const paymentData = await getSheetData('payments')
+    const [paymentData, reportData] = await Promise.all([
+      getSheetData('payments'),
+      getSheetData('reports')
+    ])
     const [, ...payRows] = paymentData
 
     let relevantWeekSheets = monthFilter
@@ -231,7 +250,7 @@ export async function GET(request) {
     const paymentMap = {}
     payRows.filter(r => r && r[0]).forEach(row => {
       const sessionId = row[3]
-      if (sessionId && !['attendance','cancellation','credit_transfer','advance','refund','ie_report'].includes(row[8])) {
+      if (sessionId && !TRACKING_TYPES.includes(row[8])) {
         paymentMap[sessionId] = {
           payment_id: row[0],
           amount: parseFloat(row[4] || 0),
@@ -242,8 +261,8 @@ export async function GET(request) {
           reference: row[9] || '',
           verified_by: row[10] || '',
           comments: row[11] || '',
-          custom_cut: row[12] !== undefined && row[12] !== '' ? parseFloat(row[12]) : null,
-          custom_center: row[13] !== undefined && row[13] !== '' ? parseFloat(row[13]) : null,
+          custom_cut: numOrNull(row[12]),
+          custom_center: numOrNull(row[13]),
           payment_timeliness: row[14] || '',
           actual_payment_date: row[15] || '',
           cutoff_date_override: row[16] || '',
@@ -262,8 +281,8 @@ export async function GET(request) {
       const sessionId = row[3]
       trackingMap[sessionId] = {
         tracking_id: row[0],
-        custom_cut: row[12] !== undefined && row[12] !== '' ? parseFloat(row[12]) : null,
-        custom_center: row[13] !== undefined && row[13] !== '' ? parseFloat(row[13]) : null,
+        custom_cut: numOrNull(row[12]),
+        custom_center: numOrNull(row[13]),
         cutoff_date_override: row[16] || '',
         cutoff_week_key: row[17] || ''
       }
@@ -275,13 +294,10 @@ export async function GET(request) {
     relevantWeekSheets.forEach((weekKey, weekIdx) => {
       const data = weekDataResults[weekIdx]
       const [, ...rows] = data
-      rows.filter(r => {
-        if (!r || !r[0] || (r[8] !== 'Present' && r[8] !== 'Cancelled')) return false
-        const payment = paymentMap[r[0]]
-        const tracking = trackingMap[r[0]]
-        const effectiveDate = payment?.cutoff_date_override || tracking?.cutoff_date_override || r[3]
-        return dateInMonth(effectiveDate, monthFilter)
-      }).forEach(row => {
+      rows.forEach((row, rowIndex) => {
+        if (!row || !row[0] || (row[8] !== 'Present' && row[8] !== 'Cancelled')) return
+        const inMonthDate = paymentMap[row[0]]?.cutoff_date_override || trackingMap[row[0]]?.cutoff_date_override || row[3]
+        if (!dateInMonth(inMonthDate, monthFilter)) return
         const sessionId = row[0]
         const therapistInfo = therapistMap[row[2]]
         const payment = paymentMap[sessionId]
@@ -308,7 +324,7 @@ export async function GET(request) {
         allSessions.push({
           id: sessionId,
           week_key: weekKey,
-          index: rows.indexOf(row),
+          index: rowIndex,
           client_name: row[1],
           therapist: row[2],
           date: effectiveDate,
@@ -345,27 +361,20 @@ export async function GET(request) {
       const level = resolveLevel(therapistName, row[7], levelHistoryByTherapist, therapistInfo?.level || 'JUNIOR 1')
       const baseCut = calcRates('IE REPORT', level, 0, false, '', row[7]).therapistCut || RATES['IE REPORT']?.levels[level] || 800
       // Online IE reports are logged with a fixed 900 cut in column M (late ones have M = 0 and a 900 reserve in N)
-      const loggedCut = row[12] !== undefined && row[12] !== '' ? parseFloat(row[12]) : 0
-      const loggedReserve = row[13] !== undefined && row[13] !== '' ? parseFloat(row[13]) : 0
+      const loggedCut = numOrNull(row[12]) ?? 0
+      const loggedReserve = numOrNull(row[13]) ?? 0
       const cut = loggedCut > 0 ? loggedCut : Math.max(baseCut, loggedReserve)
 
       // Late IE report (submitted after 6 months): forfeited, no therapist cut
-      const isLateForfeit = row[12] !== undefined && row[12] !== '' && parseFloat(row[12]) === 0
+      const isLateForfeit = numOrNull(row[12]) === 0
       if (isLateForfeit) {
         const amt = cut   // same report fee the therapist would have received (800 / 850; 850 for all from Jan 2027)
-        allSessions.push({
+        allSessions.push(extraEntry({
           id: row[0],
-          week_key: null,
-          index: null,
           client_name: row[1],
           therapist: 'FORFEITED FEES',
           date: row[7],
-          day: '',
-          time_start: '',
-          time_end: '',
           session_type: 'IE Report (Late – Forfeited)',
-          status: 'Present',
-          is_paid: true,
           mop: row[5] || '',
           reference: row[9] || '',
           comments: row[11] || `IE report submitted by ${therapistName} after 6 months`,
@@ -377,22 +386,15 @@ export async function GET(request) {
           therapist_level: '',
           is_intern: false,
           is_forfeit: true
-        })
+        }))
         return
       }
-      allSessions.push({
+      allSessions.push(extraEntry({
         id: row[0],
-        week_key: null,
-        index: null,
         client_name: row[1],
         therapist: therapistName,
         date: row[7],
-        day: '',
-        time_start: '',
-        time_end: '',
         session_type: 'IE REPORT',
-        status: 'Present',
-        is_paid: true,
         mop: row[5] || '',
         reference: row[9] || '',
         comments: row[11] || '',
@@ -404,27 +406,20 @@ export async function GET(request) {
         therapist_level: level,
         is_intern: false,
         is_ie_report: true
-      })
+      }))
     })
 
     // Supervisor fees
     const supervisorFees = payRows.filter(r => r && r[0] && r[8] === 'supervisor_fee' && dateInMonth(r[7], monthFilter))
     supervisorFees.forEach(row => {
       const therapistName = row[2]
-      const customCut = row[12] !== undefined && row[12] !== '' ? parseFloat(row[12]) : 0
-      allSessions.push({
+      const customCut = numOrNull(row[12]) ?? 0
+      allSessions.push(extraEntry({
         id: row[0],
-        week_key: null,
-        index: null,
         client_name: row[1],
         therapist: therapistName,
         date: row[7],
-        day: '',
-        time_start: '',
-        time_end: '',
         session_type: 'SUPERVISOR FEE',
-        status: 'Present',
-        is_paid: true,
         mop: row[5] || '',
         reference: row[9] || '',
         comments: row[11] || '',
@@ -436,26 +431,19 @@ export async function GET(request) {
         therapist_level: '',
         is_intern: false,
         is_ie_report: false
-      })
+      }))
     })
 
     // Forfeited (non-refunded) reservation fees
     const forfeitedFees = payRows.filter(r => r && r[0] && r[8] === 'forfeit' && dateInMonth(r[7], monthFilter))
     forfeitedFees.forEach(row => {
       const amount = parseFloat(row[4] || 0)
-      allSessions.push({
+      allSessions.push(extraEntry({
         id: row[0],
-        week_key: null,
-        index: null,
         client_name: row[1],
         therapist: 'FORFEITED FEES',
         date: row[7],
-        day: '',
-        time_start: '',
-        time_end: '',
         session_type: 'Reservation Fee (Forfeited)',
-        status: 'Present',
-        is_paid: true,
         mop: row[5] || '',
         reference: row[9] || '',
         comments: row[11] || '',
@@ -467,18 +455,22 @@ export async function GET(request) {
         therapist_level: '',
         is_intern: false,
         is_forfeit: true
-      })
+      }))
     })
 
     // Paid document requests
-    const reportData = await getSheetData('reports')
+    // Lookup of each document's payment record (first match wins, same as a .find())
+    const docPaymentById = new Map()
+    payRows.forEach(p => {
+      if (p && p[3] && p[3].startsWith('DOC-') && !docPaymentById.has(p[3])) docPaymentById.set(p[3], p)
+    })
     const [, ...reportRows] = reportData
     reportRows.filter(r => r && r[0] && r[8] === 'Completed' && r[6] !== 'IE Report').forEach(row => {
       const therapistName = row[2]
       const therapistInfo = therapistMap[therapistName]
       const amount = parseFloat(row[7] || 0)
 
-      const paymentRecord = payRows.find(p => p && p[3] === `DOC-${row[0]}`)
+      const paymentRecord = docPaymentById.get(`DOC-${row[0]}`)
       const payDate = row[13] || (paymentRecord ? paymentRecord[7] : row[4])
       if (!dateInMonth(payDate, monthFilter)) return
 
@@ -492,23 +484,16 @@ export async function GET(request) {
       // own custom_cut/custom_center, so an edited "INTERN PR"-style entry
       // isn't silently overwritten by the standard rate calculation every
       // time the ledger reloads.
-      const customCut = paymentRecord && paymentRecord[12] !== undefined && paymentRecord[12] !== '' ? parseFloat(paymentRecord[12]) : null
-      const customCenter = paymentRecord && paymentRecord[13] !== undefined && paymentRecord[13] !== '' ? parseFloat(paymentRecord[13]) : null
+      const customCut = paymentRecord ? numOrNull(paymentRecord[12]) : null
+      const customCenter = paymentRecord ? numOrNull(paymentRecord[13]) : null
       const docComments = (paymentRecord && paymentRecord[11]) || row[9] || ''
 
-      allSessions.push({
+      allSessions.push(extraEntry({
         id: `DOC-${row[0]}`,
-        week_key: null,
-        index: null,
         client_name: row[1],
         therapist: therapistName,
         date: payDate,
-        day: '',
-        time_start: '',
-        time_end: '',
         session_type: row[6] || 'Document',
-        status: 'Present',
-        is_paid: true,
         mop,
         reference,
         comments: docComments,
@@ -520,11 +505,12 @@ export async function GET(request) {
         therapist_level: level,
         is_intern: false,
         is_document: true
-      })
+      }))
     })
 
     // Group by therapist → month → date
     const ledger = {}
+    const monthLabels = {} // 'YYYY-MM' -> 'November 2026' (date formatting is slow; do it once per month)
     allSessions.forEach(s => {
       let therapist = s.therapist
       if (!therapist) return
@@ -537,7 +523,7 @@ export async function GET(request) {
       const d = parsePHDate(s.date)
       if (!d) return
       const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-      const monthLabel = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+      const monthLabel = monthLabels[monthKey] ||= d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 
       if (!ledger[therapist][monthKey]) {
         ledger[therapist][monthKey] = { label: monthLabel, dates: {} }
