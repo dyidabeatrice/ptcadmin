@@ -226,6 +226,10 @@ export async function PATCH(request) {
 export async function DELETE(request) {
   try {
     const { session_id } = await request.json()
+    // Safety guard: a blank ID would match (and delete) every payment row
+    if (typeof session_id !== 'string' || session_id.trim() === '') {
+      return Response.json({ success: false, error: 'session_id is required' })
+    }
     const data = await getSheetData('payments')
     const [, ...rows] = data
 
