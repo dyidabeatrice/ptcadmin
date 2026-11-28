@@ -33,6 +33,27 @@ export async function getSheetData(sheetName) {
   return response.data.values || []
 }
 
+// Reads several tabs/ranges in ONE request (counts as a single read against
+// the Sheets quota). Returns one rows array per name, in the same order.
+export async function getSheetsData(sheetNames) {
+  if (!sheetNames || sheetNames.length === 0) return []
+  const response = await sheetsClient.spreadsheets.values.batchGet({
+    spreadsheetId: SPREADSHEET_ID,
+    ranges: sheetNames,
+  })
+  return (response.data.valueRanges || []).map(r => r.values || [])
+}
+
+// Writes several ranges in ONE request.
+// updates: [{ range: 'payments!F5', values: [['GCash']] }, ...]
+export async function updateRanges(updates) {
+  if (!updates || updates.length === 0) return
+  await sheetsClient.spreadsheets.values.batchUpdate({
+    spreadsheetId: SPREADSHEET_ID,
+    requestBody: { valueInputOption: 'RAW', data: updates },
+  })
+}
+
 // ---- Tab list + tab IDs ----
 // Asks Google only for each tab's title and ID, not the full spreadsheet
 // metadata (formatting, grid sizes, etc. for every week tab).
