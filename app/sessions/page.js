@@ -616,8 +616,7 @@ export default function SchedulePage() {
   function sendDayReminders(day) {
     const message = `Good day!\n\n*This is a friendly reminder that you have a scheduled session tomorrow.* 😊 Kindly react to this message to *confirm* your attendance.\n\nFor _cancellations/rescheduling, please inform us before 5PM today_ so we can properly coordinate with your therapist and avoid a late cancellation/no-show fee.\n\nPlease don't forget — carer(s) accompanying a child _must sign the attendance sheet at the reception desk_ upon arrival.\n\nWe look forward to see you! 💙`
     const dayAbsences = absentTherapists[day] || new Set()
-    const skipClients = new Set(sessions.filter(x => x.day === day && ['Absent', 'Cancelled'].includes(x.status)).map(x => x.client_name))
-    sendBulkDrafts(day, 'session', 'session_reminder', s => s.status === 'Pencil' && !dayAbsences.has(s.therapist) && !skipClients.has(s.client_name), message, 'session reminder')
+    sendBulkDrafts(day, 'session', 'session_reminder', s => s.status === 'Pencil' && !dayAbsences.has(s.therapist), message, 'session reminder')
   }
 
   function sendWeatherSuspension(day) {
