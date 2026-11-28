@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import PaymentScreenshotReader from '@/components/PaymentScreenshotReader'
 import { SESSION_TYPES_BY_SPECIALTY as SESSION_TYPES, SESSION_TYPE_RATES } from '../lib/sessionTypes'
-import { fetchJSON } from '../lib/fetchJSON'
+import { fetchJSON, saveJSON } from '../lib/fetchJSON'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 
@@ -214,8 +214,14 @@ export default function SchedulePage() {
   useEffect(() => {
     initializePage()
 
+    // Background refresh, so changes made by other staff show up.
+    // Every 3 minutes while the page is visible (was every 30 seconds — the
+    // main source of /api/sessions calls), plus right away when someone comes
+    // back to the page, at most once a minute. Your own edits still refresh
+    // the list immediately, as before.
     let lastFetch = Date.now()
-    const MIN_GAP_MS = 5000 // avoid double-fetching if interval and focus land close together
+    const REFRESH_EVERY_MS = 3 * 60 * 1000
+    const MIN_GAP_MS = 60 * 1000
 
     const refetch = () => {
       if (!selectedWeekRef.current) return
@@ -224,15 +230,16 @@ export default function SchedulePage() {
       lastFetch = now
       fetchSessions(selectedWeekRef.current.key)
     }
+    const onVisible = () => { if (document.visibilityState === 'visible') refetch() }
 
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') refetch()
-    }, 30000)
+    const interval = setInterval(onVisible, REFRESH_EVERY_MS)
     window.addEventListener('focus', refetch)
+    document.addEventListener('visibilitychange', onVisible)
 
     return () => {
       clearInterval(interval)
       window.removeEventListener('focus', refetch)
+      document.removeEventListener('visibilitychange', onVisible)
     }
   }, [])
 
@@ -449,7 +456,7 @@ export default function SchedulePage() {
 
   async function updateStatus(session, status) {
     if (status === 'Absent' && session.payment === 'Paid') { setAbsentConfirm(session); return }
-    await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'status', week_key: selectedWeek.key, rowIndex: session.index, status, session_id: session.id }) })
+    await saveJSON('/api/sessions', 'PATCH', { action: 'status', week_key: selectedWeek.key, rowIndex: session.index, status, session_id: session.id }, 'Status change')
 
     // Marking a session Cancelled (No Show) should also flip its session
     // type to No Show, with the amount matching that therapist's specialty rate.
@@ -459,7 +466,7 @@ export default function SchedulePage() {
       const specialty = therapist?.specialty || 'OT'
       const REGULAR_TYPE_BY_SPECIALTY = { OT: 'OT SESSION', ST: 'ST SESSION', PT: 'PT SESSION', SPED: 'SPED SESSION' }
       const noShowAmount = isIntern ? 600 : (SESSION_TYPE_RATES[REGULAR_TYPE_BY_SPECIALTY[specialty]] ?? SESSION_TYPE_RATES['Cancellation Fee'] ?? 0)
-      await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update_type', week_key: selectedWeek.key, rowIndex: session.index, session_type: 'Cancellation Fee', amount: noShowAmount }) })
+      await saveJSON('/api/sessions', 'PATCH', { action: 'update_type', week_key: selectedWeek.key, rowIndex: session.index, session_type: 'Cancellation Fee', amount: noShowAmount }, 'No Show fee update')
     }
 
     fetchSessions(selectedWeek.key)
@@ -469,9 +476,9 @@ export default function SchedulePage() {
   }
 
   async function confirmAbsent() {
-    await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'absent_paid', week_key: selectedWeek.key, rowIndex: absentConfirm.index, client_name: absentConfirm.client_name, amount: absentConfirm.amount, session_id: absentConfirm.id })
-    })
+    await saveJSON('/api/sessions', 'PATCH',
+      { action: 'absent_paid', week_key: selectedWeek.key, rowIndex: absentConfirm.index, client_name: absentConfirm.client_name, amount: absentConfirm.amount, session_id: absentConfirm.id },
+      'Marking absent')
     setAbsentConfirm(null)
     fetchSessions(selectedWeek.key)
   }
@@ -530,10 +537,7 @@ export default function SchedulePage() {
         creditMop = latestAdvance?.mop || 'Credit'
       }
     }
-    await fetch('/api/sessions', {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'pay', week_key: selectedWeek.key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payForm.session_type, mop: payForm.use_credit ? creditMop : payForm.split ? 'Split' : payForm.mop, amount: payForm.amount, use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, credit_balance: clientCredit, reference: payForm.reference || creditRef, custom_notes: payForm.custom_notes || '', payment_timeliness: payForm.payment_timeliness, actual_payment_date: payForm.actual_payment_date })
-    })
+    await saveJSON('/api/sessions', 'PATCH', { action: 'pay', week_key: selectedWeek.key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payForm.session_type, mop: payForm.use_credit ? creditMop : payForm.split ? 'Split' : payForm.mop, amount: payForm.amount, use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, credit_balance: clientCredit, reference: payForm.reference || creditRef, custom_notes: payForm.custom_notes || '', payment_timeliness: payForm.payment_timeliness, actual_payment_date: payForm.actual_payment_date }, 'Payment')
     setPayModal(null)
     fetchSessions(selectedWeek.key)
     const cRes = await fetch('/api/clients')
@@ -553,7 +557,7 @@ export default function SchedulePage() {
 
   async function reversePayment(session) {
     if (!confirm(`Reverse payment for ${session.client_name}?`)) return
-    await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'unpay', week_key: selectedWeek.key, rowIndex: session.index, session_id: session.id, client_name: session.client_name, amount: session.amount }) })
+    await saveJSON('/api/sessions', 'PATCH', { action: 'unpay', week_key: selectedWeek.key, rowIndex: session.index, session_id: session.id, client_name: session.client_name, amount: session.amount }, 'Payment reversal')
     setPaymentDetailsModal(null)
     fetchSessions(selectedWeek.key)
     const cRes = await fetch('/api/clients')

@@ -1,35 +1,6 @@
 import { getSheetData, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
 import { formatPHDate } from '../../lib/dates'
-
-async function getClientRow(clientName) {
-  const data = await getSheetData('clients')
-  const [, ...rows] = data
-  const index = rows.findIndex(r => r && r[1] === clientName)
-  if (index === -1) return null
-  return { index, row: rows[index] }
-}
-
-async function updateClientBalances(clientName, creditDelta, outstandingDelta) {
-  const sheets = getGoogleSheets()
-  const result = await getClientRow(clientName)
-  if (!result) return
-
-  const { index, row } = result
-  const currentCredit = parseFloat(row[9] || 0)
-  const currentOutstanding = parseFloat(row[10] || 0)
-  const newCredit = Math.max(0, currentCredit + creditDelta)
-  const newOutstanding = Math.max(0, currentOutstanding + outstandingDelta)
-  const sheetRow = index + 2
-
-  await sheets.spreadsheets.values.update({
-    spreadsheetId: SPREADSHEET_ID,
-    range: `clients!J${sheetRow}:K${sheetRow}`,
-    valueInputOption: 'RAW',
-    requestBody: { values: [[newCredit, newOutstanding]] }
-  })
-
-  return { newCredit, newOutstanding }
-}
+import { getClientRow, updateClientBalances, applyCredit } from '../../lib/credits'
 
 export async function GET(request) {
   try {
@@ -91,9 +62,7 @@ export async function POST(request) {
     }
 
     if (body.action === 'apply_credit') {
-      const safeCreditBalance = typeof body.credit_balance === 'number' ? body.credit_balance : 0
-      const amountToDeduct = Math.min(body.amount, safeCreditBalance)
-      const result = await updateClientBalances(body.client_name, -amountToDeduct, 0)
+      const result = await applyCredit(body.client_name, body.amount, body.credit_balance)
       
       // Find most recent advance payment reference for this client
       const payData = await getSheetData('payments')

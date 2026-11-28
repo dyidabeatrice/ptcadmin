@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { ALL_SESSION_TYPE_OPTIONS } from '../lib/sessionTypes'
-import { fetchJSON } from '../lib/fetchJSON'
+import { fetchJSON, saveJSON } from '../lib/fetchJSON'
 import { statusLabel, sessionTypeLabel } from '../lib/labels'
 
 const MOP_OPTIONS = ['Cash', 'BDO', 'Union Bank']
@@ -935,7 +935,7 @@ function OutstandingByDayTab({ clients, onSettle }) {
     } else if (payModal.is_document) {
       const today = new Date().toLocaleDateString('en-PH', { timeZone: 'Asia/Manila', year: 'numeric', month: 'short', day: 'numeric' })
       const mop = payForm.use_credit ? 'Credit' : payForm.split ? 'Split' : payForm.mop
-      await fetch('/api/documents', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pay', index: payModal.index, client_name: payModal.client_name, amount: payModal.amount, mop }) })
+      await saveJSON('/api/documents', 'PATCH', { action: 'pay', index: payModal.index, client_name: payModal.client_name, amount: payModal.amount, mop }, 'Document payment')
       await fetch('/api/payments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'log', client_name: payModal.client_name, therapist: payModal.therapist, session_id: `DOC-${payModal.id}`, amount: payModal.amount, mop, session_type: payForm.session_type || payModal.session_type, date: today, payment_type: 'document', reference: payForm.reference || '' }) })
       if (payForm.use_credit || payForm.split) {
         const creditAmount = payForm.split ? payForm.split_credit : payModal.amount
@@ -953,7 +953,7 @@ function OutstandingByDayTab({ clients, onSettle }) {
           creditMop = latestAdvance?.mop || 'Credit'
         }
       }
-      await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'pay', week_key: payModal.week_key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payModal.session_type || 'Regular', mop: payForm.use_credit ? creditMop : payForm.split ? 'Split' : payForm.mop, amount: Number(payForm.amount) || Number(payModal.amount), use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, credit_balance: clientCredit, reference: payForm.reference || creditRef, payment_timeliness: payForm.payment_timeliness, actual_payment_date: payForm.actual_payment_date }) })
+      await saveJSON('/api/sessions', 'PATCH', { action: 'pay', week_key: payModal.week_key, rowIndex: payModal.index, session_id: payModal.id, client_name: payModal.client_name, therapist: payModal.therapist, date: payModal.date, session_type: payModal.session_type || 'Regular', mop: payForm.use_credit ? creditMop : payForm.split ? 'Split' : payForm.mop, amount: Number(payForm.amount) || Number(payModal.amount), use_credit: payForm.use_credit, split: payForm.split, split_credit: payForm.split_credit, split_cash: payForm.split_cash, credit_balance: clientCredit, reference: payForm.reference || creditRef, payment_timeliness: payForm.payment_timeliness, actual_payment_date: payForm.actual_payment_date }, 'Payment')
     }
     setPayModal(null)
     fetchOutstanding()
