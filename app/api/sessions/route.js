@@ -1,10 +1,53 @@
-import { getSheetData, getSheetId, getGoogleSheets, SPREADSHEET_ID } from '../../lib/sheets'
+import { getSheetData, getGoogleSheets, SPREADSHEET_ID, deleteSheetRow, deleteSheetRows } from '../../lib/sheets'
 import { SPECIALTY_RATES, getDefaultSessionType, IE_SESSION_TYPES } from '../../lib/constants'
 import { formatPHDate, formatPHDateTime } from '../../lib/dates'
 import { addOutstanding, clearOutstanding, applyCredit, absentCredit } from '../../lib/credits'
 import { getTherapistFromCookie } from '../../lib/auth'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+
+// Adds a "Pending Submission" IE report row unless one already exists for this session.
+// recordedDate fills column E; the 6-month deadline is counted from deadlineFrom
+// (or from today when it's blank).
+async function createIEReportIfMissing(sheets, { sessionId, clientName, therapist, recordedDate, deadlineFrom, reportType }) {
+  const reportsData = await getSheetData('reports')
+  const [, ...reportRows] = reportsData
+  const exists = reportRows.find(r => r && r[0] === `IE-${sessionId}`)
+  if (exists) return
+  const deadline = new Date(deadlineFrom || new Date())
+  deadline.setMonth(deadline.getMonth() + 6)
+  const deadlineStr = deadline.toISOString().split('T')[0]
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SPREADSHEET_ID,
+    range: 'reports',
+    valueInputOption: 'RAW',
+    requestBody: { values: [[
+      `IE-${sessionId}`,
+      clientName || '',
+      therapist || '',
+      '',
+      recordedDate,
+      deadlineStr,
+      'IE Report',
+      0,
+      'Pending Submission',
+      '',
+      '',
+      'soft',
+      '',
+      '',
+      reportType || ''
+    ]]}
+  })
+}
+
+// Removes the IE report row for this session, if there is one.
+async function deleteIEReport(sessionId) {
+  const reportsData = await getSheetData('reports')
+  const [, ...reportRows] = reportsData
+  const ieIndex = reportRows.findIndex(r => r && r[0] === `IE-${sessionId}`)
+  if (ieIndex !== -1) await deleteSheetRow('reports', ieIndex)
+}
 
 async function getWeekSheet(weekKey) {
   try {
@@ -138,56 +181,20 @@ export async function PATCH(request) {
       const isPresent = currentSession?.status === 'Present'
 
       if (isNewIE && isPresent) {
-        const reportsData = await getSheetData('reports')
-        const [, ...reportRows] = reportsData
-        const exists = reportRows.find(r => r && r[0] === `IE-${currentSession.id}`)
-        const reportType = body.session_type || ''
-        if (!exists) {
-          const sessionDate = new Date(currentSession.date || new Date())
-          const deadline = new Date(sessionDate)
-          deadline.setMonth(deadline.getMonth() + 6)
-          const deadlineStr = deadline.toISOString().split('T')[0]
-          const today = formatPHDate()
-          await sheets.spreadsheets.values.append({
-            spreadsheetId: SPREADSHEET_ID,
-            range: 'reports',
-            valueInputOption: 'RAW',
-            requestBody: { values: [[
-              `IE-${currentSession.id}`,
-              currentSession.client_name || '',
-              currentSession.therapist || '',
-              '',
-              today,
-              deadlineStr,
-              'IE Report',
-              0,
-              'Pending Submission',
-              '',
-              '',
-              'soft',
-              '',
-              '',
-              reportType
-            ]]}
-          })
-        }
+        await createIEReportIfMissing(sheets, {
+          sessionId: currentSession.id,
+          clientName: currentSession.client_name,
+          therapist: currentSession.therapist,
+          recordedDate: formatPHDate(),
+          deadlineFrom: currentSession.date,
+          reportType: body.session_type
+        })
       }
 
       // Auto-delete IE report entry if session type changed away from IE
       const wasIE = IE_SESSION_TYPES.includes(currentSession?.session_type)
       if (wasIE && !isNewIE) {
-        const reportsData = await getSheetData('reports')
-        const [, ...reportRows] = reportsData
-        const ieIndex = reportRows.findIndex(r => r && r[0] === `IE-${currentSession.id}`)
-        if (ieIndex !== -1) {
-          const sheetId = await getSheetId('reports')
-          await sheets.spreadsheets.batchUpdate({
-            spreadsheetId: SPREADSHEET_ID,
-            requestBody: { requests: [{ deleteDimension: {
-              range: { sheetId, dimension: 'ROWS', startIndex: ieIndex + 1, endIndex: ieIndex + 2 }
-            }}]}
-          })
-        }
+        await deleteIEReport(currentSession.id)
       }
 
       return Response.json({ success: true })
@@ -211,35 +218,16 @@ if (body.action === 'status') {
     if ((newStatus === 'Absent' || newStatus === 'Pencil' || newStatus === 'Scheduled') && session?.id) {
       const payData = await getSheetData('payments')
       const [, ...payRows] = payData
-      const sheetId = await getSheetId('payments')
       const toDelete = payRows
         .map((r, i) => ({ r, i }))
         .filter(({ r }) => r && r[3] === session.id && (r[8] === 'attendance' || r[8] === 'cancellation'))
-        .sort((a, b) => b.i - a.i)
-      for (const { i } of toDelete) {
-        await sheets.spreadsheets.batchUpdate({
-          spreadsheetId: SPREADSHEET_ID,
-          requestBody: { requests: [{ deleteDimension: {
-            range: { sheetId, dimension: 'ROWS', startIndex: i + 1, endIndex: i + 2 }
-          }}]}
-        })
+        .map(({ i }) => i)
+      await deleteSheetRows('payments', toDelete)
+
+      // Also delete IE report entry if exists
+      if (IE_SESSION_TYPES.includes(session?.session_type)) {
+        await deleteIEReport(session.id)
       }
-        // Also delete IE report entry if exists
-        const isIEType = IE_SESSION_TYPES.includes(session?.session_type)
-        if (isIEType) {
-          const reportsData = await getSheetData('reports')
-          const [, ...reportRows] = reportsData
-          const ieIndex = reportRows.findIndex(r => r && r[0] === `IE-${session.id}`)
-          if (ieIndex !== -1) {
-            const reportsSheetId = await getSheetId('reports')
-            await sheets.spreadsheets.batchUpdate({
-              spreadsheetId: SPREADSHEET_ID,
-              requestBody: { requests: [{ deleteDimension: {
-                range: { sheetId: reportsSheetId, dimension: 'ROWS', startIndex: ieIndex + 1, endIndex: ieIndex + 2 }
-              }}]}
-            })
-          }
-        }
 
     } 
 
@@ -262,38 +250,14 @@ if (body.action === 'status') {
       // (covers the case where payment was marked before status — the 'pay' action's own
       // check only fires if status was already Present at that moment)
       if (newStatus === 'Present' && oldStatus !== 'Present' && isPaid && IE_SESSION_TYPES.includes(session?.session_type) && session?.id) {
-        const reportsData = await getSheetData('reports')
-        const [, ...reportRows] = reportsData
-        const exists = reportRows.find(r => r && r[0] === `IE-${session.id}`)
-        const reportType = session?.session_type || ''
-        if (!exists) {
-          const sessionDate = new Date(session.date || new Date())
-          const deadline = new Date(sessionDate)
-          deadline.setMonth(deadline.getMonth() + 6)
-          const deadlineStr = deadline.toISOString().split('T')[0]
-          await sheets.spreadsheets.values.append({
-            spreadsheetId: SPREADSHEET_ID,
-            range: 'reports',
-            valueInputOption: 'RAW',
-            requestBody: { values: [[
-              `IE-${session.id}`,
-              session.client_name || '',
-              session.therapist || '',
-              '',
-              session.date || today,
-              deadlineStr,
-              'IE Report',
-              0,
-              'Pending Submission',
-              '',
-              '',
-              'soft',
-              '',
-              '',
-              reportType
-            ]]}
-          })
-        }
+        await createIEReportIfMissing(sheets, {
+          sessionId: session.id,
+          clientName: session.client_name,
+          therapist: session.therapist,
+          recordedDate: session.date || today,
+          deadlineFrom: session.date,
+          reportType: session.session_type
+        })
       }
 
       // Log unpaid present sessions
@@ -416,40 +380,15 @@ if (body.action === 'status') {
 
       // Auto-create IE report entry when IE session is paid and present
       if (isIE && isPresent) {
-        const reportsData = await getSheetData('reports')
-        const [, ...reportRows] = reportsData
-        const exists = reportRows.find(r => r && r[0] === `IE-${body.session_id}`)
-        const reportType = body.session_type || ''
-        if (!exists) {
-          const sessionDate = new Date(body.date || new Date())
-          const deadline = new Date(sessionDate)
-          deadline.setMonth(deadline.getMonth() + 6)
-          const deadlineStr = deadline.toISOString().split('T')[0]
-          const sessionDateFormatted = body.date || formatPHDate()
-          await sheets.spreadsheets.values.append({
-            spreadsheetId: SPREADSHEET_ID,
-            range: 'reports',
-            valueInputOption: 'RAW',
-            requestBody: { values: [[
-              `IE-${body.session_id}`,
-              body.client_name || '',
-              body.therapist || '',
-              '',
-              sessionDateFormatted,
-              deadlineStr,
-              'IE Report',
-              0,
-              'Pending Submission',
-              '',
-              '',
-              'soft',
-              '',
-              '',
-              reportType
-            ]]}
-          })
-        }
-      }      
+        await createIEReportIfMissing(sheets, {
+          sessionId: body.session_id,
+          clientName: body.client_name,
+          therapist: body.therapist,
+          recordedDate: body.date || formatPHDate(),
+          deadlineFrom: body.date,
+          reportType: body.session_type
+        })
+      }
       // Credits calls after — wrapped so they don't block the response
       if (body.use_credit || body.split) {
         const creditAmount = body.split ? body.split_credit : body.amount
@@ -472,15 +411,7 @@ if (body.action === 'status') {
       const payData = await getSheetData('payments')
       const [, ...payRows] = payData
       const payIndex = payRows.findIndex(r => r && r[3] === body.session_id)
-      if (payIndex !== -1) {
-        const sheetId = await getSheetId('payments')
-        await sheets.spreadsheets.batchUpdate({
-          spreadsheetId: SPREADSHEET_ID,
-          requestBody: { requests: [{ deleteDimension: {
-            range: { sheetId, dimension: 'ROWS', startIndex: payIndex + 1, endIndex: payIndex + 2 }
-          }}]}
-        })
-      }
+      if (payIndex !== -1) await deleteSheetRow('payments', payIndex)
 
       // Add back to outstanding if session is Present or Cancelled
       const unpaidSessions = await getWeekSheet(weekKey)
@@ -534,7 +465,6 @@ if (body.action === 'status') {
     }
 
     if (body.action === 'therapist_absent') {
-      const sheetId = await getSheetId('blocked')
       await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
         range: 'blocked', valueInputOption: 'RAW',
@@ -557,15 +487,7 @@ if (body.action === 'status') {
         r[5] === 'absent' &&
         r[6]?.includes(body.week_key)
       )
-      if (absentIndex !== -1) {
-        const sheetId = await getSheetId('blocked')
-        await sheets.spreadsheets.batchUpdate({
-          spreadsheetId: SPREADSHEET_ID,
-          requestBody: { requests: [{ deleteDimension: {
-            range: { sheetId, dimension: 'ROWS', startIndex: absentIndex + 1, endIndex: absentIndex + 2 }
-          }}]}
-        })
-      }
+      if (absentIndex !== -1) await deleteSheetRow('blocked', absentIndex)
       return Response.json({ success: true })
     }
 
@@ -588,14 +510,7 @@ if (body.action === 'status') {
 export async function DELETE(request) {
   try {
     const { rowIndex, week_key } = await request.json()
-    const sheets = getGoogleSheets()
-    const sheetId = await getSheetId(week_key)
-    await sheets.spreadsheets.batchUpdate({
-      spreadsheetId: SPREADSHEET_ID,
-      requestBody: { requests: [{ deleteDimension: {
-        range: { sheetId, dimension: 'ROWS', startIndex: rowIndex + 1, endIndex: rowIndex + 2 }
-      }}]}
-    })
+    await deleteSheetRow(week_key, rowIndex)
     return Response.json({ success: true })
   } catch (error) {
     return Response.json({ success: false, error: error.message })
